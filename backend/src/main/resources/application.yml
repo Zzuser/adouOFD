@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: adou-ofd-backend
+  main:
+    banner-mode: "off"
+  lifecycle:
+    timeout-per-shutdown-phase: 5s
+
+server:
+  address: 127.0.0.1
+  port: 0
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+logging:
+  level:
+    root: WARN
+    com.adou.ofd: INFO
+
+adou:
+  version: 0.5.2
+  ofdrw-version: 2.3.7
+  token: ""
