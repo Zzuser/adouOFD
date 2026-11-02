@@ -83,8 +83,9 @@ jobs:
         run: |
           $installer = Get-ChildItem desktop/dist-inno/*.exe | Select-Object -First 1
           $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower()
-          "$hash  $($installer.Name)" | Set-Content desktop/dist-inno/SHA256.txt -Encoding utf8
-          Get-Content desktop/dist-inno/SHA256.txt
+          $file = "desktop/dist-inno/SHA256-$env:APP_VERSION.txt"
+          "$hash  $($installer.Name)" | Set-Content $file -Encoding utf8
+          Get-Content $file
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -93,7 +94,7 @@ jobs:
           body_path: docs/RELEASE-NOTES-${{ env.APP_VERSION }}.md
           files: |
             desktop/dist-inno/*.exe
-            desktop/dist-inno/SHA256.txt
+            desktop/dist-inno/SHA256-*.txt
             LICENSE
             PRIVACY.md
             THIRD-PARTY-NOTICES.md
