@@ -1,6 +1,6 @@
 {
   "name": "adou-ofd",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "阿豆OFD — 免费、离线的 OFD / PDF 桌面阅读与处理工具",
   "main": "./out/main/index.js",
   "author": "Zzuser",

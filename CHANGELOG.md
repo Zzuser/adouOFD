@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-11-02
 
 - Added an in-app print panel (`Ctrl+P` / “打印”) with live preview: printer selection, copies, grayscale, all/current/custom page ranges, odd/even pages, reverse order, paper size/orientation/margins, N-up (2/4/6/8/9 pages per sheet, row/column order, borders) and duplex.
 - Printing now sends the composed sheets directly to the selected printer; OFD and PDF share the same rendering path with adaptive 300/200/150 DPI output.
 - Added direct print entries to single-conversion, batch-conversion and merge results, so results can be printed without opening them in the viewer first.
 - Added print panel, N-up, paper-size, range, grayscale and result-entry coverage to the UI smoke test.
+- Updated installer to 0.8.0.
 
 ## 0.7.1 — 2026-11-02
 
