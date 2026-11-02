@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>免费、离线的 OFD / PDF 桌面阅读与处理工具</strong><br>
-  阅读 · 搜索 · 转换 · 合并 · Windows 文件关联
+  阅读 · 搜索 · 打印 · 转换 · 合并 · Windows 文件关联
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 </p>
 
 > 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**0.7.1**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 格式转换 + 合并 + Windows 文件关联）
+> 当前版本：**0.7.1**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 打印 + 格式转换 + 合并 + Windows 文件关联）
 
 ## 品牌与图标
 
@@ -45,6 +45,7 @@
 - **页码与快捷键**：页码输入、上一页/下一页、←/→
 - **文字选择复制**：逐字文字层，框选复制保留换行；右键选区弹出原生“复制”菜单
 - **全文搜索**：阅读器“查找”或 `Ctrl+F` 跨页搜索 OFD / PDF 文本；结果列表逐条定位，页面内高亮当前命中；支持区分大小写，长文档后台扫描并显示进度
+- **打印**：阅读器“打印”或 `Ctrl+P` 打开打印面板，实时预览并直接发送到所选打印机；支持份数、灰度、全部/当前页/自定义范围、奇偶页、逆序、纸张大小/方向/边距、每张多页（2/4/6/8/9 页，按行/按列、边框）与双面打印；按页数自动使用 300 / 200 / 150 DPI 渲染；单文件转换、批量转换与合并结果都提供“打印”入口，无需先打开阅读器
 - **选区防误选**：拖出文字/页面边界时自动钳制，不会整页选中
 - **PDF 兼容**：页面旋转、加密 PDF 提示，扫描件按图显示
 - **本地处理**：文件不离开本机；不登录、不联网、无广告
@@ -72,7 +73,7 @@
 | --- |
 | ![多标签查看](docs/screenshots/tabs.png) |
 
-更多：[全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [隐私政策](docs/screenshots/privacy.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
+更多：[打印面板](docs/screenshots/print-dialog.png) · [全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [隐私政策](docs/screenshots/privacy.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
 
 ## 下载与安装
 
@@ -161,6 +162,7 @@ npm run dev:all
 | 缩放 | 底部工具条、`Ctrl` + `+/-`、`Ctrl + 0` 适合宽度、`Ctrl + 滚轮` |
 | 导航 | “导航”打开缩略图 / 目录页签 |
 | 全文搜索 | “查找”或 `Ctrl+F`，输入关键词；`Enter` / `Shift+Enter` 切换命中，`Esc` 关闭 |
+| 打印 | 阅读器顶部“打印”或 `Ctrl+P`，在打印面板选择打印机、范围、排版与纸张后打印；转换/合并结果区也可直接打印 |
 | 复制文字 | 在页面上框选后 `Ctrl+C`，或右键选择“复制选中文字” |
 | 格式转换 | 阅读器顶部“转换” → 选择保存位置 → 开始转换（可取消） |
 | 批量转换 | 左侧“批量转换” → 添加/拖入多个文件 → 选输出目录 → 开始（可停止） |

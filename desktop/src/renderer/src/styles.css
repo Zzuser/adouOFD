@@ -2124,3 +2124,472 @@ button:focus-visible {
     flex-basis: 208px;
   }
 }
+
+/* ---------- Print dialog ---------- */
+
+.print-dialog {
+  position: relative;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  width: min(1060px, calc(100vw - 40px));
+  height: min(760px, calc(100vh - 40px));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(23, 37, 28, 0.3);
+  animation: fade-up 0.22s ease;
+}
+
+.print-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 52px 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.print-dialog-title {
+  min-width: 0;
+}
+
+.print-dialog-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.print-dialog-title p {
+  max-width: 60ch;
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.print-dialog .about-close {
+  top: 14px;
+  right: 14px;
+}
+
+.print-dialog-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 350px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.print-settings {
+  padding: 6px 20px 20px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: #fbfaf5;
+  scrollbar-width: thin;
+}
+
+.print-settings[aria-busy='true'] {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.print-section {
+  padding: 12px 0 14px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.print-section:last-child {
+  border-bottom: 0;
+}
+
+.print-section h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.print-field {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.print-field > span {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.print-dialog select,
+.print-dialog input[type='number'],
+.print-range-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11.5px;
+}
+
+.print-dialog select:focus,
+.print-dialog input[type='number']:focus,
+.print-range-input:focus {
+  border-color: #b9cdbb;
+  box-shadow: 0 0 0 2px rgba(47, 122, 79, 0.12);
+}
+
+.print-dialog input[type='number'] {
+  font-variant-numeric: tabular-nums;
+}
+
+.print-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  color: var(--ink);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.print-dialog input[type='checkbox'],
+.print-dialog input[type='radio'] {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+
+.print-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.print-radio {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.print-range-input {
+  width: 110px;
+  margin-left: 4px;
+}
+
+.print-range-input:disabled {
+  background: #f3f1e8;
+  color: #9aa39a;
+}
+
+.print-radio-inline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.print-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0 0;
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.print-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.print-note-warn {
+  color: #9a5a22;
+}
+
+.print-static {
+  color: var(--ink);
+  font-size: 11.5px;
+}
+
+.print-segment {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: #f0eee4;
+}
+
+.print-segment button {
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.print-segment button.active {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.print-nup {
+  margin-top: 2px;
+}
+
+.print-order {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 4px;
+}
+
+.print-order button {
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.print-order button.active {
+  border-color: #cfe2d4;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-weight: 650;
+}
+
+.print-margins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+
+.print-margins label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.print-margins input {
+  width: 100%;
+}
+
+.print-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #eeebe1;
+}
+
+.print-preview-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: 1px solid rgba(33, 49, 38, 0.08);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.print-sheet-summary {
+  font-variant-numeric: tabular-nums;
+}
+
+.print-preview-stage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.print-preview-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.print-paper {
+  position: relative;
+  flex: 0 0 auto;
+  background: #fff;
+  box-shadow: 0 10px 34px rgba(33, 49, 38, 0.18);
+  transition:
+    width 0.15s ease,
+    height 0.15s ease;
+}
+
+.print-paper.grayscale img {
+  filter: grayscale(1);
+}
+
+.print-paper-grid {
+  position: absolute;
+  display: grid;
+}
+
+.print-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.print-cell img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.print-cell.bordered {
+  outline: 1px dashed #aab4aa;
+  outline-offset: -1px;
+}
+
+.print-cell-label {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #8b958c;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.print-preview-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 9px 16px 12px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-nav-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(33, 49, 38, 0.12);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.print-nav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.print-dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.print-foot-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.print-foot-spacer {
+  flex: 1;
+}
+
+.print-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 360px;
+  color: var(--danger);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.print-dialog-foot .btn {
+  padding: 9px 16px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 900px) {
+  .print-dialog-body {
+    grid-template-columns: 310px minmax(0, 1fr);
+  }
+}
+
+/* ---------- Print notice ---------- */
+
+.print-notice {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(560px, calc(100vw - 48px));
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(35, 48, 38, 0.94);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 10px 28px rgba(23, 37, 28, 0.28);
+  overflow-wrap: anywhere;
+  transform: translateX(-50%);
+  animation: fade-in 0.16s ease;
+}
+
+.print-notice.error {
+  background: rgba(125, 47, 30, 0.96);
+}
+
+.print-notice-spinner {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}

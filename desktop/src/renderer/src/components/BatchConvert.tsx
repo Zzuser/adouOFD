@@ -15,6 +15,7 @@ import {
   IconFolder,
   IconInfo,
   IconLocation,
+  IconPrint,
   IconSpark,
   IconSwap,
   IconView
@@ -49,6 +50,7 @@ interface BatchItem {
 interface BatchConvertProps {
   backend: BackendInfo
   onOpenDocument: (path: string) => void
+  onPrintResult: (path: string) => void
 }
 
 function formatSize(bytes: number): string {
@@ -78,7 +80,7 @@ function formatElapsed(ms: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-export function BatchConvert({ backend, onOpenDocument }: BatchConvertProps) {
+export function BatchConvert({ backend, onOpenDocument, onPrintResult }: BatchConvertProps) {
   const [items, setItems] = useState<BatchItem[]>([])
   const [outputDir, setOutputDir] = useState<string>(() => {
     try {
@@ -560,6 +562,17 @@ export function BatchConvert({ backend, onOpenDocument }: BatchConvertProps) {
                   >
                     <IconView size={14} />
                     查看
+                  </button>
+                ) : null}
+                {item.status === 'done' && item.outputPath ? (
+                  <button
+                    className="icon-btn"
+                    data-action="batch-print"
+                    onClick={() => onPrintResult(item.outputPath as string)}
+                    title="打印转换结果"
+                  >
+                    <IconPrint size={14} />
+                    打印
                   </button>
                 ) : null}
                 {item.status === 'done' && item.outputPath ? (

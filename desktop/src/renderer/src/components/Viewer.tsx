@@ -16,6 +16,7 @@ import {
   IconMinus,
   IconPages,
   IconPlus,
+  IconPrint,
   IconSearch,
   IconSwap
 } from './icons'
@@ -39,11 +40,13 @@ interface ViewerProps {
   backend: BackendInfo
   doc: DocumentSummary
   active: boolean
+  printOpen: boolean
   onClose: () => void
   onConvert: () => void
+  onPrint: (page: number) => void
 }
 
-export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps) {
+export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, onPrint }: ViewerProps) {
   const [zoomMode, setZoomMode] = useState<ZoomMode>('fit-width')
   const [zoom, setZoom] = useState(1)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
@@ -381,6 +384,10 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
     setFirstPageReady(true)
   }, [])
 
+  const requestPrint = useCallback(() => {
+    if (backend.status === 'ready') onPrint(currentPage)
+  }, [backend.status, currentPage, onPrint])
+
   useEffect(() => {
     const root = scrollRef.current
     if (!root) return
@@ -408,6 +415,12 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
         })
         return
       }
+      if (mod && event.key.toLowerCase() === 'p') {
+        event.preventDefault()
+        if (!printOpen) requestPrint()
+        return
+      }
+      if (printOpen) return
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
       if (mod && (event.key === '=' || event.key === '+')) {
@@ -432,7 +445,7 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [active, zoomBy, applyFit, goToPage, searchOpen, closeSearch])
+  }, [active, zoomBy, applyFit, goToPage, searchOpen, closeSearch, requestPrint, printOpen])
 
   useEffect(() => {
     if (document.activeElement !== pageInputRef.current) {
@@ -639,6 +652,17 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
           >
             <IconSearch size={15} />
             <span>查找</span>
+          </button>
+
+          <button
+            className="icon-btn"
+            data-action="print"
+            onClick={requestPrint}
+            disabled={backend.status !== 'ready'}
+            title="打印（Ctrl + P）"
+          >
+            <IconPrint size={15} />
+            <span>打印</span>
           </button>
 
           <button

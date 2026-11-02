@@ -40,7 +40,9 @@ const api: AdouApi = {
   openDefaultAppChoice: () => ipcRenderer.invoke('windows:open-default-choice'),
   openDefaultAppsSettings: () => ipcRenderer.invoke('windows:open-default-apps'),
   readLegalNotices: () => ipcRenderer.invoke('legal:read'),
-  revealLegalNotices: () => ipcRenderer.invoke('legal:reveal')
+  revealLegalNotices: () => ipcRenderer.invoke('legal:reveal'),
+  listPrinters: () => ipcRenderer.invoke('printer:list'),
+  printDocument: (options) => ipcRenderer.invoke('document:print', options)
 }
 
 contextBridge.exposeInMainWorld('adou', api)

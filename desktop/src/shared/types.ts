@@ -207,6 +207,71 @@ export interface LegalNotices {
   noticesDir: string
 }
 
+export type PrintPaperSize =
+  | 'A3'
+  | 'A4'
+  | 'A5'
+  | 'A6'
+  | 'B5'
+  | 'Letter'
+  | 'Legal'
+  | 'Tabloid'
+
+export type PrintOrientation = 'portrait' | 'landscape'
+export type PrintPageSelection = 'all' | 'current' | 'custom'
+export type PrintParity = 'all' | 'odd' | 'even'
+export type PrintPageOrder = 'row' | 'column'
+export type PrintDuplex = 'simplex' | 'longEdge' | 'shortEdge'
+export type PrintMarginMode = 'default' | 'none' | 'custom'
+
+export interface PrintMarginsMm {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
+export interface PrintLayoutOptions {
+  printerName: string
+  copies: number
+  color: boolean
+  selection: PrintPageSelection
+  currentPage: number
+  rangeText: string
+  parity: PrintParity
+  reverse: boolean
+  paperSize: PrintPaperSize
+  orientation: PrintOrientation
+  marginMode: PrintMarginMode
+  marginsMm: PrintMarginsMm
+  duplex: PrintDuplex
+  pagesPerSheet: number
+  pageOrder: PrintPageOrder
+  printBorder: boolean
+}
+
+export interface PrinterInfo {
+  name: string
+  displayName: string
+}
+
+export interface PrintDocumentOptions {
+  id: string
+  name: string
+  pages: PageMeta[]
+  layout: PrintLayoutOptions
+}
+
+export interface PrintDocumentResult {
+  ok: boolean
+  canceled?: boolean
+  error?: string
+  pages?: number
+  sheets?: number
+  dpi?: number
+  testPdf?: string
+}
+
 export interface AdouApi {
   getBackendInfo(): Promise<BackendInfo>
   restartBackend(): Promise<BackendInfo>
@@ -229,4 +294,6 @@ export interface AdouApi {
   openDefaultAppsSettings(): Promise<void>
   readLegalNotices(): Promise<LegalNotices>
   revealLegalNotices(): Promise<void>
+  listPrinters(): Promise<PrinterInfo[]>
+  printDocument(options: PrintDocumentOptions): Promise<PrintDocumentResult>
 }

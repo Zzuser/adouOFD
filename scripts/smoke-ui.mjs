@@ -7,7 +7,7 @@
  * 运行：node scripts/smoke-ui.mjs
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -52,6 +52,16 @@ rmSync(batchInputsFile, { force: true })
 rmSync(batchOutDir, { recursive: true, force: true })
 const mergeOutput = join(outDir, 'smoke-merge.ofd')
 rmSync(mergeOutput, { force: true })
+const printTestPdf = join(outDir, 'smoke-print.pdf')
+const printNupPdf = join(outDir, 'smoke-print-nup.pdf')
+const printEightPdf = join(outDir, 'smoke-print-eight.pdf')
+const printCustomPdf = join(outDir, 'smoke-print-custom.pdf')
+const printPdfOutput = join(outDir, 'smoke-print-pdf.pdf')
+rmSync(printTestPdf, { force: true })
+rmSync(printNupPdf, { force: true })
+rmSync(printEightPdf, { force: true })
+rmSync(printCustomPdf, { force: true })
+rmSync(printPdfOutput, { force: true })
 // 隔离冒烟实例的 userData，避免与正在运行的安装版争抢单实例锁
 const smokeAppData = join(outDir, 'smoke-appdata')
 rmSync(smokeAppData, { recursive: true, force: true })
@@ -67,7 +77,8 @@ if (!attachPort) {
     ADOU_TEST_SAVE_FILE: convertOutput,
     ADOU_TEST_OPEN_FILES: batchInputsFile,
     ADOU_TEST_OUTPUT_DIR: batchOutDir,
-    ADOU_TEST_MERGE_FILE: mergeOutput
+    ADOU_TEST_MERGE_FILE: mergeOutput,
+    ADOU_TEST_PRINT_PDF: printTestPdf
   }
   delete childEnv.ELECTRON_RUN_AS_NODE
   // 无 GPU 的虚拟机/远程桌面下 Chromium GPU 进程会崩溃，可用 ADOU_SMOKE_GPU_OFF=1 降级
@@ -267,6 +278,245 @@ try {
   if (!viewerHeader.topbar || viewerHeader.topbar > 60 || viewerHeader.docBar > 60) {
     errors.push(`查看器页头过高：${JSON.stringify(viewerHeader)}`)
   }
+
+  // ---- 打印面板 ----
+  const setPrintInput = async (selector, value) => {
+    const ok = await evaluate(
+      cdp,
+      `(() => {
+        const input = document.querySelector(${JSON.stringify(selector)})
+        if (!input) return false
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        setter.call(input, ${JSON.stringify(value)})
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        return true
+      })()`
+    )
+    if (!ok) errors.push(`打印输入控件不可用：${selector}`)
+  }
+  const setPrintSelect = async (selector, value) => {
+    const ok = await evaluate(
+      cdp,
+      `(() => {
+        const select = document.querySelector(${JSON.stringify(selector)})
+        if (!select) return false
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set
+        setter.call(select, ${JSON.stringify(value)})
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+        return true
+      })()`
+    )
+    if (!ok) errors.push(`打印下拉控件不可用：${selector}`)
+  }
+  const openPrintDialog = async () => {
+    await evaluate(
+      cdp,
+      "document.querySelector('.viewer-pane:not([hidden]) [data-action=\"print\"]')?.click()"
+    )
+    await waitFor(cdp, "document.querySelector('.print-dialog') !== null", 10_000)
+    await waitFor(
+      cdp,
+      "(() => { const select = document.querySelector('[data-print=\"printer\"]'); return Boolean(select && !select.disabled && select.options.length > 1) })()",
+      15_000
+    )
+  }
+  const submitPrint = async (copyPath) => {
+    rmSync(printTestPdf, { force: true })
+    await evaluate(cdp, "document.querySelector('[data-print=\"submit\"]')?.click()")
+    const bytes = await waitForPdf(printTestPdf, 120_000)
+    copyFileSync(printTestPdf, copyPath)
+    await waitFor(cdp, "document.querySelector('.print-dialog') === null", 30_000)
+    return bytes
+  }
+  const openResultPrintDialog = async (selector) => {
+    await evaluate(cdp, `document.querySelector(${JSON.stringify(selector)})?.click()`)
+    await waitFor(cdp, "document.querySelector('.print-dialog') !== null", 30_000)
+    await waitFor(
+      cdp,
+      "(() => { const select = document.querySelector('[data-print=\"printer\"]'); return Boolean(select && !select.disabled && select.options.length > 1) })()",
+      15_000
+    )
+  }
+  const cancelPrintDialog = async () => {
+    await evaluate(cdp, "document.querySelector('[data-print=\"cancel\"]')?.click()")
+    await waitFor(cdp, "document.querySelector('.print-dialog') === null", 5_000)
+  }
+
+  const hasPrintButton = await evaluate(
+    cdp,
+    "Boolean(document.querySelector('.viewer-pane:not([hidden]) [data-action=\"print\"]'))"
+  )
+  if (!hasPrintButton) errors.push('阅读器缺少打印按钮')
+  await openPrintDialog()
+
+  const printerOptions = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('[data-print=\"printer\"] option')).map((option) => option.textContent?.trim())"
+  )
+  console.log('打印机选项：', printerOptions.length, JSON.stringify(printerOptions.slice(0, 4)))
+  if (printerOptions.length < 2) errors.push('未读取到系统打印机')
+
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('4 页 · 4 张')",
+    10_000
+  )
+  await waitFor(
+    cdp,
+    "(() => { const img = document.querySelector('.print-paper img[data-page=\"1\"]'); return Boolean(img && img.complete && img.naturalWidth > 0) })()",
+    30_000
+  )
+  console.log(
+    '打印预览（默认）：',
+    await evaluate(cdp, "document.querySelector('.print-sheet-summary')?.textContent?.trim()"),
+    await evaluate(cdp, "document.querySelector('[data-print=\"sheet-position\"]')?.textContent?.trim()")
+  )
+  const printDialogShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-print-dialog.png`), Buffer.from(printDialogShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-print-dialog.png`)
+
+  await evaluate(cdp, "document.querySelector('[data-print=\"mode-nup\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('[data-print=\"per-sheet\"]')?.value === '2'", 5_000)
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('4 页 · 2 张')",
+    5_000
+  )
+  await waitFor(
+    cdp,
+    "document.querySelectorAll('.print-paper-grid img').length === 2",
+    5_000
+  )
+  const nupPreviewPages = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.print-paper-grid img')).map((img) => Number(img.dataset.page))"
+  )
+  console.log('一张多页预览：', JSON.stringify(nupPreviewPages))
+  if (nupPreviewPages.join(',') !== '1,2') errors.push('N-up 预览页面顺序异常')
+
+  await setPrintSelect('[data-print="per-sheet"]', '4')
+  await evaluate(cdp, "document.querySelector('[data-print=\"order-column\"]')?.click()")
+  await waitFor(cdp, "document.querySelectorAll('.print-paper-grid img').length === 4", 5_000)
+  const columnOrder = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.print-paper-grid img')).map((img) => Number(img.dataset.page))"
+  )
+  console.log('按列排列预览：', JSON.stringify(columnOrder))
+  if (columnOrder.join(',') !== '1,3,2,4') errors.push('N-up 按列排列顺序异常')
+  await evaluate(cdp, "document.querySelector('[data-print=\"order-row\"]')?.click()")
+  await setPrintSelect('[data-print="per-sheet"]', '8')
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-static')?.textContent?.includes('2 列 × 4 行')",
+    5_000
+  )
+  const eightUp = await evaluate(
+    cdp,
+    `(() => ({
+      images: document.querySelectorAll('.print-paper-grid img').length,
+      cells: document.querySelectorAll('.print-paper-grid .print-cell').length,
+      summary: document.querySelector('.print-sheet-summary')?.textContent?.trim()
+    }))()`
+  )
+  console.log('每张 8 页预览（2 列 × 4 行）：', JSON.stringify(eightUp))
+  if (eightUp.images !== 4 || eightUp.cells !== 8) {
+    errors.push(`每张 8 页预览异常：${JSON.stringify(eightUp)}`)
+  }
+  await setPrintSelect('[data-print="per-sheet"]', '2')
+  await waitFor(cdp, "document.querySelectorAll('.print-paper-grid img').length === 2", 5_000)
+
+  const nupBytes = await submitPrint(printNupPdf)
+  console.log('一张多页打印：', nupBytes, '字节')
+
+  await openPrintDialog()
+  await evaluate(cdp, "document.querySelector('[data-print=\"mode-nup\"]')?.click()")
+  await setPrintSelect('[data-print="per-sheet"]', '8')
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-static')?.textContent?.includes('2 列 × 4 行')",
+    5_000
+  )
+  const eightBytes = await submitPrint(printEightPdf)
+  console.log('每张 8 页（2 列 × 4 行）打印：', eightBytes, '字节')
+
+  await openPrintDialog()
+  await evaluate(cdp, "document.querySelector('[data-print=\"selection-custom\"]')?.click()")
+  await setPrintInput('[data-print="range"]', '2-4')
+  await evaluate(cdp, "document.querySelector('[data-print=\"reverse\"]')?.click()")
+  await evaluate(cdp, "document.querySelector('[data-print=\"mode-single\"]')?.click()")
+  await setPrintSelect('[data-print="paper"]', 'A5')
+  await evaluate(cdp, "document.querySelector('[data-print=\"orientation-landscape\"]')?.click()")
+  await setPrintSelect('[data-print="margin-mode"]', 'none')
+  await evaluate(cdp, "document.querySelector('[data-print=\"gray\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('3 页 · 3 张')",
+    10_000
+  )
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-paper img[data-page=\"4\"]') !== null",
+    10_000
+  )
+  const customFirstPage = await evaluate(
+    cdp,
+    "Number(document.querySelector('.print-paper img')?.dataset.page)"
+  )
+  if (customFirstPage !== 4) errors.push(`逆序预览首页异常：${customFirstPage}`)
+  await evaluate(cdp, "document.querySelector('.print-preview-nav button:last-of-type')?.click()")
+  await waitFor(cdp, "document.querySelector('.print-paper img[data-page=\"3\"]') !== null", 5_000)
+  await evaluate(cdp, "document.querySelector('.print-preview-nav button:last-of-type')?.click()")
+  await waitFor(cdp, "document.querySelector('.print-paper img[data-page=\"2\"]') !== null", 5_000)
+  console.log(
+    '自定义打印预览：',
+    await evaluate(cdp, "document.querySelector('.print-sheet-summary')?.textContent?.trim()"),
+    '逆序 4,3,2 / A5 横向 / 灰度'
+  )
+  const printCustomShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-print-custom.png`), Buffer.from(printCustomShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-print-custom.png`)
+  const customBytes = await submitPrint(printCustomPdf)
+  console.log('自定义打印：', customBytes, '字节')
+
+  await openPrintDialog()
+  await evaluate(cdp, "document.querySelector('[data-print=\"selection-custom\"]')?.click()")
+  await setPrintInput('[data-print="range"]', '9-12')
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-inline-error')?.textContent?.includes('超出范围')",
+    5_000
+  )
+  const invalidDisabled = await evaluate(
+    cdp,
+    "document.querySelector('[data-print=\"submit\"]')?.disabled === true"
+  )
+  console.log('无效范围：', invalidDisabled)
+  if (!invalidDisabled) errors.push('无效页码范围未禁用打印')
+  await evaluate(cdp, "document.querySelector('[data-print=\"cancel\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.print-dialog') === null", 5_000)
+
+  await evaluate(
+    cdp,
+    "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, bubbles: true, cancelable: true }))"
+  )
+  await waitFor(cdp, "document.querySelector('.print-dialog') !== null", 10_000)
+  console.log('Ctrl+P 打开打印面板：true')
+  await evaluate(cdp, "document.querySelector('[data-print=\"selection-current\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('1 页 · 1 张')",
+    5_000
+  )
+  await evaluate(cdp, "document.querySelector('[data-print=\"selection-all\"]')?.click()")
+  await setPrintSelect('[data-print="parity"]', 'odd')
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('2 页 · 2 张')",
+    5_000
+  )
+  console.log('当前页 / 奇数页预览：通过')
+  await evaluate(cdp, "document.querySelector('[data-print=\"cancel\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.print-dialog') === null", 5_000)
 
   await waitFor(
     cdp,
@@ -628,6 +878,20 @@ try {
   )
   console.log('PDF 翻页：2')
 
+  // ---- PDF 打印 ----
+  await openPrintDialog()
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('3 页 · 3 张')",
+    10_000
+  )
+  await evaluate(cdp, "document.querySelector('[data-print=\"gray\"]')?.click()")
+  const pdfPrintBytes = await submitPrint(printPdfOutput)
+  console.log('PDF 打印渲染：', pdfPrintBytes, '字节')
+  if (pdfPrintBytes < 20_000) {
+    errors.push(`PDF 打印渲染过小：${pdfPrintBytes}`)
+  }
+
   await evaluate(cdp, "document.querySelector('[data-nav-tab=\"outline\"]')?.click()")
   await waitFor(cdp, "document.querySelectorAll('.outline-item').length >= 3", 15_000)
   const outlineCount = await evaluate(cdp, "document.querySelectorAll('.outline-item').length")
@@ -691,6 +955,28 @@ try {
   const convertDoneShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-convert-done.png`), Buffer.from(convertDoneShot.data, 'base64'))
   console.log(`截图：.tools/${shotPrefix}-convert-done.png`)
+
+  // ---- 转换结果快捷打印（不先打开阅读器） ----
+  const convertTabsBefore = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  await openResultPrintDialog('[data-action="print-output"]')
+  const convertPrintName = await evaluate(cdp, "document.querySelector('.print-dialog-title p')?.textContent")
+  const convertPrintSummary = await evaluate(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.trim()"
+  )
+  console.log('转换结果打印入口：', convertPrintName, convertPrintSummary)
+  if (!String(convertPrintName).includes('smoke-convert')) {
+    errors.push('转换结果打印未加载输出文件')
+  }
+  if (!String(convertPrintSummary).includes('3 页')) {
+    errors.push(`转换结果打印页数异常：${convertPrintSummary}`)
+  }
+  await cancelPrintDialog()
+  const convertTabsAfter = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  if (convertTabsAfter !== convertTabsBefore) {
+    errors.push('打印转换结果后新增了标签')
+  }
+
   await evaluate(
     cdp,
     "Array.from(document.querySelectorAll('.convert-actions button')).find((button) => button.textContent?.trim() === '关闭')?.click()"
@@ -780,6 +1066,24 @@ try {
   console.log('批量输出：', batchFiles.join(', '))
   if (batchFiles.length !== 2) {
     errors.push(`批量转换输出数量异常：${batchFiles.length}`)
+  }
+
+  // ---- 批量结果快捷打印 ----
+  const batchTabsBefore = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  await openResultPrintDialog('[data-action="batch-print"]')
+  const batchPrintName = await evaluate(cdp, "document.querySelector('.print-dialog-title p')?.textContent")
+  const batchPrintSummary = await evaluate(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.trim()"
+  )
+  console.log('批量结果打印入口：', batchPrintName, batchPrintSummary)
+  if (!batchPrintName || !String(batchPrintSummary).includes('页')) {
+    errors.push('批量结果打印入口异常')
+  }
+  await cancelPrintDialog()
+  const batchTabsAfter = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  if (batchTabsAfter !== batchTabsBefore) {
+    errors.push('打印批量结果后新增了标签')
   }
 
   // ---- 批量列表“查看” + 多标签 ----
@@ -887,6 +1191,27 @@ try {
     errors.push('合并未生成输出文件')
   } else {
     console.log('合并输出体积：', statSync(mergeOutput).size)
+  }
+
+  // ---- 合并结果快捷打印（不先打开阅读器） ----
+  const mergeTabsBefore = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  await openResultPrintDialog('[data-action="merge-print-result"]')
+  const mergePrintName = await evaluate(cdp, "document.querySelector('.print-dialog-title p')?.textContent")
+  const mergePrintSummary = await evaluate(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.trim()"
+  )
+  console.log('合并结果打印入口：', mergePrintName, mergePrintSummary)
+  if (!String(mergePrintName).includes('smoke-merge')) {
+    errors.push('合并结果打印未加载输出文件')
+  }
+  if (!String(mergePrintSummary).includes('7 页')) {
+    errors.push(`合并结果打印页数异常：${mergePrintSummary}`)
+  }
+  await cancelPrintDialog()
+  const mergeTabsAfter = await evaluate(cdp, "document.querySelectorAll('.doc-tab').length")
+  if (mergeTabsAfter !== mergeTabsBefore) {
+    errors.push('打印合并结果后新增了标签')
   }
 
   await evaluate(cdp, "document.querySelector('.merge-result-actions .btn')?.click()")
@@ -1086,6 +1411,27 @@ async function evaluate(cdp, expression) {
     throw new Error(result.exceptionDetails.text)
   }
   return result.result?.value
+}
+
+async function waitForPdf(path, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  let lastSize = 0
+  while (Date.now() < deadline) {
+    try {
+      if (existsSync(path)) {
+        const size = statSync(path).size
+        if (size > 0 && size === lastSize) {
+          const head = readFileSync(path).subarray(0, 5).toString('latin1')
+          if (head === '%PDF-') return size
+        }
+        lastSize = size
+      }
+    } catch {
+      // 文件仍在写入
+    }
+    await sleep(400)
+  }
+  throw new Error(`等待打印 PDF 超时：${path}`)
 }
 
 async function waitFor(cdp, expression, timeoutMs) {

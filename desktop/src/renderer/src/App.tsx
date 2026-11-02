@@ -8,6 +8,7 @@ import { DocTabs } from './components/DocTabs'
 import { EngineBadge } from './components/EngineBadge'
 import { EmptyState } from './components/EmptyState'
 import { MergePage } from './components/MergePage'
+import { PrintDialog } from './components/PrintDialog'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
 import { Viewer } from './components/Viewer'
@@ -21,6 +22,12 @@ interface ViewerTab {
   doc: DocumentSummary
 }
 
+interface PrintTarget {
+  doc: DocumentSummary
+  page: number
+  transient: boolean
+}
+
 export default function App() {
   const [backend, setBackend] = useState<BackendInfo>(INITIAL_BACKEND)
   const [health, setHealth] = useState<EngineHealth | null>(null)
@@ -32,6 +39,9 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [convertOpen, setConvertOpen] = useState(false)
   const [view, setView] = useState<AppView>('viewer')
+  const [printTarget, setPrintTarget] = useState<PrintTarget | null>(null)
+  const [printNotice, setPrintNotice] = useState<{ kind: 'preparing' | 'error'; message: string } | null>(null)
+  const preparingPrintRef = useRef(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return window.localStorage.getItem('adou.sidebar.collapsed') === '1'
@@ -92,6 +102,12 @@ export default function App() {
       setError(backend.message)
     }
   }, [backend.status, backend.message])
+
+  useEffect(() => {
+    if (printNotice?.kind !== 'error') return
+    const timer = window.setTimeout(() => setPrintNotice(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [printNotice])
 
   const showDocument = useCallback(
     (summary: DocumentSummary) => {
@@ -305,6 +321,54 @@ export default function App() {
     })
   }, [])
 
+  const requestPrint = useCallback((targetDoc: DocumentSummary, page: number) => {
+    setPrintTarget({ doc: targetDoc, page, transient: false })
+  }, [])
+
+  const closePrintTarget = useCallback(() => {
+    const target = printTarget
+    setPrintTarget(null)
+    if (target?.transient && backend.status === 'ready') {
+      void closeDocument(backend, target.doc.id).catch(() => undefined)
+    }
+  }, [backend, printTarget])
+
+  const printResultFile = useCallback(
+    async (path: string) => {
+      if (!ready) {
+        setPrintNotice({ kind: 'error', message: '本地引擎尚未就绪，请稍候再试' })
+        return
+      }
+      if (preparingPrintRef.current) return
+      const existing = tabsRef.current.find(
+        (tab) => tab.doc.path.toLowerCase() === path.toLowerCase()
+      )
+      if (existing) {
+        setPrintTarget({ doc: existing.doc, page: 1, transient: false })
+        return
+      }
+      if (tabsRef.current.length >= MAX_TABS) {
+        setPrintNotice({
+          kind: 'error',
+          message: `最多同时打开 ${MAX_TABS} 个文档，请先关闭标签后再打印结果`
+        })
+        return
+      }
+      preparingPrintRef.current = true
+      setPrintNotice({ kind: 'preparing', message: '正在准备打印…' })
+      try {
+        const summary = await openDocument(backend, path)
+        setPrintNotice(null)
+        setPrintTarget({ doc: summary, page: 1, transient: true })
+      } catch (reason) {
+        setPrintNotice({ kind: 'error', message: messageOf(reason) })
+      } finally {
+        preparingPrintRef.current = false
+      }
+    },
+    [backend, ready]
+  )
+
   return (
     <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar
@@ -393,6 +457,7 @@ export default function App() {
                 setView('viewer')
                 void openPath(path)
               }}
+              onPrintResult={(path) => void printResultFile(path)}
             />
           </div>
 
@@ -403,6 +468,7 @@ export default function App() {
                 setView('viewer')
                 void openPath(path)
               }}
+              onPrintResult={(path) => void printResultFile(path)}
             />
           </div>
 
@@ -432,8 +498,10 @@ export default function App() {
                     backend={backend}
                     doc={tab.doc}
                     active={tab.key === activeId && view === 'viewer'}
+                    printOpen={Boolean(printTarget)}
                     onClose={() => closeTab(tab.key)}
                     onConvert={() => setConvertOpen(true)}
+                    onPrint={(page) => requestPrint(tab.doc, page)}
                   />
                 </div>
               ))
@@ -460,7 +528,32 @@ export default function App() {
             setConvertOpen(false)
             void openPath(path)
           }}
+          onPrintOutput={(path) => void printResultFile(path)}
         />
+      ) : null}
+
+      {printTarget ? (
+        <PrintDialog
+          open
+          backend={backend}
+          doc={printTarget.doc}
+          currentPage={printTarget.page}
+          onClose={closePrintTarget}
+        />
+      ) : null}
+
+      {printNotice ? (
+        <div
+          className={`print-notice ${printNotice.kind === 'error' ? 'error' : ''}`}
+          role={printNotice.kind === 'error' ? 'alert' : 'status'}
+        >
+          {printNotice.kind === 'error' ? (
+            <IconAlert size={15} />
+          ) : (
+            <span className="print-notice-spinner" />
+          )}
+          <span>{printNotice.message}</span>
+        </div>
       ) : null}
     </div>
   )

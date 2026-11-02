@@ -11,6 +11,7 @@ import {
   IconInfo,
   IconLocation,
   IconMerge,
+  IconPrint,
   IconSpark,
   IconView
 } from './icons'
@@ -38,6 +39,7 @@ interface MergeItem {
 interface MergePageProps {
   backend: BackendInfo
   onOpenDocument: (path: string) => void
+  onPrintResult: (path: string) => void
 }
 
 function formatSize(bytes: number): string {
@@ -70,7 +72,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
-export function MergePage({ backend, onOpenDocument }: MergePageProps) {
+export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageProps) {
   const [items, setItems] = useState<MergeItem[]>([])
   const [target, setTarget] = useState<MergeTarget>('OFD')
   const [outputPath, setOutputPath] = useState('')
@@ -508,6 +510,14 @@ export function MergePage({ backend, onOpenDocument }: MergePageProps) {
               >
                 <IconView size={14} />
                 查看
+              </button>
+              <button
+                className="btn ghost small"
+                data-action="merge-print-result"
+                onClick={() => onPrintResult(result.outputPath)}
+              >
+                <IconPrint size={14} />
+                打印
               </button>
               <button
                 className="icon-btn"

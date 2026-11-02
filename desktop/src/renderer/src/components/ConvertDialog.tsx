@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BackendInfo, ConversionJob, DocumentSummary } from '@shared/types'
 import { cancelConversion, fetchConversion, messageOf, startConversion } from '../api'
-import { IconAlert, IconClose, IconFolder, IconInfo, IconSwap } from './icons'
+import { IconAlert, IconClose, IconFolder, IconInfo, IconPrint, IconSwap } from './icons'
 
 const POLL_INTERVAL = 400
 const STALL_TIMEOUT_MS = 180_000
@@ -23,9 +23,17 @@ interface ConvertDialogProps {
   doc: DocumentSummary
   onClose: () => void
   onOpenOutput: (path: string) => void
+  onPrintOutput: (path: string) => void
 }
 
-export function ConvertDialog({ open, backend, doc, onClose, onOpenOutput }: ConvertDialogProps) {
+export function ConvertDialog({
+  open,
+  backend,
+  doc,
+  onClose,
+  onOpenOutput,
+  onPrintOutput
+}: ConvertDialogProps) {
   const target = doc.kind === 'PDF' ? 'OFD' : 'PDF'
   const [outputPath, setOutputPath] = useState<string | null>(null)
   const [job, setJob] = useState<ConversionJob | null>(null)
@@ -241,6 +249,14 @@ export function ConvertDialog({ open, backend, doc, onClose, onOpenOutput }: Con
             <>
               <button className="btn primary" onClick={() => onOpenOutput(job.outputPath)}>
                 打开结果
+              </button>
+              <button
+                className="btn ghost"
+                data-action="print-output"
+                onClick={() => onPrintOutput(job.outputPath)}
+              >
+                <IconPrint size={15} />
+                打印
               </button>
               <button
                 className="btn ghost"

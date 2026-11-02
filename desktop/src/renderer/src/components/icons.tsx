@@ -148,6 +148,17 @@ export function IconSearch(props: IconProps) {
   )
 }
 
+export function IconPrint(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M7 8V4h10v4" />
+      <path d="M7 17H5.5A1.5 1.5 0 0 1 4 15.5v-5A1.5 1.5 0 0 1 5.5 9h13A1.5 1.5 0 0 1 20 10.5v5a1.5 1.5 0 0 1-1.5 1.5H17" />
+      <rect x="7" y="13.5" width="10" height="7" rx="1" />
+      <path d="M16.4 11.8h.01" />
+    </Svg>
+  )
+}
+
 export function IconLocation(props: IconProps) {  return (
     <Svg {...props}>
       <path d="M12 21s6.5-5.6 6.5-10.5A6.5 6.5 0 0 0 5.5 10.5C5.5 15.4 12 21 12 21Z" />

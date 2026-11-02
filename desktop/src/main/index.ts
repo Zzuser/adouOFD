@@ -5,6 +5,7 @@ import { basename, dirname, join } from 'node:path'
 import { BackendManager } from './backend'
 import { parseDocumentPaths } from './document-args'
 import { readLegalNotices, revealLegalNotices } from './legal'
+import { listPrinters, parsePrintOptions, printDocument } from './print'
 import {
   ensureRegisteredOnStartup,
   getWindowsIntegration,
@@ -312,4 +313,17 @@ function registerIpc(): void {
 
   ipcMain.handle('legal:read', () => readLegalNotices())
   ipcMain.handle('legal:reveal', () => revealLegalNotices())
+
+  ipcMain.handle('printer:list', () => listPrinters(mainWindow?.webContents))
+
+  ipcMain.handle('document:print', async (_event, payload: unknown) => {
+    if (!backend || backend.info.status !== 'ready' || !backend.info.port || !backend.info.token) {
+      return { ok: false, error: '本地引擎尚未就绪，请稍候再试' }
+    }
+    const options = parsePrintOptions(payload)
+    if (!options) {
+      return { ok: false, error: '打印参数无效' }
+    }
+    return printDocument(backend.info, options)
+  })
 }
