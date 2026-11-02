@@ -89,7 +89,7 @@ npm run package:inno
 
 需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
 
-当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。开源代码签名申请材料与签名流程见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
+当前阶段代码签名仍在申请审核中，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。Windows 发布包的 Authenticode 代码签名由 SignPath Foundation 免费开源签名计划提供，证书由 SignPath Foundation 签发；签名流程见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
 
 ## 快速开始
 
@@ -224,7 +224,7 @@ npm run stress:ui
 - OFD 竖排、带复杂 CTM 旋转的文字层仍需适配；PDF 多栏阅读顺序依赖 PDFBox
 - 加密 PDF 暂不支持打开
 - 超大文档（1000+ 页 / 100MB+）尚未压测；页面与缩略图 DOM 会随浏览增长
-- 当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；内置 jlink 精简 JRE，Inno 安装包约 181MB（NSIS 备用包约 192MB）
+- 当前申请 SignPath Foundation 开源代码签名；获批前安装包未签名，详见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)
 - OFD 转 PDF 的矢量模式会嵌入完整中文字体，文件体积可能明显大于源文件；对体积敏感时可按图像导出
 - 合并结果不保证保留各文件的目录/书签；混合格式合并需要先转换，PDF→OFD 的文字是否可选中取决于源 PDF 字体
 - 源 OFD 若引用了包内缺失的图片/字体资源，合并前会补充透明/空占位文件以继续合并，相关图片可能无法显示
