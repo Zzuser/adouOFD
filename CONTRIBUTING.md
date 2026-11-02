@@ -33,6 +33,17 @@ npm run smoke:ui
 
 All backend tests and the UI smoke test must pass. For UI changes, attach a screenshot or describe the exact window size and interaction path.
 
+## 构建与发布相关文件
+
+以下文件决定发布产物的来源可信度，变更需经维护者审核后再合并（对应[代码签名政策](docs/CODE-SIGNING.md)）：
+
+- `.github/workflows/` —— CI 与发布流水线
+- `scripts/` —— 构建、打包与签名前处理
+- `desktop/package.json`、`desktop/package-lock.json`、`backend/pom.xml` —— 依赖来源与版本锁定
+- `scripts/inno/` —— 安装器定义
+
+请勿在这些文件中引入网络下载的预编译二进制、来源不明的可执行文件，或任何绕过 CI 的发布路径。
+
 ## Code guidelines
 
 - Keep document processing local and offline. Do not add telemetry, analytics, accounts, cloud uploads, or automatic network dependencies.
