@@ -6,7 +6,11 @@
 
 本文件是 阿豆OFD（ADou OFD）面向公众的代码签名政策，适用于 `https://github.com/Zzuser/adouOFD` 发布的所有 Windows 发行版。任何与本文冲突的历史材料以本文为准。
 
+**当前状态**：已向 SignPath Foundation 提交开源代码签名申请，尚未获批。在获批之前发布的安装包**不带签名**，仅附 SHA256 供校验；获批之后，本政策自动适用于此后由 CI 发布的所有版本，历史版本不会被回溯签名。
+
 This is the public code signing policy of 阿豆OFD. It applies to every Windows release published from `https://github.com/Zzuser/adouOFD`.
+
+**Current status**: the open-source signing application has been submitted to SignPath Foundation and is pending approval. Releases published before approval carry **no signature** and ship only a SHA256 checksum. Once approved, this policy applies to all subsequent CI releases; earlier releases are not retroactively signed.
 
 ---
 

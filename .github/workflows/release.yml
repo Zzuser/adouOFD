@@ -78,6 +78,7 @@ jobs:
       # this workflow run, so exactly this CI build is what gets signed.
       - name: Upload unsigned installer for signing
         id: upload-unsigned
+        if: vars.SIGNPATH_ENABLED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: adou-ofd-${{ steps.version.outputs.version }}-unsigned
@@ -150,7 +151,9 @@ jobs:
         shell: pwsh
         run: |
           $notes = "docs/RELEASE-NOTES-$env:APP_VERSION.md"
-          $body = "desktop/dist-inno/RELEASE-BODY.md"
+          # One file serves as both the release body and the attached asset, so
+          # the asset set is unchanged from previous releases.
+          $body = "desktop/dist-inno/RELEASE-NOTES-$env:APP_VERSION.md"
           if (Test-Path $notes) {
             Copy-Item -LiteralPath $notes -Destination $body -Force
           } else {
@@ -177,10 +180,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: 阿豆OFD ${{ env.APP_VERSION }}
-          body_path: desktop/dist-inno/RELEASE-BODY.md
+          body_path: desktop/dist-inno/RELEASE-NOTES-${{ env.APP_VERSION }}.md
           files: |
             desktop/dist-inno/adou-ofd-${{ env.APP_VERSION }}-x64-inno.exe
             desktop/dist-inno/SHA256-${{ env.APP_VERSION }}.txt
+            desktop/dist-inno/RELEASE-NOTES-${{ env.APP_VERSION }}.md
             LICENSE
             PRIVACY.md
             THIRD-PARTY-NOTICES.md
