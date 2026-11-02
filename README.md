@@ -91,6 +91,8 @@ npm run package:inno
 
 当前阶段代码签名仍在申请审核中，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。Windows 发布包的 Authenticode 代码签名由 SignPath Foundation 免费开源签名计划提供，证书由 SignPath Foundation 签发；签名流程见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
 
+Code signing for Windows releases is provided through the SignPath Foundation free open-source code-signing program (application under review); the certificate is issued to SignPath Foundation.
+
 ## 快速开始
 
 **环境要求**

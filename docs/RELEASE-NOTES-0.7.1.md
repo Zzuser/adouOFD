@@ -12,6 +12,7 @@
 - SHA256：见发布附件 `SHA256-0.7.1.txt`（由构建流程生成，校验安装包完整性）
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
 - 代码签名：Windows 发布包的 Authenticode 签名由 SignPath Foundation 免费开源签名计划提供，证书由 SignPath Foundation 签发；当前申请审核中，未签名版本请用 SHA256 校验。流程见 `docs/CODE-SIGNING.md`。
+- Code signing: Windows releases use the SignPath Foundation free open-source code-signing program (application under review); the certificate is issued to SignPath Foundation.
 
 ## 主要更新
 
