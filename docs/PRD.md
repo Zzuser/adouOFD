@@ -641,6 +641,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-11-02 | 0.7.1 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.1-x64-inno.exe` 180.8MB，SHA256 `4baae9d3…`；统一 50px 单行页头、功能化文案、隐私政策、GitHub CI/Release 工作流、签名申请材料；39/39 后端测试与 UI 冒烟通过 |
 | 2026-11-02 | GitHub 发布 | GitHub Actions | ✅ | 公开仓库 `Zzuser/adouOFD`；CI 成功；Release `v0.7.1` 已发布，安装包 `adou-ofd-0.7.1-x64-inno.exe`（CI SHA256 `772c8d72…`）；附件含 PRIVACY/LICENSE/THIRD-PARTY/SHA256/release notes；当前未签名 |
 | 2026-11-02 | 0.8.0 本地安装包 | Inno Setup 6 | ✅ | `阿豆OFD-0.8.0-x64-inno.exe` 180.8MB，SHA256 `4e427dc0…`，FileVersion/ProductVersion 0.8.0，未签名；应用内打印面板、结果快捷打印、N-up 2/4/6/8/9（8 页为 2 列 × 4 行）；39/39 后端测试与完整 UI 冒烟通过 |
+| 2026-11-02 | GitHub 发布 0.8.0 | GitHub Actions | ✅ | Release `v0.8.0` 已发布；安装包 `adou-ofd-0.8.0-x64-inno.exe` 189,497,699 B，CI SHA256 `35bdd6a5…`（与附件 `SHA256-0.8.0.txt` 一致）；附件含 CODE-SIGNING/LICENSE/PRIVACY/THIRD-PARTY/RELEASE-NOTES；CI 与 Release 工作流均成功；未签名 |
 | 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
 | 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
 | 2026-11-02 | 打印面板（OFD / PDF） | Electron 45.1.0 | ✅ | OFD 示例默认 4 页/4 张 A4；2-up 输出 2 页、每页 2 张页面图，按列预览顺序 `[1,3,2,4]`；范围 2-4 + 逆序 + A5 横向 + 无边距 + 灰度输出 3 页 209.9×148.2mm（首页为第 4 页）；PDF 示例灰度输出 3 页 A4；无效范围 9-12 禁用打印；`Ctrl+P` 打开面板；转换/批量/合并结果打印入口分别加载 3/4/7 页且不新增标签；系统静默发送需用户用实际打印机验证 |
