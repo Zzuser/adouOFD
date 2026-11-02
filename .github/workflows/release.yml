@@ -72,12 +72,18 @@ jobs:
           & $signtool sign /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com /f $pfx /p $env:CERT_PASSWORD $installer.FullName
           & $signtool verify /pa /v $installer.FullName
 
+      - name: Normalize installer filename
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem desktop/dist-inno/*.exe | Select-Object -First 1
+          Rename-Item -LiteralPath $installer.FullName -NewName "adou-ofd-$env:APP_VERSION-x64-inno.exe"
+
       - name: Write SHA256
         shell: pwsh
         run: |
           $installer = Get-ChildItem desktop/dist-inno/*.exe | Select-Object -First 1
           $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower()
-          "$hash  $($installer.Name)" | Set-Content desktop/dist-inno/SHA256.txt -Encoding ascii
+          "$hash  $($installer.Name)" | Set-Content desktop/dist-inno/SHA256.txt -Encoding utf8
           Get-Content desktop/dist-inno/SHA256.txt
 
       - name: Publish GitHub Release

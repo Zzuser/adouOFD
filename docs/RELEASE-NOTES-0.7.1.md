@@ -6,7 +6,8 @@
 
 ## 下载
 
-- 安装包：`阿豆OFD-0.7.1-x64-inno.exe`
+- 安装包（GitHub Release）：`adou-ofd-0.7.1-x64-inno.exe`
+- 本地构建/Release pack：`阿豆OFD-0.7.1-x64-inno.exe`
 - 大小：180.8 MB
 - SHA256：见发布附件 `SHA256.txt`（由构建流程生成，校验安装包完整性）
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
