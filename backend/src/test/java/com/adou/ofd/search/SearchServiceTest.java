@@ -38,7 +38,7 @@ class SearchServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        documents = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
+        documents = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         searches = new SearchService(documents);
         workDir = Files.createTempDirectory("adou-search-test-");
     }

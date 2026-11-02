@@ -246,14 +246,6 @@ button:focus-visible {
   color: var(--brand);
 }
 
-.brand-sub {
-  margin-top: 3px;
-  color: #8b978e;
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .nav {
   display: flex;
   flex-direction: column;
@@ -445,30 +437,50 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 20px 30px 18px;
+  gap: 16px;
+  min-height: 50px;
+  padding: 8px 30px;
   border-bottom: 1px solid var(--line);
   background: rgba(246, 242, 231, 0.78);
   backdrop-filter: blur(10px);
 }
 
+.topbar.viewer-topbar {
+  gap: 12px;
+}
+
+.viewer-topbar .doc-tabs {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
 .topbar-title {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  gap: 12px;
   min-width: 0;
 }
 
 .topbar h1 {
+  flex: 0 0 auto;
   margin: 0;
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
-.subtitle {
-  max-width: 620px;
-  margin: 5px 0 0;
+.topbar-hint {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11.5px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -776,7 +788,7 @@ button:focus-visible {
 
 .content.has-doc {
   overflow: hidden;
-  padding-top: 18px;
+  padding-top: 10px;
 }
 
 .empty {
@@ -940,12 +952,6 @@ button:focus-visible {
   color: var(--brand-deep);
   font-size: 11px;
   letter-spacing: 0.03em;
-}
-
-.about-tagline {
-  margin: 9px 0 0;
-  color: var(--brand-deep);
-  font-size: 12px;
 }
 
 .about-desc {

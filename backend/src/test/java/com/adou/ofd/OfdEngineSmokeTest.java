@@ -23,7 +23,7 @@ class OfdEngineSmokeTest {
 
     @Test
     void demoDocumentRendersAndRoundTripsThroughPdf() throws Exception {
-        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
+        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         Path artifacts = Files.createTempDirectory("adou-smoke-");
         try {
             DocumentSummary demo = service.openDemo();

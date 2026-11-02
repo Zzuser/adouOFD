@@ -13,7 +13,7 @@
 
     <groupId>com.adou</groupId>
     <artifactId>adou-ofd-backend</artifactId>
-    <version>0.7.0</version>
+    <version>0.7.1</version>
     <name>adou-ofd-backend</name>
     <description>阿豆OFD 本地 Java 引擎</description>
     <url>https://gitcode.com/Zzuser/adouOFD</url>

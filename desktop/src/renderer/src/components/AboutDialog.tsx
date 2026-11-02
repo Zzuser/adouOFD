@@ -74,11 +74,8 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
         </button>
         <img className="about-mascot" src={mascotEmpty} alt="阿豆" draggable={false} />
         <h2 id="about-title">阿豆OFD</h2>
-        <div className="about-version">v{versions?.app ?? '0.7.0'} · MIT License</div>
-        <p className="about-tagline">豆在纸边，安静陪你读完每一页。</p>
-        <p className="about-desc">
-          免费、离线的 OFD / PDF 查看与处理工具。文件只在本机处理，不上传、不联网。
-        </p>
+        <div className="about-version">v{versions?.app ?? '0.7.1'} · MIT License</div>
+        <p className="about-desc">本地 OFD / PDF 阅读与处理工具，文档不上传。</p>
 
         <div className="about-versions">
           <div><span>Java</span><b>{health?.javaVersion ?? '—'}</b></div>
@@ -149,7 +146,7 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
 
         <p className="about-note">
           {backend.status === 'ready' ? '本地引擎运行中' : '本地引擎未就绪'}
-          。第三方组件与许可说明见上方“开源许可”或安装包 notices 目录。
+          。第三方组件与许可文本随安装包提供。
         </p>
       </div>
 

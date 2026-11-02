@@ -11,7 +11,7 @@ import { MergePage } from './components/MergePage'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
 import { Viewer } from './components/Viewer'
-import { IconAlert, IconFolder } from './components/icons'
+import { IconAlert } from './components/icons'
 
 const INITIAL_BACKEND: BackendInfo = { status: 'starting', port: null, token: null }
 const MAX_TABS = 8
@@ -319,62 +319,57 @@ export default function App() {
       />
 
       <main className="main" data-view={view}>
-        <header className="topbar">
-          <div className="topbar-title">
-            <h1>
-              {view === 'batch'
-                ? '批量转换'
-                : view === 'merge'
-                  ? '合并文档'
-                  : view === 'settings'
-                    ? '设置'
-                    : '文档查看'}
-            </h1>
-            <p className="subtitle" title={view === 'viewer' ? doc?.path : undefined}>
-              {view === 'batch'
-                ? '一次加入多个文件，逐个转换到另一种格式；文件只在本机处理。'
-                : view === 'merge'
-                  ? '按列表顺序把多个 OFD / PDF 合并为一个文档；文件只在本机处理。'
-                  : view === 'settings'
-                    ? 'Windows 文件关联、默认应用与本地数据说明。'
-                    : doc
-                      ? doc.demo
-                        ? '内置示例文档 · 由本地引擎动态生成'
-                        : doc.path
-                      : '打开并阅读本地 OFD / PDF 文档。'}
-            </p>
-          </div>
-          <div className="topbar-actions">
-            {view === 'viewer' && doc ? (
-              <button
-                className="btn ghost small"
-                onClick={() => void pickDocument()}
-                disabled={!ready || busy}
-              >
-                <IconFolder size={15} />
-                打开其他文档
-              </button>
-            ) : null}
-            {backend.status !== 'ready' ? (
-              <EngineBadge backend={backend} onRetry={() => void retryEngine()} />
-            ) : null}
-          </div>
+        <header className={`topbar ${view === 'viewer' && tabs.length > 0 ? 'viewer-topbar' : ''}`}>
+          {view === 'viewer' && tabs.length > 0 ? (
+            <>
+              <DocTabs
+                tabs={tabs.map((tab) => ({
+                  id: tab.key,
+                  name: tab.doc.name,
+                  kind: tab.doc.kind,
+                  path: tab.doc.path
+                }))}
+                activeId={activeId}
+                onSelect={switchTab}
+                onClose={closeTab}
+                onOpen={() => void pickDocument()}
+              />
+              {backend.status !== 'ready' ? (
+                <div className="topbar-actions">
+                  <EngineBadge backend={backend} onRetry={() => void retryEngine()} />
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="topbar-title">
+                <h1>
+                  {view === 'batch'
+                    ? '批量转换'
+                    : view === 'merge'
+                      ? '合并文档'
+                      : view === 'settings'
+                        ? '设置'
+                        : '文档查看'}
+                </h1>
+                <span className="topbar-hint">
+                  {view === 'batch'
+                    ? '一次加入多个文件，逐个转换到另一种格式；文件只在本机处理。'
+                    : view === 'merge'
+                      ? '按列表顺序把多个 OFD / PDF 合并为一个文档；文件只在本机处理。'
+                      : view === 'settings'
+                        ? 'Windows 文件关联、默认应用与本地数据说明。'
+                        : '打开并阅读本地 OFD / PDF 文档。'}
+                </span>
+              </div>
+              {backend.status !== 'ready' ? (
+                <div className="topbar-actions">
+                  <EngineBadge backend={backend} onRetry={() => void retryEngine()} />
+                </div>
+              ) : null}
+            </>
+          )}
         </header>
-
-        {view === 'viewer' && tabs.length > 0 ? (
-          <DocTabs
-            tabs={tabs.map((tab) => ({
-              id: tab.key,
-              name: tab.doc.name,
-              kind: tab.doc.kind,
-              path: tab.doc.path
-            }))}
-            activeId={activeId}
-            onSelect={switchTab}
-            onClose={closeTab}
-            onOpen={() => void pickDocument()}
-          />
-        ) : null}
 
         {error ? (
           <div className="alert" role="alert">

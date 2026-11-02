@@ -23,7 +23,7 @@ public class PdfDemoFactory {
 
     private final String appVersion;
 
-    public PdfDemoFactory(@Value("${adou.version:0.7.0}") String appVersion) {
+    public PdfDemoFactory(@Value("${adou.version:0.7.1}") String appVersion) {
         this.appVersion = appVersion;
     }
 

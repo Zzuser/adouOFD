@@ -48,7 +48,6 @@ export function Sidebar({
           <div className="brand-name">
             阿豆<em>OFD</em>
           </div>
-          <div className="brand-sub">Local document toolkit</div>
         </div>
         <button
           className="sidebar-toggle"
@@ -120,7 +119,7 @@ export function Sidebar({
 
       {!collapsed ? (
         <div className="sidebar-foot">
-          <span>v{appVersion ?? '0.7.0'}</span>
+          <span>v{appVersion ?? '0.7.1'}</span>
           <span>MIT</span>
         </div>
       ) : null}

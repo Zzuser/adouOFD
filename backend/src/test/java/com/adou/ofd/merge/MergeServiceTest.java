@@ -57,7 +57,7 @@ class MergeServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        documents = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
+        documents = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         workDir = Files.createTempDirectory("adou-merge-test-");
         executor = new HeavyTaskExecutor();
     }

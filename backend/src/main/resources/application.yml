@@ -20,6 +20,6 @@ logging:
     com.adou.ofd: INFO
 
 adou:
-  version: 0.7.0
+  version: 0.7.1
   ofdrw-version: 2.5.1
   token: ""

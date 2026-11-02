@@ -31,7 +31,7 @@ class PdfEngineSmokeTest {
     @Test
     void pdfDemoOpensRendersAndProducesThumbnail() throws Exception {
         Path artifacts = Files.createTempDirectory("adou-pdf-smoke-");
-        PdfDemoFactory pdfDemoFactory = new PdfDemoFactory("0.7.0");
+        PdfDemoFactory pdfDemoFactory = new PdfDemoFactory("0.7.1");
         DocumentService service = new DocumentService(new DemoOfdFactory(), pdfDemoFactory);
         try {
             Path pdf = pdfDemoFactory.generate(artifacts);
@@ -93,7 +93,7 @@ class PdfEngineSmokeTest {
             document.save(pdf.toFile());
         }
 
-        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
+        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         try {
             DocumentSummary summary = service.open(pdf.toString());
             assertEquals(297.0, summary.pages().getFirst().widthMm(), 1.0,
@@ -124,7 +124,7 @@ class PdfEngineSmokeTest {
             document.save(encrypted.toFile());
         }
 
-        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
+        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         try {
             ApiException error = assertThrows(ApiException.class, () -> service.open(encrypted.toString()));
             assertEquals("PDF_ENCRYPTED", error.getCode());

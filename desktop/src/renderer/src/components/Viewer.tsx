@@ -581,7 +581,7 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
             <IconFile size={20} />
           </div>
           <div className="doc-id-text">
-            <div className="doc-name" title={doc.name}>
+            <div className="doc-name" title={doc.path}>
               {doc.name}
             </div>
             <div className="doc-sub">
@@ -664,18 +664,20 @@ export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps
           </button>
 
           <button
-            className="icon-btn"
+            className="icon-btn compact"
             onClick={() => void window.adou.revealPath(doc.path)}
             title="在文件夹中显示"
+            aria-label="在文件夹中显示"
           >
             <IconLocation size={15} />
             <span>在文件夹中显示</span>
           </button>
           <button
-            className="icon-btn"
+            className="icon-btn compact"
             data-action="close"
             onClick={onClose}
             title="关闭文档"
+            aria-label="关闭文档"
           >
             <IconClose size={15} />
             <span>关闭</span>

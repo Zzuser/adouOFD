@@ -1,6 +1,6 @@
 ﻿#define AppName "阿豆OFD"
 #ifndef AppVersion
-  #define AppVersion "0.7.0"
+  #define AppVersion "0.7.1"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\..\desktop\dist-inno-stage\win-unpacked"

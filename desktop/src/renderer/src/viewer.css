@@ -7,58 +7,64 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   animation: fade-up 0.26s ease;
 }
 
 .doc-bar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  padding: 11px 14px;
+  flex-wrap: nowrap;
+  gap: 8px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 6px 18px rgba(33, 49, 38, 0.035);
 }
 
 .doc-id {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .doc-icon {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--brand-soft);
   color: var(--brand);
 }
 
 .doc-id-text {
+  flex: 1;
   min-width: 0;
 }
 
 .doc-name {
-  max-width: 430px;
+  max-width: 100%;
   overflow: hidden;
   color: var(--ink);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .doc-sub {
-  margin-top: 3px;
+  margin-top: 2px;
+  overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .format-badge {
@@ -83,16 +89,17 @@
 .doc-actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 7px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 5px;
   margin-left: auto;
 }
 
 .page-nav {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px;
+  gap: 3px;
+  padding: 2px;
   border-radius: 9px;
   background: #f4f2e9;
 }
@@ -100,8 +107,8 @@
 .page-nav button {
   display: grid;
   place-items: center;
-  width: 29px;
-  height: 27px;
+  width: 27px;
+  height: 25px;
   border: 0;
   border-radius: 7px;
   background: var(--surface);
@@ -147,7 +154,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--surface);
@@ -158,6 +165,16 @@
     color 0.16s ease,
     border-color 0.16s ease,
     background 0.16s ease;
+}
+
+.icon-btn.compact {
+  justify-content: center;
+  width: 34px;
+  padding: 0;
+}
+
+.icon-btn.compact span {
+  display: none;
 }
 
 .icon-btn:hover:not(:disabled) {
@@ -972,12 +989,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 1120px) {
-  .doc-name {
-    max-width: 300px;
+@media (max-width: 1400px) {
+  .doc-actions .icon-btn {
+    justify-content: center;
+    width: 34px;
+    padding: 0;
   }
 
-  .icon-btn span {
+  .doc-actions .icon-btn span {
     display: none;
   }
 
@@ -1003,10 +1022,6 @@
 }
 
 @media (max-width: 900px) {
-  .doc-name {
-    max-width: 220px;
-  }
-
   .search-bar {
     flex-wrap: wrap;
   }

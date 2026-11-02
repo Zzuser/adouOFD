@@ -52,12 +52,17 @@ rmSync(batchInputsFile, { force: true })
 rmSync(batchOutDir, { recursive: true, force: true })
 const mergeOutput = join(outDir, 'smoke-merge.ofd')
 rmSync(mergeOutput, { force: true })
+// 隔离冒烟实例的 userData，避免与正在运行的安装版争抢单实例锁
+const smokeAppData = join(outDir, 'smoke-appdata')
+rmSync(smokeAppData, { recursive: true, force: true })
+mkdirSync(smokeAppData, { recursive: true })
 
 const errors = []
 let child = null
 if (!attachPort) {
   const childEnv = {
     ...process.env,
+    APPDATA: smokeAppData,
     ELECTRON_ENABLE_LOGGING: '0',
     ADOU_TEST_SAVE_FILE: convertOutput,
     ADOU_TEST_OPEN_FILES: batchInputsFile,
@@ -162,6 +167,14 @@ try {
   if (settingsTitle !== '设置') {
     errors.push('设置页未打开')
   }
+  const settingsHeaderHeight = await evaluate(
+    cdp,
+    "Math.round(document.querySelector('.topbar')?.getBoundingClientRect().height ?? 0)"
+  )
+  console.log('设置页页头高度：', settingsHeaderHeight)
+  if (!settingsHeaderHeight || settingsHeaderHeight > 60) {
+    errors.push(`设置页页头过高：${settingsHeaderHeight}px`)
+  }
   if (!String(integrationText).includes('开发模式')) {
     errors.push('设置页 Windows 文件关联未显示开发模式')
   }
@@ -225,6 +238,22 @@ try {
   const viewerShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-viewer.png`), Buffer.from(viewerShot.data, 'base64'))
   console.log(`截图：.tools/${shotPrefix}-viewer.png`)
+
+  const viewerHeader = await evaluate(
+    cdp,
+    `(() => {
+      const topbar = document.querySelector('.topbar');
+      const bar = document.querySelector('.viewer-pane:not([hidden]) .doc-bar');
+      return {
+        topbar: Math.round(topbar?.getBoundingClientRect().height ?? 0),
+        docBar: Math.round(bar?.getBoundingClientRect().height ?? 0)
+      };
+    })()`
+  )
+  console.log('查看器页头高度：', JSON.stringify(viewerHeader))
+  if (!viewerHeader.topbar || viewerHeader.topbar > 60 || viewerHeader.docBar > 60) {
+    errors.push(`查看器页头过高：${JSON.stringify(viewerHeader)}`)
+  }
 
   await waitFor(
     cdp,
@@ -656,7 +685,7 @@ try {
   await waitFor(cdp, "document.querySelector('.convert-dialog') === null", 5_000)
 
   // ---- 单实例 / 命令行打开（模拟文件关联双击） ----
-  const secondEnv = { ...process.env }
+  const secondEnv = { ...process.env, APPDATA: smokeAppData }
   delete secondEnv.ELECTRON_RUN_AS_NODE
   const secondInstance = spawn(electronExe, ['.', convertOutput], {
     cwd: desktop,
@@ -762,6 +791,7 @@ try {
     "document.querySelectorAll('.doc-tab')[1]?.querySelector('[data-action=\"doc-tab\"]')?.click()"
   )
   await waitFor(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('示例文档.pdf')", 10_000)
+  await sleep(400)
   console.log('标签切换：2 个标签正常')
   const tabsShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-tabs.png`), Buffer.from(tabsShot.data, 'base64'))

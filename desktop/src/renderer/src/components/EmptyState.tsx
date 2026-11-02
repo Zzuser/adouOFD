@@ -47,11 +47,8 @@ export function EmptyState({
         />
       </div>
 
-      <h2>{dragOver ? '松开即可打开' : '把文档交给阿豆'}</h2>
-      <p>
-        拖拽或选择本地文件。电子发票、公文、PDF 合同都可以安静地读，
-        文件只在本机处理。
-      </p>
+      <h2>{dragOver ? '松开以打开文档' : '打开 OFD / PDF 文档'}</h2>
+      <p>选择或拖入本地文件。文档仅在本机处理，不上传。</p>
 
       <div className="empty-actions">
         <button
