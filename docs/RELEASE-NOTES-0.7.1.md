@@ -6,7 +6,7 @@
 
 - 安装包：`阿豆OFD-0.7.1-x64-inno.exe`
 - 大小：180.8 MB
-- SHA256：`e80e1799e2f9c01792857dc09e5f0c78fa33dcc323afb4d23d68bcac42a6a3ce`
+- SHA256：见发布附件 `SHA256.txt`（由构建流程生成，校验安装包完整性）
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
 - 代码签名：未签名，Windows SmartScreen 可能提示“未知发布者”，请用 SHA256 校验
 
