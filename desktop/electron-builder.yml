@@ -11,9 +11,21 @@ asar: true
 extraResources:
   - from: ../backend/target/adou-ofd-backend.jar
     to: backend/adou-ofd-backend.jar
-  # 原型阶段直接内置完整 JDK；M4 改为 jlink 裁剪（见 PRD §7）
-  - from: ../.tools/jdk-25
+  # jlink 精简运行时，由 npm run jre:build 生成（见 PRD §7）
+  - from: ../backend/target/jre
     to: jre
+  # Windows 文件类型图标（DefaultIcon 指向 resources/fileicons/*.ico）
+  - from: build/fileicons
+    to: fileicons
+    filter:
+      - "*.ico"
+  # 应用许可与第三方声明（关于页读取）
+  - from: ../THIRD-PARTY-NOTICES.md
+    to: notices/THIRD-PARTY-NOTICES.md
+  - from: ../LICENSE
+    to: notices/LICENSE.txt
+  - from: ../licenses
+    to: notices/licenses
 win:
   icon: build/icon.ico
   target:
@@ -29,3 +41,4 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: 阿豆OFD
   deleteAppDataOnUninstall: false
+  include: build/installer.nsh

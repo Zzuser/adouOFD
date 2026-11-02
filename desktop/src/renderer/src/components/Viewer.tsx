@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { BackendInfo, DocumentSummary, OutlineItem } from '@shared/types'
+import type { BackendInfo, DocumentSummary, OutlineItem, SearchHit } from '@shared/types'
 import { fetchOutline, messageOf } from '../api'
 import { DocumentNav, type NavTab } from './DocumentNav'
-import { PageCanvas } from './PageCanvas'
+import { PageCanvas, type SearchHighlight } from './PageCanvas'
+import { SearchPanel } from './SearchPanel'
 import { ZoomMenu, type ZoomMode } from './ZoomMenu'
 import {
   IconChevronLeft,
@@ -14,7 +15,9 @@ import {
   IconLocation,
   IconMinus,
   IconPages,
-  IconPlus
+  IconPlus,
+  IconSearch,
+  IconSwap
 } from './icons'
 
 const PX_PER_MM = 96 / 25.4
@@ -35,10 +38,12 @@ function formatSize(bytes: number): string {
 interface ViewerProps {
   backend: BackendInfo
   doc: DocumentSummary
+  active: boolean
   onClose: () => void
+  onConvert: () => void
 }
 
-export function Viewer({ backend, doc, onClose }: ViewerProps) {
+export function Viewer({ backend, doc, active, onClose, onConvert }: ViewerProps) {
   const [zoomMode, setZoomMode] = useState<ZoomMode>('fit-width')
   const [zoom, setZoom] = useState(1)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
@@ -51,6 +56,9 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
   const [firstPageReady, setFirstPageReady] = useState(false)
   const [renderedPages, setRenderedPages] = useState<Set<number>>(() => new Set([1]))
   const [pageInput, setPageInput] = useState('1')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchHits, setSearchHits] = useState<SearchHit[]>([])
+  const [activeSearchHit, setActiveSearchHit] = useState<SearchHit | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -74,6 +82,9 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
     setOutlineLoading(false)
     setOutlineError(null)
     setFirstPageReady(false)
+    setSearchOpen(false)
+    setSearchHits([])
+    setActiveSearchHit(null)
     anchorPageRef.current = null
     programmaticTargetRef.current = null
     if (programmaticTimerRef.current != null) {
@@ -203,6 +214,65 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
     [doc.pageCount, updateCurrentPage]
   )
 
+  const searchHighlights = useMemo(() => {
+    const result = new Map<number, SearchHighlight[]>()
+    for (const hit of searchHits) {
+      const active =
+        activeSearchHit !== null &&
+        activeSearchHit.page === hit.page &&
+        activeSearchHit.start === hit.start &&
+        activeSearchHit.end === hit.end
+      const list = result.get(hit.page)
+      if (list) {
+        list.push({ start: hit.start, end: hit.end, active })
+      } else {
+        result.set(hit.page, [{ start: hit.start, end: hit.end, active }])
+      }
+    }
+    for (const list of result.values()) {
+      list.sort((left, right) => left.start - right.start)
+    }
+    return result
+  }, [searchHits, activeSearchHit])
+
+  const handleSearchHits = useCallback((hits: SearchHit[], active: SearchHit | null) => {
+    setSearchHits(hits)
+    setActiveSearchHit(active)
+  }, [])
+
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false)
+    setSearchHits([])
+    setActiveSearchHit(null)
+  }, [])
+
+  const focusSearchHit = useCallback(
+    (hit: SearchHit) => {
+      const page = clamp(hit.page, 1, doc.pageCount)
+      setActiveSearchHit(hit)
+      setRenderedPages((previous) => {
+        if (previous.has(page)) return previous
+        const next = new Set(previous)
+        next.add(page)
+        return next
+      })
+      goToPage(page, false)
+      requestAnimationFrame(() => {
+        const root = scrollRef.current
+        const slot = pageRefs.current[page - 1]
+        if (!root || !slot) return
+        const sheet = slot.querySelector('.page-sheet') as HTMLElement | null
+        const target = sheet ?? slot
+        const rootRect = root.getBoundingClientRect()
+        const rect = target.getBoundingClientRect()
+        const top =
+          root.scrollTop + (rect.top - rootRect.top) + hit.y * rect.height - rootRect.height * 0.32
+        root.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      })
+    },
+    [doc.pageCount, goToPage]
+  )
+
   useEffect(() => {
     const root = scrollRef.current
     if (!root) return
@@ -324,10 +394,22 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
   }, [zoomBy])
 
   useEffect(() => {
+    if (!active) return
     const handler = (event: KeyboardEvent): void => {
+      const mod = event.ctrlKey || event.metaKey
+      if (mod && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        setSearchOpen(true)
+        requestAnimationFrame(() => {
+          const pane = scrollRef.current?.closest('.viewer-pane')
+          const input = pane?.querySelector<HTMLInputElement>('.search-input')
+          input?.focus()
+          input?.select()
+        })
+        return
+      }
       const target = event.target as HTMLElement | null
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
-      const mod = event.ctrlKey || event.metaKey
       if (mod && (event.key === '=' || event.key === '+')) {
         event.preventDefault()
         zoomBy(ZOOM_FACTOR)
@@ -343,11 +425,14 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
       } else if (!mod && event.key === 'ArrowRight') {
         event.preventDefault()
         goToPage(currentPageRef.current + 1)
+      } else if (!mod && event.key === 'Escape' && searchOpen) {
+        event.preventDefault()
+        closeSearch()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [zoomBy, applyFit, goToPage])
+  }, [active, zoomBy, applyFit, goToPage, searchOpen, closeSearch])
 
   useEffect(() => {
     if (document.activeElement !== pageInputRef.current) {
@@ -356,6 +441,7 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
   }, [currentPage])
 
   useEffect(() => {
+    if (!active) return
     type DragState = {
       page: HTMLElement
       anchorNode: Node
@@ -467,7 +553,13 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
       document.removeEventListener('mouseup', onMouseUp, true)
       if (drag?.frame != null) cancelAnimationFrame(drag.frame)
     }
-  }, [])
+  }, [active])
+
+  useEffect(() => {
+    if (!active) {
+      window.getSelection()?.removeAllRanges()
+    }
+  }, [active])
 
   const commitPageInput = (): void => {
     const parsed = Number.parseInt(pageInput, 10)
@@ -539,6 +631,27 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
           </div>
 
           <button
+            className={`icon-btn ${searchOpen ? 'active' : ''}`}
+            data-action="search"
+            onClick={() => setSearchOpen((value) => !value)}
+            aria-pressed={searchOpen}
+            title="查找（Ctrl + F）"
+          >
+            <IconSearch size={15} />
+            <span>查找</span>
+          </button>
+
+          <button
+            className="icon-btn"
+            data-action="convert"
+            onClick={onConvert}
+            title={`转换为 ${doc.kind === 'PDF' ? 'OFD' : 'PDF'}`}
+          >
+            <IconSwap size={15} />
+            <span>转换</span>
+          </button>
+
+          <button
             className={`icon-btn ${navOpen ? 'active' : ''}`}
             data-action="nav"
             onClick={() => setNavOpen((value) => !value)}
@@ -569,6 +682,15 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
           </button>
         </div>
       </div>
+
+      <SearchPanel
+        backend={backend}
+        docId={doc.id}
+        open={searchOpen}
+        onClose={closeSearch}
+        onNavigate={focusSearchHit}
+        onHitsChange={handleSearchHits}
+      />
 
       <div className="reader-body">
         {navOpen ? (
@@ -606,6 +728,7 @@ export function Viewer({ backend, doc, onClose }: ViewerProps) {
                     height={height}
                     shouldRender={renderedPages.has(meta.index)}
                     ready={ready}
+                    highlights={searchHighlights.get(meta.index)}
                     onLoaded={meta.index === 1 ? markFirstPageReady : undefined}
                     registerRef={(element) => {
                       pageRefs.current[meta.index - 1] = element

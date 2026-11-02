@@ -8,6 +8,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
@@ -30,7 +31,7 @@ class PdfEngineSmokeTest {
     @Test
     void pdfDemoOpensRendersAndProducesThumbnail() throws Exception {
         Path artifacts = Files.createTempDirectory("adou-pdf-smoke-");
-        PdfDemoFactory pdfDemoFactory = new PdfDemoFactory("0.5.2");
+        PdfDemoFactory pdfDemoFactory = new PdfDemoFactory("0.7.0");
         DocumentService service = new DocumentService(new DemoOfdFactory(), pdfDemoFactory);
         try {
             Path pdf = pdfDemoFactory.generate(artifacts);
@@ -84,7 +85,7 @@ class PdfEngineSmokeTest {
             document.addPage(page);
             try (PDPageContentStream content = new PDPageContentStream(document, page)) {
                 content.beginText();
-                content.setFont(PDType1Font.HELVETICA, 18);
+                content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 18);
                 content.newLineAtOffset(100, 100);
                 content.showText("ROTATED TEXT");
                 content.endText();
@@ -92,7 +93,7 @@ class PdfEngineSmokeTest {
             document.save(pdf.toFile());
         }
 
-        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.5.2"));
+        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
         try {
             DocumentSummary summary = service.open(pdf.toString());
             assertEquals(297.0, summary.pages().getFirst().widthMm(), 1.0,
@@ -123,7 +124,7 @@ class PdfEngineSmokeTest {
             document.save(encrypted.toFile());
         }
 
-        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.5.2"));
+        DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.0"));
         try {
             ApiException error = assertThrows(ApiException.class, () -> service.open(encrypted.toString()));
             assertEquals("PDF_ENCRYPTED", error.getCode());

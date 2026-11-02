@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import brandMarkUrl from '../assets/brand-mark.png'
 
 type IconProps = {
   size?: number
@@ -7,32 +8,15 @@ type IconProps = {
 
 export function BrandMark({ size = 44, className }: IconProps) {
   return (
-    <svg
+    <img
+      src={brandMarkUrl}
       width={size}
       height={size}
-      viewBox="0 0 48 48"
-      fill="none"
-      className={className}
+      className={className ? `brand-mark ${className}` : 'brand-mark'}
+      alt=""
       aria-hidden="true"
-    >
-      <rect width="48" height="48" rx="14" fill="#2F7A4F" />
-      <path
-        d="M31.4 10.2c6.6 3.9 8.9 12.3 5.1 19.3-3.7 7-12.9 9.9-19.4 6.1-6.4-3.8-8.1-12.5-3.6-18.6 4.1-5.6 11.6-7.9 17.9-6.8Z"
-        fill="#F6F4EC"
-      />
-      <path
-        d="M17 32.5c3.1-5.4 7.5-8.7 14.2-10.4"
-        stroke="#2F7A4F"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M27 12.5c.5-2.6 2.3-4.4 4.8-5"
-        stroke="#E4B54B"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-    </svg>
+      draggable={false}
+    />
   )
 }
 
@@ -144,8 +128,27 @@ export function IconAlert(props: IconProps) {
   )
 }
 
-export function IconLocation(props: IconProps) {
+export function IconSettings(props: IconProps) {
   return (
+    <Svg {...props}>
+      <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h6M14 18h6" />
+      <circle cx="15" cy="6" r="2" />
+      <circle cx="9" cy="12" r="2" />
+      <circle cx="12" cy="18" r="2" />
+    </Svg>
+  )
+}
+
+export function IconSearch(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4.5 4.5" />
+    </Svg>
+  )
+}
+
+export function IconLocation(props: IconProps) {  return (
     <Svg {...props}>
       <path d="M12 21s6.5-5.6 6.5-10.5A6.5 6.5 0 0 0 5.5 10.5C5.5 15.4 12 21 12 21Z" />
       <circle cx="12" cy="10.5" r="2.2" />
@@ -181,6 +184,14 @@ export function IconChevronDown(props: IconProps) {
   return (
     <Svg {...props}>
       <path d="m6 9.5 6 6 6-6" />
+    </Svg>
+  )
+}
+
+export function IconChevronUp(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m6 14.5 6-6 6 6" />
     </Svg>
   )
 }

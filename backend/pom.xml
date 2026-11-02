@@ -13,7 +13,7 @@
 
     <groupId>com.adou</groupId>
     <artifactId>adou-ofd-backend</artifactId>
-    <version>0.5.2</version>
+    <version>0.7.0</version>
     <name>adou-ofd-backend</name>
     <description>阿豆OFD 本地 Java 引擎</description>
     <url>https://gitcode.com/Zzuser/adouOFD</url>
@@ -36,7 +36,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <ofdrw.version>2.3.7</ofdrw.version>
+        <ofdrw.version>2.5.1</ofdrw.version>
     </properties>
 
     <dependencies>
@@ -51,16 +51,16 @@
             <version>${ofdrw.version}</version>
         </dependency>
 
-        <!-- 与 ofdrw-converter 保持同一 PDFBox 2.0.x 版本，避免 API 不兼容 -->
+        <!-- 与 ofdrw-converter 2.5.1 对齐，统一使用 PDFBox 3.0.8 -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
-            <version>2.0.27</version>
+            <version>3.0.8</version>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>fontbox</artifactId>
-            <version>2.0.27</version>
+            <version>3.0.8</version>
         </dependency>
 
         <dependency>

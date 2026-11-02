@@ -11,20 +11,40 @@
 
 <p align="center">
   <a href="LICENSE">MIT License</a> ·
-  Electron 45.1.0 · Java 25 LTS · ofdrw 2.3.7 · PDFBox 2.0.27
+  Electron 45.1.0 · Java 25 LTS · ofdrw 2.5.1 · PDFBox 3.0.8
 </p>
 
 > 仓库：<https://gitcode.com/Zzuser/adouOFD>  
-> 当前版本：**0.5.2**（M0 + M1.1 预览增强 + PDF + 目录 + 文字选择）
+> 当前版本：**0.7.0**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 格式转换 + 合并 + Windows 文件关联）
+
+## 品牌
+
+阿豆是一只灰白英短：灰蓝面罩、白色鼻梁和胸口、金色眼睛、粉色鼻子。品牌保留原有豆绿、奶油纸与金色的克制风格，让猫只出现在空状态、引擎启动和关于页；阅读与处理界面保持安静。
+
+| 应用图标 | 空状态插画 | 引擎启动 |
+| --- | --- | --- |
+| ![应用图标](docs/screenshots/icon.png) | ![阿豆空状态](docs/screenshots/mascot-empty.webp) | ![阿豆加载](docs/screenshots/mascot-loading.webp) |
+
+- 主色：豆绿 `#2F7A4F`；背景：奶油纸 `#F6F2E7`；高亮：眼金 `#E4B54B`；鼻粉 `#E8A6A0` 仅作微点缀。
+- 应用图标为阿豆的标准正脸头像：灰蓝面罩、白色鼻梁/胸口、金色眼睛、粉色鼻子，放在白色圆角底上；以全身插画为角色基准重新调整为正面对称构图，不再是裁切碎片或几何尖眼猫脸。
+- **文件图标**：OFD 与 PDF 共用“奶油纸 + 金色折角”版式，分别用豆绿和印章红标签；已写入 Windows `DefaultIcon`，16–256px 多尺寸 ICO。
+
+![OFD / PDF 文件图标](docs/screenshots/file-icons.png)
 
 ## 功能
 
 - **OFD / PDF 查看**：本地打开、拖拽或内置示例，电子发票、公文、合同均可阅读
+- **OFD ↔ PDF 转换**：阅读时一键转换，保留页面尺寸与文字；大文档自动分片 + 多线程转换，进度、取消、页数校验与质量提示
+- **批量转换标签页**：拖入多个文件、选好输出目录即可批量互转；逐个进度、可中途停止、同名自动改名；每行可直接“查看”源文件或转换结果
+- **合并文档标签页**：拖入多个 OFD / PDF，拖动或上下调整列表顺序，选择输出 OFD / PDF 后合并；混合格式会先转换到目标格式，最多 100 个文件；每个文件可一键查看
+- **多标签查看**：同时打开多个文档，标签切换保留阅读位置与缩放状态；最多同时打开 8 个
+- **Windows 文件关联**：安装版自动注册 `.ofd` / `.pdf` 的“打开方式”，分别使用 OFD / PDF 文件图标；双击文件会并入已打开窗口；不覆盖你已选择的默认应用，可在“设置”中修复/移除或打开系统默认应用设置
 - **连续多页预览**：页面按需渲染，大文档滚动不一次性加载全部高清图
 - **缩略图 + 目录**：缩略图高亮跳页；PDF Outline、OFD Outlines/Bookmarks 目录跳页并高亮当前章节
 - **缩放**：50%–300%、适合宽度、适合页面、Ctrl+滚轮，页面清晰可读
 - **页码与快捷键**：页码输入、上一页/下一页、←/→
 - **文字选择复制**：逐字文字层，框选复制保留换行；右键选区弹出原生“复制”菜单
+- **全文搜索**：阅读器“查找”或 `Ctrl+F` 跨页搜索 OFD / PDF 文本；结果列表逐条定位，页面内高亮当前命中；支持区分大小写，长文档后台扫描并显示进度
 - **选区防误选**：拖出文字/页面边界时自动钳制，不会整页选中
 - **PDF 友好处理**：页面旋转、加密 PDF 提示，扫描件按图显示
 - **纯本地、离线**：文件不离开本机；不登录、不联网、无广告
@@ -40,18 +60,36 @@
 | --- | --- |
 | ![OFD 预览](docs/screenshots/viewer.png) | ![PDF 预览](docs/screenshots/pdf-viewer.png) |
 
-更多：[目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
+| 格式转换 | 转换结果 |
+| --- | --- |
+| ![转换](docs/screenshots/convert-dialog.png) | ![转换结果](docs/screenshots/convert.png) |
+
+| 批量转换 | 合并文档 |
+| --- | --- |
+| ![批量转换](docs/screenshots/batch.png) | ![合并文档](docs/screenshots/merge.png) |
+
+| 多标签查看 |
+| --- |
+| ![多标签查看](docs/screenshots/tabs.png) |
+
+更多：[全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
 
 ## 下载与安装
 
-仓库只包含源码。预编译安装包体积较大（约 272MB，内含 JRE 25），暂未随仓库提交；可按下述步骤本地构建，后续通过 Releases 提供：
+仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，后续通过 Releases 提供：
 
 ```powershell
 cd desktop
-npm run package:win
+npm install
+npm run backend:build
+npm run package:inno
 ```
 
-产物：`desktop/dist/阿豆OFD-<version>-x64.exe`（NSIS，按用户安装，无需管理员）。当前安装包未代码签名，Windows SmartScreen 可能提示“未知发布者”。
+产物：`desktop/dist-inno/阿豆OFD-<version>-x64-inno.exe`（Inno Setup，按用户安装，无需管理员）。安装向导提供“关联 .ofd / .pdf 文件类型”任务，取消勾选则只安装程序、不写文件关联；构建会自动生成精简 JRE，不再内置完整 JDK。
+
+需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
+
+当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。
 
 ## 快速开始
 
@@ -89,12 +127,17 @@ npm run dev:all
 
 | 操作 | 方式 |
 | --- | --- |
-| 打开文档 | “打开文档”、拖拽文件到窗口 |
+| 打开文档 | “打开文档”、拖拽文件到窗口、双击已关联的 `.ofd` / `.pdf` |
 | 查看示例 | “OFD 示例 / PDF 示例” |
+| 文件关联 | 左侧“设置” → Windows 文件关联：注册/修复、设为默认、系统设置、移除 |
+| 开源许可 | “关于” → 开源许可：查看第三方声明、MIT 许可、打开许可目录 |
 | 翻页 | 顶部页码输入、‹ ›、`←` / `→` |
 | 缩放 | 底部工具条、`Ctrl` + `+/-`、`Ctrl + 0` 适合宽度、`Ctrl + 滚轮` |
 | 导航 | “导航”打开缩略图 / 目录页签 |
+| 全文搜索 | “查找”或 `Ctrl+F`，输入关键词；`Enter` / `Shift+Enter` 切换命中，`Esc` 关闭 |
 | 复制文字 | 在页面上框选后 `Ctrl+C`，或右键选择“复制选中文字” |
+| 格式转换 | 阅读器顶部“转换” → 选择保存位置 → 开始转换（可取消） |
+| 批量转换 | 左侧“批量转换” → 添加/拖入多个文件 → 选输出目录 → 开始（可停止） |
 | 收起侧栏 | 左上角折叠按钮；状态会记住 |
 
 ## 架构
@@ -108,7 +151,8 @@ Electron 主进程
 React 渲染进程 ────────────────► Java 引擎（Spring Boot 4）
   • 连续滚动、缩略图、目录        • OFD：ofdrw Reader / ImageMaker
   • 缩放、页码、逐字文字层        • PDF：PDFBox PDDocument / PDFRenderer
-  • 选区钳制、右键复制            • 目录、渲染缓存、会话管理
+  • 选区钳制、右键复制            • 转换：单工作线程 + 有界队列 + 进度
+  • 转换对话框 / 批量转换页       • 目录、渲染缓存、会话管理
 ```
 
 **技术栈**
@@ -118,8 +162,8 @@ React 渲染进程 ────────────────► Java 引�
 | 桌面 | Electron 45.1.0、electron-vite 6.0.0、electron-builder 26.18.0 |
 | 前端 | React 19.3.1、TypeScript 7.0.2、Vite 8.3.5 |
 | 运行时 | Temurin JDK 25.0.5 LTS（项目内 `.tools/jdk-25`） |
-| 引擎 | Spring Boot 4.0.9、ofdrw-full 2.3.7、PDFBox 2.0.27 |
-| 构建 | Maven 3.9.16、Node.js 24 LTS |
+| 引擎 | Spring Boot 4.0.9、ofdrw-full 2.5.1、PDFBox 3.0.8 |
+| 构建 | Maven 3.9.16、Node.js 24 LTS、Inno Setup 6 |
 
 ## 目录
 
@@ -139,7 +183,7 @@ adouOFD/
 ## 测试与压测
 
 ```powershell
-# 后端测试（9 个用例）
+# 后端测试（39 个用例）
 cd backend
 $env:JAVA_HOME="../.tools/jdk-25"
 mvn test
@@ -166,18 +210,27 @@ npm run stress:ui
 
 ## 路线图
 
-- **M1.2**：全文搜索、页面旋转、最近文件、文件关联
-- **M2**：PDF ↔ OFD 转换、批量任务与进度
-- **M3**：OFD 合并 / 拆分
-- **M4**：代码签名、jlink 裁剪（目标安装包 <150MB）、自动更新
+- **M1.2**：全文搜索（已实现）/ Windows 文件关联（已实现）/ 页面旋转 / 最近文件
+- **M2**：PDF ↔ OFD 转换（单文件 + 批量标签页已实现）
+- **M3**：合并（已实现，支持 OFD / PDF 混合与顺序调整）/ 拆分
+- **M4**：安装包进一步瘦身（目标 <150MB）、自动更新
 
 ## 已知限制
 
 - 扫描件 PDF/OFD 无文本层，只能按图像查看
+- PDF 转 OFD 按 PDF 内嵌字体自动选择：字体完整嵌入时输出可选中文字；字体为子集（多数真实 PDF）时按矢量图形输出，版面一致但文字不可选中，报告会提示
+- OFD 转 PDF 在系统缺少可替代字体时会自动改为图像导出（报告会提示），此时文字同样不可选中
+- PDF 转 OFD 会在内存中构建整份文档：≤120 页单次转换（约 18 秒），更多页数自动拆成约 10 片、多线程转换后合并（404 页 / 27MB 手册：2GB 堆、约 60 秒、峰值约 1.5GB、输出 190MB）。引擎堆按物理内存 1/16 分配（1–2GB），内存仍不足时会明确提示并终止该任务（不会卡住界面）
 - OFD 竖排、带复杂 CTM 旋转的文字层仍需适配；PDF 多栏阅读顺序依赖 PDFBox
 - 加密 PDF 暂不支持打开
 - 超大文档（1000+ 页 / 100MB+）尚未压测；页面与缩略图 DOM 会随浏览增长
-- 安装包未签名；安装包内置完整 JDK，体积较大
+- 当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；内置 jlink 精简 JRE，Inno 安装包约 181MB（NSIS 备用包约 192MB）
+- OFD 转 PDF 的矢量模式会嵌入完整中文字体，文件体积可能明显大于源文件；对体积敏感时可按图像导出
+- 合并结果不保证保留各文件的目录/书签；混合格式合并需要先转换，PDF→OFD 的文字是否可选中取决于源 PDF 字体
+- 源 OFD 若引用了包内缺失的图片/字体资源，合并前会补充透明/空占位文件以继续合并，相关图片可能无法显示
+- 合并前会展开 OFD 的 DrawParam 样式继承，避免发票表格框线/颜色在合并后丢失；缺失的水印本身仍可能不显示
+- 单次最多合并 100 个文件；超大文档合并受内存限制，失败时会明确提示
+- 查看器最多同时打开 8 个标签（与本地引擎会话上限一致）；后台标签会保留会话与渲染状态
 
 ## 参与贡献
 
@@ -189,4 +242,4 @@ npm run stress:ui
 
 ## 许可
 
-应用代码以 [MIT License](LICENSE) 发布。第三方组件许可、特别是 ofdrw-converter 传递依赖的 iText AGPL-3.0 说明，请阅读 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。公开发布二进制安装包前需完成相应许可合规处理。
+应用代码以 [MIT License](LICENSE) 发布。第三方组件、版权与完整许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 与 [licenses/](licenses/)；安装包会将它们复制到 `resources/notices/`，也可从“关于 → 开源许可”查看。ofdrw 2.5.1 已移除 iText，依赖树中不再包含 AGPL 组件。

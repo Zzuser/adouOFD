@@ -3,10 +3,22 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs'
 import { createServer } from 'node:net'
+import { totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import type { BackendInfo } from '../shared/types'
 
 const START_TIMEOUT_MS = 40_000
+const MIN_HEAP_MB = 1024
+const MAX_HEAP_MB = 2048
+
+/**
+ * PDF 转 OFD 已改为分片 + 合并，峰值内存大幅下降，堆不必再给到 4G。
+ * 按物理内存的 1/16 分配，下限 1G、上限 2G，避免小工具长期占用过多内存。
+ */
+function resolveHeapMb(): number {
+  const totalMb = Math.round(totalmem() / 1024 / 1024)
+  return Math.min(MAX_HEAP_MB, Math.max(MIN_HEAP_MB, Math.round(totalMb / 16)))
+}
 
 export class BackendManager {
   private child: ChildProcess | null = null
@@ -37,14 +49,17 @@ export class BackendManager {
       const token = randomBytes(24).toString('hex')
       const java = this.resolveJava()
       const jar = this.resolveJar()
+      const heapMb = resolveHeapMb()
       mkdirSync(dirname(this.logPath), { recursive: true })
-      this.appendLog(`\n=== ${new Date().toISOString()} 启动引擎 ===\njava: ${java}\njar: ${jar}\nport: ${port}\n`)
+      this.appendLog(
+        `\n=== ${new Date().toISOString()} 启动引擎 ===\njava: ${java}\njar: ${jar}\nport: ${port}\nheap: ${heapMb}m\n`
+      )
 
       const args = [
         '-Djava.awt.headless=true',
         '-Dfile.encoding=UTF-8',
         '-Xms64m',
-        '-Xmx768m',
+        `-Xmx${heapMb}m`,
         '-Xss2m',
         '-jar',
         jar,

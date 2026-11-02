@@ -5,6 +5,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
@@ -71,20 +72,20 @@ public final class StressFixtureGenerator {
 
                     content.beginText();
                     content.setNonStrokingColor(Color.WHITE);
-                    content.setFont(PDType1Font.HELVETICA_BOLD, 18);
+                    content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 18);
                     content.newLineAtOffset(48, 812);
                     content.showText("ADou OFD Stress PDF");
                     content.endText();
 
                     content.beginText();
                     content.setNonStrokingColor(new Color(40, 48, 42));
-                    content.setFont(PDType1Font.HELVETICA, 11);
+                    content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 11);
                     content.newLineAtOffset(48, 750);
                     content.showText("Page " + pageNo + " / " + pageCount);
                     content.endText();
 
                     content.beginText();
-                    content.setFont(PDType1Font.HELVETICA, 9);
+                    content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 9);
                     content.newLineAtOffset(48, 715);
                     for (int line = 0; line < 34; line++) {
                         content.showText("The quick brown fox jumps over the lazy dog. "
@@ -158,7 +159,7 @@ public final class StressFixtureGenerator {
                     content.fill();
                     content.beginText();
                     content.setNonStrokingColor(Color.WHITE);
-                    content.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                    content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
                     content.newLineAtOffset(28, 22);
                     content.showText("Page " + pageNo + " / " + pageCount + " · large embedded image");
                     content.endText();

@@ -7,6 +7,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +23,7 @@ public class PdfDemoFactory {
 
     private final String appVersion;
 
-    public PdfDemoFactory(@Value("${adou.version:0.5.2}") String appVersion) {
+    public PdfDemoFactory(@Value("${adou.version:0.7.0}") String appVersion) {
         this.appVersion = appVersion;
     }
 
@@ -31,8 +32,8 @@ public class PdfDemoFactory {
         try (PDDocument document = new PDDocument()) {
             PDFont chinese = loadChineseFont(document);
             boolean useChinese = chinese != null;
-            PDFont regular = useChinese ? chinese : PDType1Font.HELVETICA;
-            PDFont bold = useChinese ? chinese : PDType1Font.HELVETICA_BOLD;
+            PDFont regular = useChinese ? chinese : new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+            PDFont bold = useChinese ? chinese : new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
             for (int pageNo = 1; pageNo <= 3; pageNo++) {
                 PDPage page = new PDPage(PDRectangle.A4);
@@ -81,19 +82,19 @@ public class PdfDemoFactory {
         float height = page.getMediaBox().getHeight();
 
         try (PDPageContentStream content = new PDPageContentStream(document, page)) {
-            content.setNonStrokingColor(47, 122, 79);
+            content.setNonStrokingColor(47 / 255f, 122 / 255f, 79 / 255f);
             content.addRect(0, height - 104, width, 104);
             content.fill();
 
             content.beginText();
-            content.setNonStrokingColor(255, 255, 255);
+            content.setNonStrokingColor(255 / 255f, 255 / 255f, 255 / 255f);
             content.setFont(bold, 25);
             content.newLineAtOffset(56, height - 62);
             content.showText(useChinese ? "阿豆 OFD · PDF 预览示例" : "ADou OFD - PDF Preview");
             content.endText();
 
             content.beginText();
-            content.setNonStrokingColor(228, 240, 231);
+            content.setNonStrokingColor(228 / 255f, 240 / 255f, 231 / 255f);
             content.setFont(regular, 11);
             content.newLineAtOffset(56, height - 86);
             content.showText(useChinese
@@ -102,7 +103,7 @@ public class PdfDemoFactory {
             content.endText();
 
             content.beginText();
-            content.setNonStrokingColor(23, 37, 28);
+            content.setNonStrokingColor(23 / 255f, 37 / 255f, 28 / 255f);
             content.setFont(bold, 18);
             content.newLineAtOffset(56, height - 150);
             content.showText(useChinese ? "第 " + pageNo + " 页 / 共 3 页" : "Page " + pageNo + " of 3");
@@ -125,7 +126,7 @@ public class PdfDemoFactory {
                     };
 
             content.beginText();
-            content.setNonStrokingColor(58, 72, 62);
+            content.setNonStrokingColor(58 / 255f, 72 / 255f, 62 / 255f);
             content.setFont(regular, 11.5f);
             content.newLineAtOffset(56, height - 192);
             for (String line : lines) {
@@ -140,24 +141,24 @@ public class PdfDemoFactory {
                     : new String[]{"Scroll", "Thumbnails", "Zoom"};
             for (int index = 0; index < colors.length; index++) {
                 float cardX = 56 + index * 162;
-                content.setNonStrokingColor(colors[index][0], colors[index][1], colors[index][2]);
+                content.setNonStrokingColor(colors[index][0] / 255f, colors[index][1] / 255f, colors[index][2] / 255f);
                 content.addRect(cardX, height - 380, 146, 86);
                 content.fill();
 
                 content.beginText();
-                content.setNonStrokingColor(255, 255, 255);
+                content.setNonStrokingColor(255 / 255f, 255 / 255f, 255 / 255f);
                 content.setFont(bold, 14);
                 content.newLineAtOffset(cardX + 18, height - 338);
                 content.showText(labels[index]);
                 content.endText();
             }
 
-            content.setNonStrokingColor(215, 210, 198);
+            content.setNonStrokingColor(215 / 255f, 210 / 255f, 198 / 255f);
             content.addRect(56, 74, width - 112, 1);
             content.fill();
 
             content.beginText();
-            content.setNonStrokingColor(130, 140, 130);
+            content.setNonStrokingColor(130 / 255f, 140 / 255f, 130 / 255f);
             content.setFont(regular, 9);
             content.newLineAtOffset(56, 50);
             content.showText("ADou OFD " + appVersion + " - PDF preview sample");

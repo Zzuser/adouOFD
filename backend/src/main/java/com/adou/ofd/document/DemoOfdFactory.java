@@ -35,7 +35,7 @@ public class DemoOfdFactory {
             }
 
             doc.add(new Paragraph(" ", 3d, bodyFont));
-            doc.add(new Paragraph("本示例由 ofdrw 2.3.7 在本机动态生成，仅用于功能演示。", 3.2d, bodyFont)
+            doc.add(new Paragraph("本示例由 ofdrw 2.5.1 在本机动态生成，仅用于功能演示。", 3.2d, bodyFont)
                     .setTextAlign(TextAlign.center));
         }
         return target;

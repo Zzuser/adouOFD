@@ -1,23 +1,37 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AppVersions, BackendInfo, DocumentSummary, EngineHealth } from '@shared/types'
 import { closeDocument, fetchHealth, messageOf, openDemo, openDocument, openPdfDemo } from './api'
 import { AboutDialog } from './components/AboutDialog'
+import { BatchConvert } from './components/BatchConvert'
+import { ConvertDialog } from './components/ConvertDialog'
+import { DocTabs } from './components/DocTabs'
 import { EngineBadge } from './components/EngineBadge'
 import { EmptyState } from './components/EmptyState'
-import { Sidebar } from './components/Sidebar'
+import { MergePage } from './components/MergePage'
+import { Sidebar, type AppView } from './components/Sidebar'
+import { SettingsPage } from './components/SettingsPage'
 import { Viewer } from './components/Viewer'
 import { IconAlert, IconFolder } from './components/icons'
 
 const INITIAL_BACKEND: BackendInfo = { status: 'starting', port: null, token: null }
+const MAX_TABS = 8
+
+interface ViewerTab {
+  key: string
+  doc: DocumentSummary
+}
 
 export default function App() {
   const [backend, setBackend] = useState<BackendInfo>(INITIAL_BACKEND)
   const [health, setHealth] = useState<EngineHealth | null>(null)
   const [versions, setVersions] = useState<AppVersions | null>(null)
-  const [doc, setDoc] = useState<DocumentSummary | null>(null)
+  const [tabs, setTabs] = useState<ViewerTab[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [convertOpen, setConvertOpen] = useState(false)
+  const [view, setView] = useState<AppView>('viewer')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return window.localStorage.getItem('adou.sidebar.collapsed') === '1'
@@ -26,7 +40,19 @@ export default function App() {
     }
   })
 
+  const tabsRef = useRef<ViewerTab[]>([])
+  const activeIdRef = useRef<string | null>(null)
+  const activeTab = tabs.find((tab) => tab.key === activeId) ?? null
+  const doc = activeTab?.doc ?? null
   const ready = backend.status === 'ready'
+
+  useEffect(() => {
+    tabsRef.current = tabs
+  }, [tabs])
+
+  useEffect(() => {
+    activeIdRef.current = activeId
+  }, [activeId])
 
   useEffect(() => {
     let alive = true
@@ -69,18 +95,51 @@ export default function App() {
 
   const showDocument = useCallback(
     (summary: DocumentSummary) => {
-      if (doc) {
-        void closeDocument(backend, doc.id).catch(() => undefined)
+      const current = tabsRef.current
+      const existing = current.find(
+        (tab) =>
+          tab.doc.id === summary.id ||
+          (!summary.demo && tab.doc.path.toLowerCase() === summary.path.toLowerCase())
+      )
+      if (existing) {
+        activeIdRef.current = existing.key
+        setActiveId(existing.key)
+        setView('viewer')
+        return
       }
-      setDoc(summary)
+      if (current.length >= MAX_TABS) {
+        void closeDocument(backend, summary.id).catch(() => undefined)
+        setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
+        return
+      }
+      const next = [...current, { key: summary.id, doc: summary }]
+      tabsRef.current = next
+      setTabs(next)
+      activeIdRef.current = summary.id
+      setActiveId(summary.id)
+      setView('viewer')
     },
-    [backend, doc]
+    [backend]
   )
 
   const openPath = useCallback(
     async (path: string) => {
       if (!ready) {
         setError('本地引擎尚未就绪，请稍候再试')
+        return
+      }
+      const existing = tabsRef.current.find(
+        (tab) => tab.doc.path.toLowerCase() === path.toLowerCase()
+      )
+      if (existing) {
+        activeIdRef.current = existing.key
+        setActiveId(existing.key)
+        setView('viewer')
+        setError(null)
+        return
+      }
+      if (tabsRef.current.length >= MAX_TABS) {
+        setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
         return
       }
       setBusy(true)
@@ -96,6 +155,24 @@ export default function App() {
     [backend, ready, showDocument]
   )
 
+  const openQueuedFiles = useCallback(async () => {
+    if (!ready) return
+    const paths = await window.adou.takePendingFiles()
+    for (const path of paths) {
+      await openPath(path)
+    }
+  }, [openPath, ready])
+
+  useEffect(() => {
+    return window.adou.onOpenFiles(() => {
+      void openQueuedFiles()
+    })
+  }, [openQueuedFiles])
+
+  useEffect(() => {
+    if (ready) void openQueuedFiles()
+  }, [ready, openQueuedFiles])
+
   const pickDocument = useCallback(async () => {
     if (!ready) {
       setError('本地引擎尚未就绪，请稍候再试')
@@ -104,10 +181,20 @@ export default function App() {
     const path = await window.adou.pickDocument()
     if (path) await openPath(path)
   }, [openPath, ready])
-
   const openSample = useCallback(async () => {
     if (!ready) {
       setError('本地引擎尚未就绪，请稍候再试')
+      return
+    }
+    const existing = tabsRef.current.find((tab) => tab.doc.demo && tab.doc.kind === 'OFD')
+    if (existing) {
+      activeIdRef.current = existing.key
+      setActiveId(existing.key)
+      setView('viewer')
+      return
+    }
+    if (tabsRef.current.length >= MAX_TABS) {
+      setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
       return
     }
     setBusy(true)
@@ -124,6 +211,17 @@ export default function App() {
   const openPdfSample = useCallback(async () => {
     if (!ready) {
       setError('本地引擎尚未就绪，请稍候再试')
+      return
+    }
+    const existing = tabsRef.current.find((tab) => tab.doc.demo && tab.doc.kind === 'PDF')
+    if (existing) {
+      activeIdRef.current = existing.key
+      setActiveId(existing.key)
+      setView('viewer')
+      return
+    }
+    if (tabsRef.current.length >= MAX_TABS) {
+      setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
       return
     }
     setBusy(true)
@@ -155,13 +253,35 @@ export default function App() {
     [openPath]
   )
 
-  const closeCurrent = useCallback(() => {
-    const current = doc
-    setDoc(null)
-    if (current && backend.status === 'ready') {
-      void closeDocument(backend, current.id).catch(() => undefined)
-    }
-  }, [backend, doc])
+  const closeTab = useCallback(
+    (id: string) => {
+      const current = tabsRef.current
+      const index = current.findIndex((tab) => tab.key === id)
+      if (index < 0) return
+      const closing = current[index]
+      const next = current.filter((tab) => tab.key !== id)
+      tabsRef.current = next
+      setTabs(next)
+      if (activeIdRef.current === id) {
+        const neighbor = next[Math.min(index, next.length - 1)] ?? null
+        activeIdRef.current = neighbor?.key ?? null
+        setActiveId(neighbor?.key ?? null)
+        setConvertOpen(false)
+      }
+      if (backend.status === 'ready') {
+        void closeDocument(backend, closing.doc.id).catch(() => undefined)
+      }
+    },
+    [backend]
+  )
+
+  const switchTab = useCallback((id: string) => {
+    if (activeIdRef.current === id) return
+    activeIdRef.current = id
+    setActiveId(id)
+    setConvertOpen(false)
+    setView('viewer')
+  }, [])
 
   const retryEngine = useCallback(async () => {
     setError(null)
@@ -190,26 +310,42 @@ export default function App() {
       <Sidebar
         backend={backend}
         collapsed={sidebarCollapsed}
+        view={view}
+        onNavigate={setView}
         onToggle={toggleSidebar}
         appVersion={versions?.app}
         onAbout={() => setAboutOpen(true)}
         onRetry={() => void retryEngine()}
       />
 
-      <main className="main">
+      <main className="main" data-view={view}>
         <header className="topbar">
           <div className="topbar-title">
-            <h1>文档查看</h1>
-            <p className="subtitle" title={doc?.path}>
-              {doc
-                ? doc.demo
-                  ? '内置示例文档 · 由本地引擎动态生成'
-                  : doc.path
-                : '打开并阅读本地 OFD / PDF 文档。'}
+            <h1>
+              {view === 'batch'
+                ? '批量转换'
+                : view === 'merge'
+                  ? '合并文档'
+                  : view === 'settings'
+                    ? '设置'
+                    : '文档查看'}
+            </h1>
+            <p className="subtitle" title={view === 'viewer' ? doc?.path : undefined}>
+              {view === 'batch'
+                ? '一次加入多个文件，逐个转换到另一种格式；文件只在本机处理。'
+                : view === 'merge'
+                  ? '按列表顺序把多个 OFD / PDF 合并为一个文档；文件只在本机处理。'
+                  : view === 'settings'
+                    ? 'Windows 文件关联、默认应用与本地数据说明。'
+                    : doc
+                      ? doc.demo
+                        ? '内置示例文档 · 由本地引擎动态生成'
+                        : doc.path
+                      : '打开并阅读本地 OFD / PDF 文档。'}
             </p>
           </div>
           <div className="topbar-actions">
-            {doc ? (
+            {view === 'viewer' && doc ? (
               <button
                 className="btn ghost small"
                 onClick={() => void pickDocument()}
@@ -225,6 +361,21 @@ export default function App() {
           </div>
         </header>
 
+        {view === 'viewer' && tabs.length > 0 ? (
+          <DocTabs
+            tabs={tabs.map((tab) => ({
+              id: tab.key,
+              name: tab.doc.name,
+              kind: tab.doc.kind,
+              path: tab.doc.path
+            }))}
+            activeId={activeId}
+            onSelect={switchTab}
+            onClose={closeTab}
+            onOpen={() => void pickDocument()}
+          />
+        ) : null}
+
         {error ? (
           <div className="alert" role="alert">
             <IconAlert size={18} />
@@ -239,20 +390,60 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className={`content ${doc ? 'has-doc' : ''}`}>
-          {doc ? (
-            <Viewer backend={backend} doc={doc} onClose={closeCurrent} />
-          ) : (
-            <EmptyState
-              ready={ready}
-              busy={busy}
-              engineStarting={backend.status === 'starting'}
-              onOpen={() => void pickDocument()}
-              onDemo={() => void openSample()}
-              onPdfDemo={() => void openPdfSample()}
-              onDropFiles={dropFiles}
+        <section className={`content ${view === 'viewer' && doc ? 'has-doc' : ''}`}>
+          <div className="pane" hidden={view !== 'batch'}>
+            <BatchConvert
+              backend={backend}
+              onOpenDocument={(path) => {
+                setView('viewer')
+                void openPath(path)
+              }}
             />
-          )}
+          </div>
+
+          <div className="pane" hidden={view !== 'merge'}>
+            <MergePage
+              backend={backend}
+              onOpenDocument={(path) => {
+                setView('viewer')
+                void openPath(path)
+              }}
+            />
+          </div>
+
+          <div className="pane" hidden={view !== 'settings'}>
+            <SettingsPage />
+          </div>
+
+          <div className="pane viewer-stack" hidden={view !== 'viewer'}>
+            {tabs.length === 0 ? (
+              <EmptyState
+                ready={ready}
+                busy={busy}
+                engineStarting={backend.status === 'starting'}
+                onOpen={() => void pickDocument()}
+                onDemo={() => void openSample()}
+                onPdfDemo={() => void openPdfSample()}
+                onDropFiles={dropFiles}
+              />
+            ) : (
+              tabs.map((tab) => (
+                <div
+                  className="pane viewer-pane"
+                  hidden={tab.key !== activeId}
+                  key={tab.key}
+                >
+                  <Viewer
+                    backend={backend}
+                    doc={tab.doc}
+                    active={tab.key === activeId && view === 'viewer'}
+                    onClose={() => closeTab(tab.key)}
+                    onConvert={() => setConvertOpen(true)}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </section>
       </main>
 
@@ -263,6 +454,19 @@ export default function App() {
         health={health}
         versions={versions}
       />
+
+      {doc ? (
+        <ConvertDialog
+          open={convertOpen}
+          backend={backend}
+          doc={doc}
+          onClose={() => setConvertOpen(false)}
+          onOpenOutput={(path) => {
+            setConvertOpen(false)
+            void openPath(path)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

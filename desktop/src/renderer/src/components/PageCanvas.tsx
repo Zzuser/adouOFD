@@ -1,6 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BackendInfo, TextRun } from '@shared/types'
 import { fetchPageText, pageImageUrl } from '../api'
+
+export interface SearchHighlight {
+  start: number
+  end: number
+  active?: boolean
+}
 
 interface PageCanvasProps {
   backend: BackendInfo
@@ -11,8 +17,44 @@ interface PageCanvasProps {
   height: number
   shouldRender: boolean
   ready: boolean
+  highlights?: SearchHighlight[]
   registerRef: (element: HTMLDivElement | null) => void
   onLoaded?: () => void
+}
+
+interface RunSegment {
+  text: string
+  hit: boolean
+  active: boolean
+}
+
+function splitRun(
+  text: string,
+  runStart: number,
+  highlights: SearchHighlight[] | undefined
+): RunSegment[] | null {
+  if (!highlights || highlights.length === 0) return null
+  const runEnd = runStart + text.length
+  const segments: RunSegment[] = []
+  let cursor = 0
+  for (const highlight of highlights) {
+    if (highlight.end <= runStart) continue
+    if (highlight.start >= runEnd) break
+    const from = Math.max(cursor, Math.max(0, highlight.start - runStart))
+    const to = Math.min(text.length, highlight.end - runStart)
+    if (to <= from) continue
+    if (from > cursor) {
+      segments.push({ text: text.slice(cursor, from), hit: false, active: false })
+    }
+    segments.push({ text: text.slice(from, to), hit: true, active: Boolean(highlight.active) })
+    cursor = to
+    if (cursor >= text.length) break
+  }
+  if (segments.length === 0) return null
+  if (cursor < text.length) {
+    segments.push({ text: text.slice(cursor), hit: false, active: false })
+  }
+  return segments
 }
 
 export function PageCanvas({
@@ -24,6 +66,7 @@ export function PageCanvas({
   height,
   shouldRender,
   ready,
+  highlights,
   registerRef,
   onLoaded
 }: PageCanvasProps) {
@@ -85,6 +128,15 @@ export function PageCanvas({
     return () => controller.abort()
   }, [backend, docId, page, ready, shouldRender])
 
+  const renderedRuns = useMemo(() => {
+    let offset = 0
+    return textRuns.map((run, index) => {
+      const runStart = offset
+      offset += run.text.length
+      return { run, index, segments: splitRun(run.text, runStart, highlights) }
+    })
+  }, [textRuns, highlights])
+
   return (
     <div className="page-slot" data-page={page} ref={registerRef}>
       <div className="page-number">第 {page} 页</div>
@@ -105,9 +157,9 @@ export function PageCanvas({
           />
         ) : null}
 
-        {loaded && !failed && textRuns.length > 0 ? (
+        {loaded && !failed && renderedRuns.length > 0 ? (
           <div className="text-layer" aria-label={`第 ${page} 页可选择文本`}>
-            {textRuns.map((run, index) => (
+            {renderedRuns.map(({ run, index, segments }) => (
               <span
                 key={`${index}-${run.text.slice(0, 12)}`}
                 className="text-run"
@@ -120,7 +172,20 @@ export function PageCanvas({
                   lineHeight: 1
                 }}
               >
-                {run.text}
+                {segments
+                  ? segments.map((segment, segmentIndex) =>
+                      segment.hit ? (
+                        <mark
+                          key={segmentIndex}
+                          className={`search-hit ${segment.active ? 'active' : ''}`}
+                        >
+                          {segment.text}
+                        </mark>
+                      ) : (
+                        segment.text
+                      )
+                    )
+                  : run.text}
               </span>
             ))}
           </div>

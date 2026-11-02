@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 | --- | --- |
 | 产品名称 | 阿豆OFD（ADou OFD） |
-| 文档版本 | v0.5.2（M0 + M1.1 预览增强 + PDF + 目录/折叠 + 逐字选择 + 压测） |
-| 日期 | 2026-10-30 |
-| 阶段 | M0 已完成；M1.1 多页预览、缩略图、缩放、PDF、目录、导航折叠、文字选择已交付 |
+| 文档版本 | v0.7.0（M0 + M1.1 + PDF + 目录/折叠 + 逐字选择 + 转换 + 合并 + 全文搜索 + Windows 集成） |
+| 日期 | 2026-11-02 |
+| 阶段 | 0.7.0：预览、搜索、转换、合并、多标签、Windows 文件关联、Inno 安装包已交付 |
 | 形态 | Windows 桌面软件（Electron 壳 + Java 本地引擎），后续扩展 macOS |
 | 许可 | 应用免费；第三方依赖许可见 §11 |
 
@@ -69,32 +69,51 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 - **PDF 预览**：打开 PDF、页数/尺寸（含旋转）、按 DPI 渲染、缩略图、连续滚动、缩放；加密 PDF 友好提示；内置 PDF 示例。
 - **文档目录**：阅读器导航面板“缩略图 / 目录”双页签；PDF Outline、OFD Outlines/Bookmarks 解析为扁平层级目录，点击跳页并高亮当前章节。
 - **应用导航折叠**：左侧应用导航可收起为图标栏，阅读区自适应；折叠状态持久化。
+- **多标签查看**：同时打开最多 8 个文档，标签切换保留阅读位置/缩放/导航状态；批量转换与合并列表提供“查看”入口，直接跳转到对应标签。
+- **Windows 文件关联与单实例**：安装版启动时在 HKCU 注册两个独立 ProgID（`AdouOFD.OFD` / `AdouOFD.PDF`）、`.ofd` / `.pdf` 的 OpenWithProgids，以及 RegisteredApplications/Capabilities；`DefaultIcon` 分别指向随包携带的 `ofd-file.ico` / `pdf-file.ico`（奶油纸 + 金色折角，豆绿/印章红标签，16–256px 多尺寸）。不写 HKLM、不抢已存在的 UserChoice 默认应用。双击文件时通过命令行参数并入当前窗口（第二实例会唤醒并聚焦已有窗口）；“关于”中可注册/修复、调用 Windows“打开方式”选择默认、打开系统默认应用设置或移除注册。安装包卸载脚本会清理这些每用户注册项，并恢复注册前的 `.ofd` 扩展默认值。
+- **全文搜索**：阅读器“查找”或 `Ctrl+F` 打开搜索条；后台逐页扫描 OFD / PDF 文字层并增量返回命中，不阻塞渲染；结果列表显示页码与上下文片段，点击/上下键逐条定位，命中文字在页面内高亮，当前项用印章红强调；支持区分大小写、跨换行短语匹配；长文档显示扫描进度，切换关键词自动取消旧任务；最多保留 300 条命中（仍统计总数），单页文本提取失败不影响其他页面。
 - **文字选择/复制**：逐字文字层，支持框选、跨行复制并保留换行；右键选区弹出原生复制菜单；拖出文字/页面时钳制到最后一个有效字形，避免整页误选。
 - **压力测试**：800 页矢量 PDF、100 页/20MB 图片 PDF、91 页 OFD；引擎与 UI 打开/跳页/缩略图/目录压测通过，详见 `docs/STRESS-TEST.md`。
 
 **M1.2 待办：完整阅读器**
 
-- 文本选择与复制、全文搜索。
 - 页面旋转、文档属性与签章面板。
-- 最近打开、拖拽打开全屏、文件关联（双击 .ofd 打开）。
+- 最近打开、拖拽打开全屏。
 - 大文档内存上限与页面卸载策略。
 
 ### 2.3 M2：格式转换
 
-- OFD → PDF（优先 PDFBox 实现，规避 iText 许可风险）。
-- PDF → OFD（保留页面尺寸、图片、基础文本；扫描件按图片嵌入）。
-- 批量转换、进度、失败重试、输出目录记忆。
-- 转换质量报告（字体替换、图片压缩、页数校验）。
+**已实现（单文件转换）**
+
+- OFD → PDF：`PdfboxMaker` 逐页矢量导出，保留可复制文字与页面尺寸；导出后做中文保真检查，字体无法嵌入时自动改为本机渲染图像导出（150 DPI）并在报告中提示。
+- PDF → OFD：`PDFConverter` 分批转换，页数、页面尺寸保留；输出为矢量图形，文字不可选中（ofdrw 转换特性，报告中提示）。
+- 转换任务：单工作线程 + 有界队列（8）、进度、取消、临时文件 + 原子落盘、页数与体积校验、字体/文字质量提示。
+- 桌面端：阅读器“转换”入口（单文件）、保存对话框、进度条、取消、结果报告、打开结果/定位文件。
+- **批量转换标签页**：左侧独立导航；添加/拖入多个文件（轻量探测页数与格式，不建立阅读会话）、选择输出目录（记忆）、逐个转换与进度、停止、失败项重试、同名自动加序号、完成后可打开结果。
+
+**待办**
+
+- 转换历史与命名模板；批量并发上限可配置（当前为 1，与单工作线程一致）。
 
 ### 2.4 M3：合并与拆分
 
-- 多 OFD 合并（可调顺序、页码区间）。
+**合并已实现**
+
+- 独立“合并文档”标签页：拖入多个 OFD / PDF，列表顺序即最终页序；支持拖动或上下按钮调整顺序、删除、清空。
+- 用户选择输出格式（OFD / PDF）；混合输入会先归一化到目标格式再合并，PDF→OFD / OFD→PDF 复用现有转换引擎。
+- 任务能力：与转换共用单工作线程 + 有界队列、进度、取消、临时文件 + 原子落盘、页数校验、质量告警、OOM 可读提示；单次最多 100 个文件。
+- **资源修复**：部分真实发票 OFD 在 Res 中声明了图片/字体，但包内缺失（如水印 `redInvoiceWatermark.png`）；`OFDMerger` 会因此直接失败。合并前扫描资源引用，为缺失资源补充透明/空占位文件后继续合并，并在报告中提示。
+- **样式修复**：`OFDMerger` 保留 DrawParam 的 `Relative` 继承但不重映射被引用 ID，合并后可能继承到其他文档的白色描边，表现为发票表格框线消失。合并前把 DrawParam 继承链展开为自包含样式，并移除指向不存在 ColorSpace 的引用；报告中提示“已展开样式继承”。
+- 合并结果不保证保留各文件的目录/书签；混合转换的文字可选中性沿用转换能力边界。
+
+**待办**
+
 - OFD 按页/按区间拆分，支持批量命名规则。
-- 合并/拆分后完整性校验（页数、页面尺寸）。
+- 合并/拆分后完整性校验扩展（页面尺寸汇总、书签策略）。
 
 ### 2.5 M4：安装与发布
 
-- Windows NSIS 安装包、便携版 ZIP。
+- Windows Inno Setup 安装包（含文件关联安装任务）、NSIS 备用构建。
 - 应用图标、文件关联、开始菜单、卸载清理。
 - 自动更新（可选，默认关闭）、崩溃日志与一键导出诊断信息。
 
@@ -117,18 +136,18 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 | 构建 | electron-vite | 6.0.0 | 主进程/预加载/渲染进程统一构建 |
 | 前端 | React + TypeScript | 19.3.1 / 7.0.2 | 函数组件 + 严格类型 |
 | 构建 | Vite | 8.3.5 | 渲染进程开发服务器与产物构建 |
-| 打包 | electron-builder | 26.18.0 | NSIS 安装包 / 便携版 |
+| 打包 | Inno Setup 6 + electron-builder | 6.x / 26.18.0 | Inno Setup 安装包 / NSIS 备用 |
 | 运行时 | Eclipse Temurin JDK | **25.0.5+8 LTS** | 项目内 `.tools/jdk-25`，发布时 jlink 裁剪 |
 | 框架 | Spring Boot | 4.0.9 | 仅作为本地 HTTP 引擎，绑定 127.0.0.1 |
-| OFD 核心 | ofdrw-full | **2.3.7** | Maven Central 最新稳定版（2025-06），Java 8 字节码 |
+| OFD 核心 | ofdrw-full | **2.5.1** | 2026-11-01 发布，移除 iText、协议改 MIT、PDF→OFD 新增文字对象化 |
 | PDF 渲染 | Apache PDFBox | **2.0.27** | 与 ofdrw-converter 内置版本对齐；Apache-2.0 |
 | 构建 | Maven | 3.9.16 | 最新稳定 3.9 线；Maven 4 仍为 RC |
 | 开发 Node | Node.js | 24.13.0 LTS | 仅构建期使用，不随应用分发 |
 
 ### 3.1 版本选择依据
 
-- **ofdrw 2.3.7**：Maven Central 最新稳定版；`ofdrw-full` 聚合 reader / converter / layout / tool 等模块，覆盖查看、转 PDF、PDF 转 OFD、合并。
-- **PDFBox 2.0.27**：显式锁定，与 ofdrw-converter 使用的版本一致；用于 PDF 页数/页面尺寸/渲染与 PDF 示例生成，避免 PDFBox 3.x API 不兼容。
+- **ofdrw 2.5.1**：`ofdrw-full` 聚合 reader / converter / layout / tool 等模块，覆盖查看、转 PDF、PDF 转 OFD、合并；2.5.1 起彻底移除 iText（无 AGPL 依赖），协议为 MIT。
+- **PDFBox 3.0.8**：与 ofdrw-converter 2.5.1 对齐；加载入口为 `Loader.loadPDF`，颜色 API 使用 0–1 浮点，流缓存通过 `MemoryUsageSetting.streamCache` 传入。
 - **JDK 25 LTS**：当前最新 LTS。ofdrw 以 Java 8 目标编译，需在 JDK 25 上实际验证 AWT 渲染、PDFBox、字体加载链路；M0 已完成示例生成、页面渲染、OFD→PDF、PDF→OFD 往返测试，真实发票渲染与 JDK 21 输出字节级一致（见 §13）。
 - **Spring Boot 4.0.9**：当前最新稳定版，运行于 JDK 25；仅使用 Web/JSON 能力，不引入数据库与安全框架。
 - **Electron 45.1.0**：当前稳定版；使用 `contextIsolation + sandbox + 禁用 nodeIntegration` 的安全基线。
@@ -155,7 +174,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
                 │ IPC (contextBridge 白名单)    │ HTTP 127.0.0.1
 ┌───────────────▼─────────────┐   ┌───────────▼───────────────┐
 │ 渲染进程 (React + TS)        │   │ Java 本地引擎              │
-│  · 文档导航 / 预览 / 工具栏   │   │ Spring Boot 4 + ofdrw 2.3.7│
+│  · 文档导航 / 预览 / 工具栏   │   │ Spring Boot 4 + ofdrw 2.5.1│
 │  · 仅通过 preload API 触达系统│   │ · 解析 / 渲染 / 转换 / 合并 │
 └──────────────────────────────┘   │ · 会话与临时文件管理        │
                                    └───────────────────────────┘
@@ -230,6 +249,9 @@ DocumentHandle {
 }
 ```
 
+- 会话 LRU 上限 **8**；前端标签上限同为 8。关闭标签会调用 `DELETE /api/documents/{id}`，避免后端静默淘汰导致标签失效。
+- 每个标签对应一个独立 Viewer（隐藏但保持挂载），切换标签不重建页面，保留滚动位置、缩放与已渲染页面。
+
 - OFD 句柄持有 `OFDReader` 与按 DPI 缓存的 `ImageMaker`，避免每页重复解析 OFD 包。
 - PDF 句柄持有 `PDDocument` / `PDFRenderer`；渲染串行化，保证 PDFBox 线程安全。
 - 同一进程内最多保留 8 个会话；超出按最近最少使用关闭。
@@ -261,6 +283,9 @@ DocumentHandle {
 | GET | `/api/documents/{id}/outline` | 文档目录：`[{ title, page, level }]`，无目录返回空数组 |
 | GET | `/api/documents/{id}/pages/{page}` | 渲染页面 PNG，`page` 从 1 开始，`dpi` 可选 |
 | GET | `/api/documents/{id}/pages/{page}/text` | 页面可选文字层：`[{ text,x,y,width,height,fontSize }]`（归一化坐标） |
+| POST | `/api/documents/{id}/searches` | `{ "query": "...", "caseSensitive": false }` 创建后台全文搜索（202） |
+| GET | `/api/documents/{id}/searches/{searchId}` | 搜索任务快照；扫描中 `hits` 增量增长，含进度、总数、截断与失败页数 |
+| POST | `/api/documents/{id}/searches/{searchId}/cancel` | 取消搜索任务 |
 | DELETE | `/api/documents/{id}` | 关闭会话并清理临时文件 |
 | POST | `/api/system/shutdown` | 优雅关闭（供 Electron 调用） |
 
@@ -292,31 +317,62 @@ DocumentHandle {
 | `UNAUTHORIZED` | 401 | Token 缺失/错误 |
 | `INTERNAL_ERROR` | 500 | 未预期异常 |
 
-### 5.5 转换、合并、拆分 API（M2/M3 预留）
+### 5.5 转换与合并 API（M2 / M3 合并已实现）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/api/conversions` | `{ documentId?, sourcePath?, target: "PDF"/"OFD", outputPath }` |
-| POST | `/api/merge` | `{ documentIds: [], outputPath }` |
-| POST | `/api/split` | `{ documentId, ranges: [{from,to}], outputDir, namePattern }` |
-| GET | `/api/jobs/{id}` | `{ status, progress, message, outputs[] }` |
-| POST | `/api/jobs/{id}/cancel` | 取消排队/执行中的任务 |
+| POST | `/api/conversions` | `{ documentId?, sourcePath?, target: "PDF"/"OFD", outputPath, overwrite? }`，202 返回任务 |
+| POST | `/api/conversions/probe` | `{ paths: [] }` → `[{ path, name, size, kind, pages, error }]`，批量加文件用，不建立会话 |
+| GET | `/api/conversions/{id}` | `{ status, progress, phase, report, errorCode, ... }` |
+| GET | `/api/conversions?limit=20` | 最近任务列表（最多保留 20 条） |
+| POST | `/api/conversions/{id}/cancel` | 取消排队/执行中的任务 |
+| POST | `/api/merges` | `{ files: [path...], target: "PDF"/"OFD", outputPath, overwrite? }`，202 返回任务；files 顺序即页序 |
+| GET | `/api/merges/{id}` | `{ status, progress, phase, target, report, errorCode, ... }` |
+| GET | `/api/merges?limit=20` | 最近合并任务列表 |
+| POST | `/api/merges/{id}/cancel` | 取消排队/执行中的合并任务 |
+| POST | `/api/split` | `{ documentId, ranges: [{from,to}], outputDir, namePattern }`（M3 待办） |
 
-长任务统一进入**单工作线程 + 有界队列**：ofdrw 转换吃 CPU/内存，并发会拖垮桌面体验；进度以 5% 粒度上报。
+转换与合并统一进入**单工作线程 + 有界队列（8）**：两类任务都吃 CPU/内存，串行执行避免同时跑两份大文档；进度按页/文件上报，队列满时分别返回 `CONVERSION_QUEUE_FULL` / `MERGE_QUEUE_FULL`。
+
+错误码补充：`SOURCE_REQUIRED`、`INVALID_TARGET`、`SAME_FORMAT`、`OUTPUT_REQUIRED`、`OUTPUT_EXISTS`（409）、`SOURCE_IS_OUTPUT`、`INVALID_OUTPUT_PATH`、`JOB_NOT_FOUND`、`CONVERSION_QUEUE_FULL`（429）、`FILES_REQUIRED`、`NEED_TWO_FILES`、`TOO_MANY_FILES`、`UNSUPPORTED_FORMAT`、`MERGE_QUEUE_FULL`（429）。
 
 ### 5.6 关键实现选型
 
 - **OFD 读取**：`OFDReader` → `getNumberOfPages()` / `getPageSize(int)` / `hasSignature()`。
 - **OFD 页面渲染**：`ImageExporter`（ofdrw-converter），PNG。
-- **PDF 读取/渲染**：PDFBox 2.0.27 `PDDocument` + `PDFRenderer`；CropBox/MediaBox 与页面旋转参与尺寸计算；签名通过 `getSignatureDictionaries()` 检测。
+- **PDF 读取/渲染**：PDFBox 3.0.8 `Loader.loadPDF` + `PDFRenderer`；CropBox/MediaBox 与页面旋转参与尺寸计算；签名通过 `getSignatureDictionaries()` 检测。
 - **PDF 安全**：加密 PDF 捕获 `InvalidPasswordException` 返回 `PDF_ENCRYPTED`；渲染最长边 12000px 上限。
 - **逐字文字层**：PDF 使用每个 `TextPosition` 的字形框；OFD 使用 `TextObject` 边界、`TextCode` 的 X/Y 与 `DeltaX` 推进逐字位置；按基线变化插入换行。坐标/字号归一化后前端逐字叠加，选区随字形与字号对齐，并处理 PDF 页面旋转。扫描件无文本层。
 - **目录提取**：
   - PDF：`PDDocumentOutline` 递归遍历，`PDOutlineItem.findDestinationPage()` 解析页码，层级扁平化为 level。
   - OFD：`Document.getOutlines()` 递归（Actions → Goto → Dest → PageID 映射页码）；无 Outlines 时回退 `getBookmarks()`。
   - 目录条目上限 5000，深度上限 20，损坏目录不影响页面预览。
-- **OFD→PDF**：`PDFExporterPDFBox`（Apache PDFBox 2.0.x），不采用 iText 实现。
-- **PDF→OFD**：`PDFConverter`（基于 PDFBox 解析，输出 OFD）。
+- **OFD→PDF**：`PdfboxMaker`（Apache PDFBox 3.0.8）逐页导出，不采用 iText 实现。
+  - **字体别名**：ofdrw 在 TTC 字体集合中只按 PS 名（如 `MicrosoftYaHei`）查找，OFD 里的中文族名（微软雅黑/宋体）会查不到字形并静默退回 Helvetica，导致中文整段丢失。转换前把系统字体族名（含 `Locale.CHINA`/`ENGLISH` 本地化名）映射到 PS 名，可显著提升中文保真。
+  - **保真兜底**：矢量导出后抽样比较源 OFD 与输出 PDF 的中文字符数，若输出不足源文档 1/3，判定字体失败，删除结果并改用本机 `ImageMaker` 150 DPI 渲染后写入 PDF，报告提示“文字不可选中”。
+- **PDF→OFD**：按 PDF 内嵌字体能力自动选择转换器。
+  - **文字模式**（`PDFConverter`）：ofdrw 2.5.1 起逐页生成 OFD `TextObject` 并内嵌字体，输出文字可选中/可检索。前提是 PDF 内嵌字体程序完整（含 `cmap`）；`setSubsetFont(true)` 用于控制体积。
+  - **图形模式**（`PDFGraphicsConverter`）：整页按矢量图形输出，速度快、版面一致，但文字不可选中。
+  - 判定逻辑（`canPreservePdfText`）：遍历页面字体资源，任一字体未内嵌、非 TrueType（无 FontFile2）或字体程序缺 `cmap` 即判为不可保留文字。
+  - 实测：子集字体 PDF（PDFBox 生成示例、真实 404 页手册）文字模式会逐字体回退，20 页耗时 23.8 秒；图形模式仅 2.9 秒且输出完全相同。字体完整嵌入的 PDF 走文字模式，1 页 OFD 体积由 5.1MB（整字体嵌入）降至可接受范围（开启子集化）。
+- **输出安全**：先写同目录临时文件（`.名字.adou-tmp-xxxxxxxx.ext`），校验通过后原子替换目标；失败/取消删除临时文件，源文件只读。
+- **内存与失败处理**：PDF→OFD 由 ofdrw 在内存中构建整份 OFD，因此按页数与堆大小自动选择单次或分片。
+  - **实测（2GB 堆，27MB 手册及其子集）**：
+
+    | 页数 | 单次转换 | 分片（2 线程） |
+    | --- | --- | --- |
+    | 60 | 9.0s / 977MB | — |
+    | 120 | 17.9s / 1579MB | — |
+    | 200 | 27.2s / 1883MB | 31.5s / 1033MB |
+    | 300 | 35.9s / 1988MB | 43.8s / 1181MB |
+    | 404 | 51.6s / 2022MB | 57.5s / 1520MB |
+
+  - 单次转换峰值约 12MB/页，超过堆 75% 后 GC 抖动明显；合并耗时约 75ms/页，与分片数量几乎无关。
+  - **虚拟线程无收益**：CPU 密集的矢量转换在相同并发度下 43.0s vs 平台线程 43.8s，只提高并发度并抬高内存，故未采用。
+  - 策略：`shouldShard = 页数 × 12MB > 堆 × 75%`；`shardPages = clamp(ceil(页数/10), 20, min(60, 堆×45%/线程数/12))`；`workers = clamp(堆/900MB, 1, 4, CPU/2)`。
+  - 单次路径内部只切 2–3 块做进度（每块都要重新解析源 PDF，120 页按 6 页切会多花 80 秒）。
+  - 引擎堆按物理内存 1/16 分配（1–2GB）。`OutOfMemoryError` 属于 `Error`，转换任务显式捕获后置为 `FAILED`（`OUT_OF_MEMORY`）并给出可读提示，避免任务停留在 `RUNNING`。`PDFConverter.close()` 不使用 try-with-resources，防止关闭再次失败时 `Self-suppression not permitted` 掩盖真实错误。
+- **前端兜底**：所有引擎请求带 20 秒超时；转换轮询连续失败 5 次或 180 秒无进度变化即判定异常，停止等待并提示重试/拆分文档。
 - **合并**：`OFDMerger`（ofdrw-tool），按页范围选择。
 - **拆分**：基于 `OFDMerger` 的页选择能力逐区间导出（M3 验证后定稿）。
 
@@ -326,8 +382,8 @@ DocumentHandle {
 
 ### 6.1 进程职责
 
-- **Main**：窗口生命周期、原生对话框、引擎进程管理、日志、单实例锁、文件关联启动参数。
-- **Preload**：仅暴露白名单 API（`pickDocument`、`getBackendInfo`、`onBackendStatus`、`revealPath`、`getPathForFile`、应用版本）。
+- **Main**：窗口生命周期、原生对话框、引擎进程管理、日志、单实例锁、文件关联启动参数与每用户注册表注册。
+- **Preload**：仅暴露白名单 API（`pickDocument`、`getBackendInfo`、`onBackendStatus`、`revealPath`、`getPathForFile`、待打开文件队列、Windows 集成、应用版本）。
 - **Renderer**：纯 UI，无 Node 权限，不直接读文件系统。
 
 ### 6.2 安全基线
@@ -337,20 +393,23 @@ DocumentHandle {
 - CSP：`default-src 'self'`；`img-src`/`connect-src` 仅允许自身与 `http://127.0.0.1:*`；开发期额外放行 Vite HMR。
 - 已实测：渲染进程 `require` / `process` 均不可见，`window.open` 被拦截，CSP 生效。
 - 原生对话框选择文件；渲染进程不能拼任意路径去写文件（写操作仅在 M2 后通过“保存对话框”授权路径）。
-- 发布前检查：依赖审计、ASAR 完整性、安装包签名。
+- 发布前检查：依赖审计、ASAR 完整性、安装包 SHA256。
 
 ### 6.3 视觉方向
 
-- 关键词：**温润、可靠、国风但现代**；避免“后台管理系统”观感。
+- 关键词：**温润、可靠、安静陪伴**；避免“后台管理系统”观感，也避免猫元素过度装饰。
+- 品牌故事：阿豆是一只灰白英短（灰蓝面罩、白色鼻梁/胸口、金眼、粉鼻）。品牌保留原有豆绿/奶油纸/金色的克制风格，把猫只放在空状态、引擎启动与关于页；阅读与处理界面保持安静。
 - 色板：
-  - 背景米白 `#F6F4EC`，卡片 `#FFFFFF`，正文墨绿黑 `#17251C`；
-  - 品牌豆绿 `#2F7A4F`，浅豆绿 `#E4F0E7`，点缀麦黄 `#E4B54B`；
-  - 分割线 `#E4E0D5`。
-- 标识：豆荚造型 + “阿豆OFD”字标；已输出多尺寸 ICO（`desktop/build/icon.ico`）。
-- 字体：系统字体栈（Windows 优先“微软雅黑 UI”/“Segoe UI”）。
+  - 背景奶油纸 `#F6F2E7`，卡片纸白 `#FFFDF7`，正文墨绿黑 `#1D2A22`；
+  - 品牌豆绿 `#2F7A4F`，深豆 `#215C3B`，豆雾 `#E4F0E7`，眼金 `#E4B54B`；
+  - 阿豆灰 `#6E777B`、鼻粉 `#E8A6A0`（仅吉祥物/微点缀）、印章红 `#B4472F`；
+  - 分割线 `#E4DED0`。
+- 标识：阿豆标准正脸头像（灰蓝面罩、白色鼻梁/胸口、金眼、粉鼻），白色圆角底；以全身插画为角色基准重绘为正面对称构图，避免裁切碎片和几何尖眼猫脸的“凶”感；输出 `brand-mark.png` 与多尺寸 ICO（`desktop/build/icon.ico`）。
+- 吉祥物：`mascot-empty.webp` 用于空状态/关于，`mascot-loading.webp` 用于引擎启动；透明背景，阅读器与转换/合并列表不放大幅猫图。
+- 字体：系统字体栈（Windows 优先“微软雅黑 UI”/“Segoe UI”），保持离线与体积。
 - 布局：左侧 236px 应用导航（可折叠为 72px 图标栏）；阅读区左侧“缩略图 / 目录”导航面板、中间连续页面画布；底部悬浮缩放/页码工具条；空状态与加载态均有明确反馈。
-- 精简：侧栏只保留“文档查看 / 关于”，引擎详细信息移入“关于”弹层；空状态移除功能卡；顶部仅在引擎异常/启动中显示状态。
-- “关于”：展示版本、MIT 许可、Java/ofdrw/Spring Boot/Electron 版本、本地运行状态与开源仓库入口。
+- 精简：侧栏导航为“文档查看 / 批量转换 / 合并文档 / 设置 / 关于”，Windows 文件关联放在独立“设置”页；引擎详细信息仍在“关于”弹层。
+- “关于”：展示版本、MIT 许可、Java/ofdrw/Spring Boot/Electron 版本、本地运行状态、开源组件摘要、第三方声明与完整许可文本入口。
 - 文档栏显示 OFD/PDF 格式徽标；空状态提供“打开文档 / OFD 示例 / PDF 示例”三个入口。
 - 目录条目按层级缩进、显示目标页码；当前章节高亮，点击跳页。
 
@@ -365,6 +424,22 @@ DocumentHandle {
 7. 页面按需渲染：只加载视口附近的页面；缩放时按当前比例请求合适 DPI。
 8. 文字：页面文字可直接框选、复制；跨行复制保留换行；右键弹出“复制选中文字”；拖出页面/文字范围时选区被钳制，不会整页选中。扫描件无文字层。
 9. 失败：单页错误提示与重试，不阻塞其他页面；加密 PDF、损坏文件给出中文提示。
+10. 合并：左侧“合并文档”标签页；拖入或选择多个 OFD/PDF，拖动左侧手柄或上下按钮调整顺序，选择输出 OFD/PDF 与保存位置后开始；显示总进度、取消、结果页数/体积/告警，完成后可直接查看或在文件夹中定位。
+11. 多标签：查看器顶部标签栏，支持点击切换、关闭、`+` 打开新文档；批量转换/合并列表的“查看”按钮直接打开或激活对应标签；最多 8 个标签。
+12. 设置：左侧“设置”独立页，包含 Windows 文件关联（注册/修复、设为默认、系统设置、移除）和本地/隐私说明；与“关于”分离。
+13. 关于：展示版本信息与开源许可摘要，可打开第三方声明、MIT 许可和随包许可目录。
+
+### 6.5 版本与安装升级
+
+- 版本以 `desktop/package.json` 为主源；后端 `pom.xml`、`application.yml`、Inno `AppVersion` 同步。构建脚本把版本传给 ISCC，安装包文件名与 `VersionInfoVersion` 使用同一版本。
+- Inno Setup 使用固定 `AppId`，启用 `UsePreviousAppDir` / `UsePreviousTasks`，同版本或更高版本安装时按升级处理并保留安装目录、任务选择；卸载信息显示当前版本。
+- 安装任务“关联 .ofd / .pdf 文件类型”默认勾选；取消勾选会清理旧关联并写入 `optedOut`，应用启动不自动回写。
+
+### 6.6 开源许可展示
+
+- 运行时组件、版权声明与许可名汇总在 `THIRD-PARTY-NOTICES.md`；完整许可文本与 Apache NOTICE 汇总随包放在 `resources/notices/licenses/`。
+- “关于”提供“第三方声明 / MIT 许可 / 打开许可目录”入口；Electron 的 `LICENSE.electron.txt` 与 `LICENSES.chromium.html` 保留在安装目录。
+- 组件清单覆盖 Electron、React、Node.js、ofdrw、PDFBox、Spring Boot、Tomcat、Jackson、Batik、BouncyCastle、Logback、UJMP、TwelveMonkeys、Jaxen、Dom4j、JSON-java、Inno Setup 等。
 
 ---
 
@@ -378,22 +453,25 @@ DocumentHandle {
 ├─ resources/
 │  ├─ app.asar                 渲染进程与主进程代码
 │  ├─ backend/adou-ofd-backend.jar
-│  └─ jre/                     Java 25 运行时（原型为完整 JDK，M4 用 jlink 裁剪）
+│  ├─ fileicons/               ofd-file.ico / pdf-file.ico（Windows 文件类型图标）
+│  └─ jre/                     Java 25 运行时（scripts/build-jre.mjs 用 jlink 裁剪，约 54MB）
 └─ ...
 ```
 
 ### 7.2 构建流程
 
-1. `mvn -DskipTests package` 产出可执行 fat jar。
-2. `jlink --add-modules ...` 生成最小 JRE（需包含 `java.desktop`、`java.net.http`、`jdk.crypto.ec` 等；M0 原型直接内置完整 JDK，M4 启用裁剪）。
-3. `electron-builder --win nsis` 打包，`extraResources` 注入 jar 与 jre。
-4. 安装包默认按用户安装（无需管理员），支持自定义目录。
+1. `npm run backend:build`（`mvn -DskipTests package`）产出可执行 fat jar。
+2. `npm run jre:build`（`scripts/build-jre.mjs`）用 jlink 生成最小 JRE：17 个模块（含 `java.desktop`、`java.xml`、`jdk.charsets`、`jdk.localedata`、`jdk.crypto.ec`），`--include-locales=zh,en`，产物约 54MB。
+3. `npm run package:inno` 先由 electron-builder 生成临时 `win-unpacked`（注入 jar、jre、fileicons），再调用 Inno Setup 6 编译安装包；`package:win` 保留 NSIS 备用构建。
+4. 安装向导任务页提供“关联 .ofd / .pdf 文件类型”（默认勾选，升级时保留选择）：勾选时写入两个 ProgID、DefaultIcon、OpenWithProgids、RegisteredApplications/Capabilities；取消勾选时清理这些注册项并写入 `optedOut`，应用启动不会再自动关联。
+5. 安装包按用户安装（HKCU，无需管理员），支持自定义目录；卸载时恢复注册前的 `.ofd` 默认值并删除关联注册项。
 
 ### 7.3 实测与待办
 
-- 已实测（2026-10-30）：免安装目录约 712MB，NSIS 安装包约 272MB；0.5.2 打包产物使用内置 JRE 25.0.5 成功启动，并完成 OFD/PDF/目录/折叠/逐字选择/越界钳制冒烟。
-- 代码签名证书（当前无，SmartScreen 会提示“未知发布者”）。
-- 安装包体积优化（jlink 裁剪，目标 <150MB）。
+- 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.0-x64-inno.exe`，SHA256 `30a6d952…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
+- Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
+- 当前阶段不做代码签名、不采购证书；发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
+- 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
 - 自动更新源与回滚策略（M4 评估）。
 
 ---
@@ -423,6 +501,8 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
   - 生成示例 PDF → 打开 → 3 页/A4/渲染/缩略图；
   - 真实 PDF 打开与渲染；
   - 加密 PDF 返回 `PDF_ENCRYPTED`；
+  - 转换：OFD↔PDF、分片不丢页、OOM 落 FAILED、排队/运行中取消；
+  - 合并：PDF/OFD 顺序保持、同名 OFD 重复加入、混合格式双向、参数校验、取消、OOM、缺失资源占位修复、DrawParam 继承展开与无效 ColorSpace 清理；
   - Token 鉴权、越界页码、损坏文件错误码。
 - **端到端（Electron）**：
   - 启动即健康检查成功；
@@ -447,24 +527,26 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | ofdrw 在 JDK 25 上的 AWT/字体兼容问题 | 页面空白、乱码 | 已验证通过（真实发票 + 多页示例）；后续升级仍跑回归 |
 | 个别 OFD 的 DrawParam 循环引用触发 ofdrw `StackOverflowError` | 单页无法渲染、日志膨胀 | 引擎捕获单页 `StackOverflowError` 返回 `RENDER_OVERFLOW`；JVM `-Xss2m`；向 ofdrw 上游反馈，M1.2 增加预检/降级 |
 | PDF 大页面/复杂文档内存占用 | 渲染慢或 OOM | PDFBox 混合内存 128MB；页面最长边 12000px 上限；会话 LRU 与单页异常隔离 |
-| PDF 字体/图像/旋转兼容性 | 页面空白或方向错误 | PDFBox 2.0.27；CropBox/旋转参与尺寸计算；真实 PDF 已回归 |
-| iText 7（AGPL）随 ofdrw-converter 传递依赖 | 分发许可风险 | 只使用 PDFBox 导出路径；评估 Maven 排除 iText；公开分发前完成许可审查，必要时开源或取得授权 |
+| PDF 字体/图像/旋转兼容性 | 页面空白或方向错误 | PDFBox 3.0.8；CropBox/旋转参与尺寸计算；真实 PDF 已回归 |
+| iText 7（AGPL）随 ofdrw-converter 传递依赖 | 分发许可风险 | 已解决：ofdrw 2.5.1 移除 iText，依赖树无 AGPL 组件 |
 | PDF→OFD 字体/排版保真度 | 转换效果不达预期 | 明确“保版面、可阅读”目标；扫描件按图嵌入；输出质量报告 |
 | 大文件/恶意 OFD 导致内存或路径穿越 | 稳定性/安全 | 限制解压大小（ofdrw `setZipFileMaxSize`）、会话隔离、临时目录白名单、超时 |
 | Electron + 本地 HTTP 被本机其他程序调用 | 数据泄露/滥用 | 随机端口 + 每次启动 Token + 仅回环；后续改 IPC/自定义协议 |
-| 安装包体积与启动速度 | 体验 | jlink 裁剪、ASAR、按需加载页面、启动并行化 |
-| 无代码签名 | 信任与安装成功率 | M4 前采购签名证书；提供 SHA256 校验与官网下载 |
+| 安装包体积与启动速度 | 体验 | jlink 裁剪已完成（272MB→Inno 181MB / NSIS 192MB）；后续评估 Electron 语言包裁剪与 7z 字典 |
+| 不做代码签名 | 信任与安装成功率 | 已确认当前阶段不做；提供 SHA256 校验与官网/Release 下载，后续视需要再评估 |
+| OFD→PDF 矢量模式嵌入完整中文字体 | 输出体积过大（4 页示例约 78MB，19.6MB/页） | 已知问题；可切换图像导出；后续评估 `PDFExporter`（同类文档约 19.6MB）或字体子集化 |
 
 ---
 
 ## 11. 许可与合规（重要）
 
 - 应用自身代码以 **MIT License** 发布（`LICENSE`）。
-- ofdrw：Apache-2.0。
-- PDFBox / FontBox / Batik：Apache-2.0。
-- **iText 7（ofdrw-converter 依赖）：AGPL-3.0**。若分发包含 iText 代码，需满足 AGPL 或取得商业授权。
-  - 行动项：M1 验证仅依赖 `PDFExporterPDFBox` 时能否排除 iText；若可行，从依赖树移除并在 CI 加校验。
-- BouncyCastle：MIT 风格许可；ujmp 等传递依赖需在发布前生成完整 SBOM（CycloneDX）。
+- Electron / React / Node.js / ofdrw / SLF4J / BouncyCastle：MIT（BouncyCastle 为 MIT 风格）。
+- PDFBox / FontBox / Batik / Spring Boot / Tomcat / Jackson / Apache Commons 等：Apache-2.0。
+- Logback：EPL-2.0 或 LGPL-2.1；Jakarta Annotation API：EPL-2.0 或 GPL-2.0 with Classpath Exception。
+- UJMP Core：LGPL-3.0（未修改的传递依赖）；JSON-java：JSON License；TwelveMonkeys/Jaxen：BSD-3-Clause；Dom4j：BSD 风格（Plexus）。
+- **iText 已移除**：ofdrw 2.5.1 起不再依赖 iText，依赖树无 AGPL 组件；公开分发不再受 AGPL 约束。
+- 版权与许可全文：`THIRD-PARTY-NOTICES.md` + `licenses/`；打包时复制到 `resources/notices/`，并可从“关于”查看。Apache 组件的 NOTICE 汇总在 `licenses/APACHE-NOTICES.txt`。
 
 ---
 
@@ -478,7 +560,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - [x] 关闭窗口后 Java 进程退出（退出码 0，任务管理器无残留）。
 - [x] Java 集成测试全绿，含 ofdrw 在 JDK 25 上的渲染/转换冒烟。
 - [x] 渲染进程无 Node 权限，CSP 生效，外部导航/弹窗被拦截。
-- [x] Windows NSIS 安装包可生成，打包产物使用内置 JRE 正常启动。
+- [x] Windows Inno Setup 安装包可生成（180.8MB），安装任务可选择关联文件类型；打包产物使用内置 JRE 正常启动。
 
 ### 12.1 M1.1 预览增强验收
 
@@ -494,7 +576,10 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - [x] 大文件压力测试通过（800 页 / 20MB / 91 页 OFD），无崩溃与运行时错误。
 - [x] 页面文字逐字框选复制：OFD/PDF 选区文本正确、跨行复制保留换行，字形/字号/旋转版面下高亮对齐。
 - [x] 右键原生复制菜单；拖出文字/页面后选区钳制（实测正常拖选 19 字、越界仅 44 字，不再整页选中）。
-- [ ] 全文搜索、页面旋转、最近文件/文件关联（M1.2）。
+- [x] 全文搜索：OFD/PDF 跨页扫描、增量结果、片段/页码、页面内高亮、当前命中强调、`Ctrl+F`、Enter/Shift+Enter、Esc、区分大小写、进度与取消（实测唯一命中跳第 4 页；常见词 150 处、当前项 1 条、页面命中 750 个字形段）。
+- [x] Windows 文件关联：安装版自动注册 `.ofd` / `.pdf` 打开方式与默认应用能力；不覆盖已有 UserChoice 默认应用；第二实例打开文件并入当前窗口；“关于”支持注册/修复、设为默认、系统设置与移除；卸载脚本清理注册项。
+- [x] Inno 安装选项：勾选“关联 .ofd / .pdf 文件类型”时写入两个 ProgID、DefaultIcon、OpenWithProgids、Capabilities；取消关联升级时清理注册项并写入 `optedOut`，应用启动不自动回写；静默卸载后无残留。
+- [ ] 页面旋转、最近文件（M1.2）。
 
 ### 12.2 PDF 预览验收
 
@@ -504,7 +589,8 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - [x] 加密 PDF 返回友好提示，不影响其他文档打开。
 - [x] 真实 PDF 文件打开与渲染验证通过。
 - [x] UI 冒烟覆盖 PDF 示例：3 页、3 个缩略图、翻页到第 2 页。
-- [ ] PDF 文本选择/搜索、PDF 注解显示（M1.2）。
+- [x] PDF 文本选择/搜索：逐字文字层可选；全文搜索复用统一搜索服务，PDFBox 文字提取后跨页匹配、片段与页面高亮正常。
+- [ ] PDF 注解显示（M1.2）。
 
 ---
 
@@ -537,12 +623,28 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-10-30 | UI 安全基线 | Electron 45.1.0 | ✅ | `require`/`process` 不可见；`window.open` 被拦截；CSP 生效 |
 | 2026-10-30 | 进程清理 | 打包应用 | ✅ | 关闭窗口后 Java 引擎退出码 0，无残留进程 |
 | 2026-10-30 | NSIS 打包 | electron-builder 26.18.0 | ✅ | 0.5.2 安装包约 272MB（SHA256 `65c740cc…`），未签名；内置 JRE 25.0.5 可启动，打包版 OFD/PDF/目录/折叠/逐字选择/越界钳制冒烟通过 |
+| 2026-11-02 | 后端回归 | JDK 25.0.5 | ✅ | 39/39 测试通过（转换 13 项 + 合并 8 项 + 资源修复 2 项 + 样式修复 1 项 + 全文搜索 6 项，含顺序、同名重复、混合格式、取消、OOM、跨页/大小写/换行短语/命中上限） |
+| 2026-11-02 | 全文搜索 UI | Electron 45.1.0 | ✅ | OFD 示例：唯一词“仅用于功能演示”命中 1 处并自动定位第 4 页，当前命中高亮；常见词“阿豆OFD”命中 150 处，结果列表 150 行、下一处 2/150、当前项唯一高亮、页面高亮 750 个字形段；PDF 搜索由后端测试覆盖 |
+| 2026-11-02 | 全文搜索真实文件 | JDK 25.0.5 | ✅ | 真实电子发票 OFD（1 页）关键词命中 1 处 / 144ms；404 页 PDF 用户手册“电池”命中 241 处、扫描 404/404 页、失败 0 页 / 4.76s（34 次轮询），片段与页码正确 |
+| 2026-11-02 | Windows 文件关联（打包版） | Windows 11 / Electron 45.1.0 | ✅ | 临时打包版启动自动注册 HKCU 两个 ProgID（OFD/PDF）、OpenWithProgids、RegisteredApplications/Capabilities；About 显示“已注册”；第二实例打开真实发票并聚焦；移除后三项键值均不存在，原有 `.ofd` 默认应用未被覆盖，配置已恢复 |
+| 2026-11-02 | Windows 文件图标 | Windows 11 / ICO 16–256px | ✅ | `AdouOFD.OFD` / `AdouOFD.PDF` 的 DefaultIcon 分别指向随包 `fileicons/ofd-file.ico`、`pdf-file.ico`；`.ofd`/`.pdf` OpenWith 与 Capabilities 映射到对应 ProgID；图标 16px 可辨、24px 起清晰；卸载清理后无遗留 |
+| 2026-11-02 | Inno Setup 安装包 | Inno Setup 6 / Windows 11 | ✅ | 安装包 180.8MB（SHA256 `22ee7843…`）；勾选关联安装后两个 ProgID/DefaultIcon/OpenWith/Capabilities 正确；同目录取消关联升级后注册项清理并写 `{"optedOut":true}`；启动安装版不自动回写；静默卸载后安装目录、配置与注册项均无残留；WPS `.ofd` 默认未覆盖 |
+| 2026-11-02 | Inno 版本升级 | 0.6.0 → 0.7.0 | ✅ | 0.6.0 安装到临时目录（勾选关联）；0.7.0 静默升级后版本 0.7.0、目录不变、后端 jar 为 0.7.0；未传 `/TASKS` 时保留已有文件关联与 `optedOut:false`；notices/licenses 随包存在；卸载后无残留 |
+| 2026-11-02 | 0.7.0 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.0-x64-inno.exe` 180.8MB，SHA256 `30a6d952…`；版本号统一为 0.7.0；设置页与关于许可、截图资产已更新 |
+| 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
+| 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
+| 2026-11-02 | 0.6.0 打包 | electron-builder 26.18.0 | ✅ | 安装包 192MB（SHA256 `98a5193b…`），解包 466MB；打包版使用 `resources/jre` 启动 1.24s，完整 UI 冒烟通过；未签名 |
+| 2026-11-02 | 合并文档 UI | Electron 45.1.0 | ✅ | 2 个文件（OFD 4 页 + PDF 3 页）；下移调整顺序生效；合并为 OFD 输出 7 页 / 195.2KB / 1.3s；结果可在阅读器打开 |
+| 2026-11-02 | 多标签与查看入口 | Electron 45.1.0 | ✅ | 批量列表“查看”打开结果、合并列表“查看”打开输入；2 个标签切换正常；多标签后页面滚动/缩略图正常；全部标签可关闭并回到空状态 |
+| 2026-11-02 | 品牌 UI | Electron 45.1.0 | ✅ | 混合版应用图标/侧栏标识、空状态吉祥物、引擎启动插画、关于页吉祥物与品牌语；奶油纸配色上线；完整 UI 冒烟通过 |
+| 2026-11-02 | 合并缺失资源修复 | JDK 25.0.5 | ✅ | 构造缺失图片资源的 OFD + PDF 合并为 OFD：自动补 3 个占位文件，输出 3 页 / 374KB；合并结果可打开、3 页均可渲染、文字层 176 段 |
+| 2026-11-02 | 合并样式修复 | JDK 25.0.5 | ✅ | 真实电子发票 + OFD + PDF 合并：自动展开 1 处 DrawParam 继承、清理 1 处无效 ColorSpace；渲染页面表格红框完整，不再丢失 |
 | 2026-10-30 | 界面精简与关于 | Electron 45.1.0 | ✅ | 侧栏仅保留文档查看/关于；引擎详情移入关于弹层；空状态精简；关于弹层展示版本与许可 |
 
 ## 14. 决策记录（ADR 摘要）
 
 1. **ADR-001 采用 Java sidecar 而非 JNI**：调试成本低、可独立测试、崩溃隔离；代价是多一个进程与本地 HTTP 攻击面，用回环 + Token 收敛。
-2. **ADR-002 锁定 ofdrw-full 2.3.7**：最新稳定、模块完整；升级必须跑 §9 回归。
+2. **ADR-002 使用 ofdrw-full 2.5.1**：最新稳定、模块完整，已移除 iText；升级必须跑 §9 回归。
 3. **ADR-003 使用 JDK 25 LTS + Spring Boot 4**：满足“最新稳定优先”；项目内自带 JDK，发布用 jlink，不依赖用户环境。
 4. **ADR-004 React + TypeScript + electron-vite**：UI 复杂度会随阅读器/任务队列增长，需要组件化与类型约束；不引入 UI 框架，控制体积。
 5. **ADR-005 转换默认新文件输出**：绝不原地修改用户文档，降低数据损失风险。
@@ -559,13 +661,14 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 
 - 设计：[docs/PRD.md](PRD.md)。
 - 压测：[docs/STRESS-TEST.md](STRESS-TEST.md)。
-- 引擎：`backend/`（Spring Boot 4.0.9 + ofdrw 2.3.7 + PDFBox 2.0.27，9 个测试全绿；OFD/PDF 统一句柄、目录与文字层提取）。
-- 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、应用导航折叠）。
-- 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
-- 界面截图：`docs/screenshots/`（空状态、关于、OFD/PDF 阅读器、目录、折叠、文字选择、800 页压测）。
-- 许可：[LICENSE](../LICENSE)、[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)。
+- 引擎：`backend/`（Spring Boot 4.0.9 + ofdrw 2.5.1 + PDFBox 3.0.8，39 个测试全绿；OFD/PDF 统一句柄、目录、文字层、全文搜索、格式转换、合并、缺失资源与样式修复）。
+- 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠）。
+- Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF 文件图标 ICO + PNG）。
+- 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/build-inno.mjs`、`scripts/inno/adou-ofd.iss`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
+- 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、文件图标、批量转换、合并文档、800 页压测）。
+- 许可：[LICENSE](../LICENSE)、[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)、`licenses/`（完整许可文本与 Apache NOTICE 汇总）。
 - 压力夹具：`backend/src/test/java/com/adou/ofd/StressFixtureGenerator.java`（生成到 `.tools/stress`，不纳入版本库）。
-- 安装包：本机已验证 NSIS 生成与运行（未签名，约 272MB；不纳入版本库）。
+- 安装包：本机已验证 Inno Setup 生成与运行（0.7.0，未签名，约 180.8MB，含文件关联安装任务；NSIS 备用包约 192MB；均不纳入版本库）。
 
 ### 15.2 本轮完成
 
@@ -573,11 +676,15 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - 阅读器导航面板“缩略图 / 目录”双页签；PDF Outline / OFD Outlines+Bookmarks 解析、跳页、高亮。
 - OFD 改为会话级 Reader + ImageMaker，多页渲染性能显著提升。
 - 大文件压力测试与报告：800 页 PDF、100 页/20MB 图片 PDF、91 页 OFD。
+- 合并文档：OFD/PDF 混合输入、列表顺序拖动/上下调整、输出格式选择、进度/取消/结果；合并任务与转换共享单工作线程。
+- 多标签查看与列表查看入口：最多 8 个标签，切换保留状态；批量/合并列表可直接“查看”文件或结果。
 - 页面文字层：PDF/OFD 框选复制，保留换行。
+- 全文搜索、Windows 文件关联与独立文件图标、单实例双击打开。
+- Inno Setup 安装包与安装任务、“设置”独立页、关于页开源许可声明、0.7.0 版本升级。
 
 ### 15.3 待用户确认
 
-1. **下一阶段优先级**：先补 M1.2 阅读能力（文本复制、搜索、旋转、PDF 注解/签章面板），还是先做 M2 PDF↔OFD 转换？
-2. **iText 许可路线**：仅保留 PDFBox 导出并尝试排除 iText，或以 AGPL 方式开源，或采购商业授权。
-3. **包体积**：M4 前是否投入 jlink 裁剪（目标安装包 <150MB）。
+1. **下一阶段优先级**：全文搜索、Windows 文件关联、设置页与 Inno 安装包已完成；下一步做页面旋转、最近文件，以及 OFD 拆分。
+2. **代码签名**：已确认当前阶段不做代码签名、不采购证书；发布包保持未签名。
+3. **OFD→PDF 字体体积**：是否迁移到 `PDFExporter` 或改用图像导出，待发布后单独评估。
 4. **视觉与图标**：当前豆绿/米白风格、缩略图 + 目录 + 悬浮缩放条布局是否保留。

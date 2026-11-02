@@ -1,7 +1,17 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { basename, dirname, join } from 'node:path'
 import { BackendManager } from './backend'
+import { parseDocumentPaths } from './document-args'
+import { readLegalNotices, revealLegalNotices } from './legal'
+import {
+  ensureRegisteredOnStartup,
+  getWindowsIntegration,
+  openDefaultAppChoice,
+  registerFileAssociations,
+  unregisterFileAssociations
+} from './windows-integration'
 import type { BackendInfo } from '../shared/types'
 
 const APP_NAME = '阿豆OFD'
@@ -12,12 +22,20 @@ app.setAppUserModelId('com.adou.ofd')
 let mainWindow: BrowserWindow | null = null
 let backend: BackendManager | null = null
 let quitting = false
+const pendingFiles: string[] = parseDocumentPaths(process.argv, process.cwd())
 
 const hasLock = app.requestSingleInstanceLock()
 if (!hasLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv, workingDirectory) => {
+    const files = parseDocumentPaths(argv, workingDirectory)
+    if (files.length > 0) {
+      pendingFiles.push(...files)
+      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isLoading()) {
+        mainWindow.webContents.send('app:open-files-available')
+      }
+    }
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.show()
@@ -39,6 +57,7 @@ if (!hasLock) {
     registerIpc()
     createWindow()
     void backend.start()
+    void ensureRegisteredOnStartup()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -155,6 +174,105 @@ function registerIpc(): void {
     return result.canceled ? null : result.filePaths[0]
   })
 
+  ipcMain.handle('dialog:open-documents', async () => {
+    // 自动化冒烟/压测：ADOU_TEST_OPEN_FILES 支持“分号分隔路径”或“路径清单 txt”
+    const autoFiles = process.env.ADOU_TEST_OPEN_FILES
+    if (autoFiles) {
+      if (autoFiles.toLowerCase().endsWith('.txt') && existsSync(autoFiles)) {
+        return readFileSync(autoFiles, 'utf8')
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+      }
+      return autoFiles.split(';').map((item) => item.trim()).filter((item) => item.length > 0)
+    }
+    const options: Electron.OpenDialogOptions = {
+      title: '选择 OFD / PDF 文档',
+      buttonLabel: '添加',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'OFD / PDF 文档', extensions: ['ofd', 'pdf'] },
+        { name: 'OFD 文档', extensions: ['ofd'] },
+        { name: 'PDF 文档', extensions: ['pdf'] }
+      ]
+    }
+    const result = mainWindow
+      ? await dialog.showOpenDialog(mainWindow, options)
+      : await dialog.showOpenDialog(options)
+    return result.canceled ? [] : result.filePaths
+  })
+
+  ipcMain.handle('dialog:pick-directory', async () => {
+    const autoDir = process.env.ADOU_TEST_OUTPUT_DIR
+    if (autoDir) {
+      return autoDir
+    }
+    const options: Electron.OpenDialogOptions = {
+      title: '选择转换结果保存目录',
+      buttonLabel: '选择',
+      properties: ['openDirectory', 'createDirectory']
+    }
+    const result = mainWindow
+      ? await dialog.showOpenDialog(mainWindow, options)
+      : await dialog.showOpenDialog(options)
+    return result.canceled || !result.filePaths[0] ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('dialog:save-conversion', async (_event, payload: unknown) => {
+    // 自动化冒烟：显式设置环境变量时跳过原生保存对话框
+    const autoSave = process.env.ADOU_TEST_SAVE_FILE
+    if (autoSave) {
+      return autoSave
+    }
+    const options = payload as { sourcePath?: unknown; target?: unknown } | null
+    const rawSource = options?.sourcePath
+    const rawTarget = options?.target
+    const sourcePath = typeof rawSource === 'string' ? rawSource : ''
+    const target = typeof rawTarget === 'string' ? rawTarget.toUpperCase() : ''
+    if (target !== 'PDF' && target !== 'OFD') {
+      return null
+    }
+    const extension = target.toLowerCase()
+    const base = sourcePath ? basename(sourcePath).replace(/\.[^.]+$/, '') : '阿豆OFD-转换结果'
+    const sourceDir = sourcePath ? dirname(sourcePath) : ''
+    const preferredDir =
+      sourceDir && !sourceDir.startsWith(tmpdir()) ? sourceDir : app.getPath('documents')
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: `转换为 ${target} 并保存`,
+      buttonLabel: '保存',
+      defaultPath: join(preferredDir, `${base}.${extension}`),
+      filters: [{ name: `${target} 文件`, extensions: [extension] }]
+    }
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, saveOptions)
+      : await dialog.showSaveDialog(saveOptions)
+    return result.canceled || !result.filePath ? null : result.filePath
+  })
+
+  ipcMain.handle('dialog:save-merge', async (_event, payload: unknown) => {
+    // 自动化冒烟：显式设置环境变量时跳过原生保存对话框
+    const autoSave = process.env.ADOU_TEST_MERGE_FILE
+    if (autoSave) {
+      return autoSave
+    }
+    const options = payload as { target?: unknown } | null
+    const target = typeof options?.target === 'string' ? options.target.toUpperCase() : ''
+    if (target !== 'PDF' && target !== 'OFD') {
+      return null
+    }
+    const extension = target.toLowerCase()
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: `合并为 ${target} 并保存`,
+      buttonLabel: '保存',
+      defaultPath: join(app.getPath('documents'), `合并文档.${extension}`),
+      filters: [{ name: `${target} 文件`, extensions: [extension] }]
+    }
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, saveOptions)
+      : await dialog.showSaveDialog(saveOptions)
+    return result.canceled || !result.filePath ? null : result.filePath
+  })
+
   ipcMain.handle('file:reveal', (_event, rawPath: unknown) => {
     if (typeof rawPath === 'string' && rawPath.length > 0) {
       shell.showItemInFolder(rawPath)
@@ -179,4 +297,19 @@ function registerIpc(): void {
       // 忽略非法链接
     }
   })
+
+  ipcMain.handle('app:take-pending-files', () => pendingFiles.splice(0))
+
+  ipcMain.handle('windows:integration', () => getWindowsIntegration())
+  ipcMain.handle('windows:register', () => registerFileAssociations())
+  ipcMain.handle('windows:unregister', () => unregisterFileAssociations())
+  ipcMain.handle('windows:open-default-choice', () => openDefaultAppChoice())
+  ipcMain.handle('windows:open-default-apps', async () => {
+    if (process.platform === 'win32') {
+      await shell.openExternal('ms-settings:defaultapps')
+    }
+  })
+
+  ipcMain.handle('legal:read', () => readLegalNotices())
+  ipcMain.handle('legal:reveal', () => revealLegalNotices())
 }

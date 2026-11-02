@@ -4,12 +4,19 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconInfo,
+  IconMerge,
+  IconSettings,
+  IconSwap,
   IconView
 } from './icons'
+
+export type AppView = 'viewer' | 'batch' | 'merge' | 'settings'
 
 interface SidebarProps {
   backend: BackendInfo
   collapsed: boolean
+  view: AppView
+  onNavigate: (view: AppView) => void
   onToggle: () => void
   appVersion?: string | null
   onAbout: () => void
@@ -26,6 +33,8 @@ const STATUS_TEXT: Record<BackendInfo['status'], string> = {
 export function Sidebar({
   backend,
   collapsed,
+  view,
+  onNavigate,
   onToggle,
   appVersion,
   onAbout,
@@ -34,7 +43,7 @@ export function Sidebar({
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="brand">
-        <BrandMark size={42} className="brand-mark" />
+        <BrandMark size={42} />
         <div className="brand-text">
           <div className="brand-name">
             阿豆<em>OFD</em>
@@ -54,10 +63,42 @@ export function Sidebar({
       </div>
 
       <nav className="nav" aria-label="主导航">
-        <div className="nav-item active" title="文档查看">
+        <button
+          className={`nav-item nav-button ${view === 'viewer' ? 'active' : ''}`}
+          data-action="nav-viewer"
+          onClick={() => onNavigate('viewer')}
+          title="文档查看"
+        >
           <IconView size={18} />
           <span>文档查看</span>
-        </div>
+        </button>
+        <button
+          className={`nav-item nav-button ${view === 'batch' ? 'active' : ''}`}
+          data-action="nav-batch"
+          onClick={() => onNavigate('batch')}
+          title="批量转换"
+        >
+          <IconSwap size={18} />
+          <span>批量转换</span>
+        </button>
+        <button
+          className={`nav-item nav-button ${view === 'merge' ? 'active' : ''}`}
+          data-action="nav-merge"
+          onClick={() => onNavigate('merge')}
+          title="合并文档"
+        >
+          <IconMerge size={18} />
+          <span>合并文档</span>
+        </button>
+        <button
+          className={`nav-item nav-button ${view === 'settings' ? 'active' : ''}`}
+          data-action="nav-settings"
+          onClick={() => onNavigate('settings')}
+          title="设置"
+        >
+          <IconSettings size={18} />
+          <span>设置</span>
+        </button>
         <button
           className="nav-item nav-button"
           data-action="about"
@@ -79,7 +120,7 @@ export function Sidebar({
 
       {!collapsed ? (
         <div className="sidebar-foot">
-          <span>v{appVersion ?? '0.5.2'}</span>
+          <span>v{appVersion ?? '0.7.0'}</span>
           <span>MIT</span>
         </div>
       ) : null}

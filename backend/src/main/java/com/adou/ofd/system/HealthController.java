@@ -17,8 +17,8 @@ public class HealthController {
     private final String startedAt = Instant.now().toString();
 
     public HealthController(
-            @Value("${adou.version:0.5.2}") String appVersion,
-            @Value("${adou.ofdrw-version:2.3.7}") String ofdrwVersion) {
+            @Value("${adou.version:0.7.0}") String appVersion,
+            @Value("${adou.ofdrw-version:2.5.1}") String ofdrwVersion) {
         this.appVersion = appVersion;
         this.ofdrwVersion = ofdrwVersion;
     }

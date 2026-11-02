@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { BrandMark, IconFile, IconFolder, IconSpark } from './icons'
+import mascotEmpty from '../assets/mascot-empty.webp'
+import mascotLoading from '../assets/mascot-loading.webp'
+import { IconFile, IconFolder, IconSpark } from './icons'
 
 interface EmptyStateProps {
   ready: boolean
@@ -36,24 +38,18 @@ export function EmptyState({
         onDropFiles(event.dataTransfer.files)
       }}
     >
-      <div className="hero-art" aria-hidden="true">
-        <div className="paper paper-back" />
-        <div className="paper paper-front">
-          <span className="paper-tag">OFD · PDF</span>
-          <span className="paper-line w80" />
-          <span className="paper-line w95" />
-          <span className="paper-line w60" />
-          <span className="paper-line w85" />
-          <span className="paper-line w40" />
-        </div>
-        <div className="hero-bean">
-          <BrandMark size={58} />
-        </div>
+      <div className="hero-art-mascot" aria-hidden="true">
+        <img
+          className={engineStarting ? 'is-loading' : undefined}
+          src={engineStarting ? mascotLoading : mascotEmpty}
+          alt=""
+          draggable={false}
+        />
       </div>
 
-      <h2>{dragOver ? '松开即可打开' : '打开一份 OFD 或 PDF 文档'}</h2>
+      <h2>{dragOver ? '松开即可打开' : '把文档交给阿豆'}</h2>
       <p>
-        拖拽或选择本地文件。电子发票、公文、PDF 合同均可查看，
+        拖拽或选择本地文件。电子发票、公文、PDF 合同都可以安静地读，
         文件只在本机处理。
       </p>
 

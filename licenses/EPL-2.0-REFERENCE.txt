@@ -1,0 +1,8 @@
+Eclipse Public License 2.0 (EPL-2.0)
+
+The full text of the Eclipse Public License 2.0 is available at:
+https://www.eclipse.org/legal/epl-2.0/
+
+EPL-2.0 permits recipients to obtain the license text by URI. The components
+using EPL-2.0 in this distribution are listed in THIRD-PARTY-NOTICES.md.
+No EPL-covered source files are modified by 阿豆OFD.

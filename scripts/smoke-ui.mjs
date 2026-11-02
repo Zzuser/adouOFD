@@ -7,7 +7,7 @@
  * 运行：node scripts/smoke-ui.mjs
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -44,13 +44,33 @@ if (!attachPort) {
   }
 }
 mkdirSync(outDir, { recursive: true })
+const convertOutput = join(outDir, 'smoke-convert.ofd')
+rmSync(convertOutput, { force: true })
+const batchInputsFile = join(outDir, 'smoke-batch-inputs.txt')
+const batchOutDir = join(outDir, 'smoke-batch')
+rmSync(batchInputsFile, { force: true })
+rmSync(batchOutDir, { recursive: true, force: true })
+const mergeOutput = join(outDir, 'smoke-merge.ofd')
+rmSync(mergeOutput, { force: true })
 
 const errors = []
 let child = null
 if (!attachPort) {
-  const childEnv = { ...process.env, ELECTRON_ENABLE_LOGGING: '0' }
+  const childEnv = {
+    ...process.env,
+    ELECTRON_ENABLE_LOGGING: '0',
+    ADOU_TEST_SAVE_FILE: convertOutput,
+    ADOU_TEST_OPEN_FILES: batchInputsFile,
+    ADOU_TEST_OUTPUT_DIR: batchOutDir,
+    ADOU_TEST_MERGE_FILE: mergeOutput
+  }
   delete childEnv.ELECTRON_RUN_AS_NODE
-  child = spawn(electronExe, ['.', `--remote-debugging-port=${debugPort}`], {
+  // 无 GPU 的虚拟机/远程桌面下 Chromium GPU 进程会崩溃，可用 ADOU_SMOKE_GPU_OFF=1 降级
+  const launchArgs = ['.', `--remote-debugging-port=${debugPort}`]
+  if (process.env.ADOU_SMOKE_GPU_OFF === '1') {
+    launchArgs.push('--disable-gpu', '--in-process-gpu', '--no-sandbox')
+  }
+  child = spawn(electronExe, launchArgs, {
     cwd: desktop,
     env: childEnv,
     stdio: ['ignore', 'pipe', 'pipe']
@@ -77,7 +97,9 @@ try {
     errors.push(`exception: ${params.exceptionDetails.text}`)
   })
   cdp.on('Log.entryAdded', (params) => {
-    if (params.entry.level === 'error') errors.push(`console: ${params.entry.text}`)
+    if (params.entry.level === 'error') {
+      errors.push(`console: ${params.entry.text}${params.entry.url ? ` (${params.entry.url})` : ''}`)
+    }
   })
 
   await waitFor(cdp, "document.querySelector('.engine-mini.ready') !== null", 40_000)
@@ -96,12 +118,58 @@ try {
   await sleep(200)
   const aboutVersions = await evaluate(cdp, "document.querySelector('.about-versions')?.innerText")
   console.log('关于/版本：', JSON.stringify(aboutVersions))
+  const aboutLicenses = await evaluate(
+    cdp,
+    "document.querySelector('.about-licenses')?.innerText.replace(/\\n/g, ' | ')"
+  )
+  console.log('关于/许可：', JSON.stringify(aboutLicenses))
+  if (!String(aboutLicenses).includes('开源许可') || !String(aboutLicenses).includes('Electron')) {
+    errors.push('关于页开源许可区未正确显示')
+  }
+  await waitFor(
+    cdp,
+    "(() => { const button = document.querySelector('[data-action=\"view-third-party\"]'); return Boolean(button && !button.disabled) })()",
+    10_000
+  )
+  await evaluate(cdp, "document.querySelector('[data-action=\"view-third-party\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.license-dialog') !== null", 10_000)
+  await sleep(350)
+  const licenseText = await evaluate(cdp, "document.querySelector('.license-text')?.innerText")
+  console.log('第三方声明长度：', String(licenseText ?? '').length)
+  if (!String(licenseText).includes('第三方组件') || !String(licenseText).includes('Apache')) {
+    errors.push('第三方许可声明未加载')
+  }
+  const licenseShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-license.png`), Buffer.from(licenseShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-license.png`)
+  await evaluate(cdp, "document.querySelector('[data-action=\"license-close\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.license-dialog') === null", 5_000)
   const aboutShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-about.png`), Buffer.from(aboutShot.data, 'base64'))
   console.log(`截图：.tools/${shotPrefix}-about.png`)
   await evaluate(cdp, "document.querySelector('.about-close')?.click()")
   await waitFor(cdp, "document.querySelector('.about-dialog') === null", 5_000)
   await sleep(200)
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-settings\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.settings-page') !== null", 5_000)
+  const settingsTitle = await evaluate(cdp, "document.querySelector('.topbar-title h1')?.textContent")
+  const integrationText = await evaluate(
+    cdp,
+    "document.querySelector('.integration-panel')?.innerText.replace(/\\n/g, ' | ')"
+  )
+  console.log('设置页：', settingsTitle, JSON.stringify(integrationText))
+  if (settingsTitle !== '设置') {
+    errors.push('设置页未打开')
+  }
+  if (!String(integrationText).includes('开发模式')) {
+    errors.push('设置页 Windows 文件关联未显示开发模式')
+  }
+  const settingsShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-settings.png`), Buffer.from(settingsShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-settings.png`)
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-viewer\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.main')?.dataset.view === 'viewer'", 5_000)
 
   const security = await evaluate(
     cdp,
@@ -130,13 +198,13 @@ try {
   await evaluate(cdp, "document.querySelector('[data-action=\"demo-ofd\"]')?.click()")
   await waitFor(
     cdp,
-    "document.querySelector('.page-slot[data-page=\"1\"] img.loaded') !== null",
+    "document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page=\"1\"] img.loaded') !== null",
     60_000
   )
   await sleep(500)
 
-  const docName = await evaluate(cdp, "document.querySelector('.doc-name')?.textContent")
-  const totalText = await evaluate(cdp, "document.querySelector('.page-total')?.textContent")
+  const docName = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent")
+  const totalText = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .page-total')?.textContent")
   const pageCount = Number.parseInt(String(totalText ?? '').replace(/\D/g, ''), 10)
   const thumbCount = await evaluate(cdp, "document.querySelectorAll('.thumb-item').length")
   console.log('文档：', docName, '页数：', pageCount, '缩略图：', thumbCount)
@@ -365,6 +433,78 @@ try {
     console.log('缩略图跳页：3')
   }
 
+  // ---- 全文搜索 ----
+  await evaluate(cdp, "document.querySelector('[data-action=\"search\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.search-bar') !== null", 5_000)
+  const setSearchValue = async (value) => {
+    const ok = await evaluate(
+      cdp,
+      `(() => {
+        const input = document.querySelector('.viewer-pane:not([hidden]) .search-input')
+        if (!input) return false
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        setter.call(input, ${JSON.stringify(value)})
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        return true
+      })()`
+    )
+    if (!ok) errors.push('搜索输入框不可用')
+  }
+
+  await setSearchValue('仅用于功能演示')
+  await waitFor(
+    cdp,
+    "document.querySelector('.search-status')?.textContent?.includes('找到 1 处')",
+    30_000
+  )
+  await waitFor(cdp, "document.querySelectorAll('.search-row').length === 1", 15_000)
+  await waitFor(cdp, "document.querySelector('.page-input')?.value === '4'", 15_000)
+  await waitFor(
+    cdp,
+    "document.querySelector('.page-slot[data-page=\"4\"] .search-hit.active') !== null",
+    30_000
+  )
+  const searchSnippet = await evaluate(
+    cdp,
+    "document.querySelector('.search-row')?.innerText?.replace(/\\n/g, ' ')"
+  )
+  console.log('全文搜索（唯一命中）：', searchSnippet)
+  const searchShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-search.png`), Buffer.from(searchShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-search.png`)
+
+  await setSearchValue('阿豆OFD')
+  await waitFor(
+    cdp,
+    "(() => { const text = document.querySelector('.search-status')?.textContent ?? ''; return text.includes('找到') && Number.parseInt(text.replace(/\\D/g, ''), 10) > 1 })()",
+    30_000
+  )
+  await waitFor(cdp, "document.querySelectorAll('.search-row').length > 3", 15_000)
+  await waitFor(cdp, "document.querySelector('.page-input')?.value === '1'", 15_000)
+  await evaluate(cdp, "document.querySelector('[data-action=\"search-next\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.search-index')?.textContent?.startsWith('2/')", 10_000)
+  const searchState = await evaluate(
+    cdp,
+    `(() => ({
+      status: document.querySelector('.search-status')?.textContent?.trim(),
+      index: document.querySelector('.search-index')?.textContent?.trim(),
+      rows: document.querySelectorAll('.search-row').length,
+      activeRows: document.querySelectorAll('.search-row.active').length,
+      marks: document.querySelectorAll('.search-hit').length,
+      activeMarks: document.querySelectorAll('.search-hit.active').length
+    }))()`
+  )
+  console.log('全文搜索（多命中）：', JSON.stringify(searchState))
+  if (searchState.activeRows !== 1) {
+    errors.push('搜索结果当前项未唯一高亮')
+  }
+  if (searchState.marks < 1 || searchState.activeMarks < 1) {
+    errors.push('页面内搜索命中未高亮')
+  }
+  await evaluate(cdp, "document.querySelector('[data-action=\"search-close\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.search-bar') === null", 5_000)
+  await waitFor(cdp, "document.querySelectorAll('.search-hit').length === 0", 5_000)
+
   if (!docName || !secondPage) {
     errors.push('未获取到文档标题或页码')
   }
@@ -379,7 +519,7 @@ try {
   )
   await waitFor(
     cdp,
-    "document.querySelector('.page-slot[data-page=\"1\"] img.loaded') !== null",
+    "document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page=\"1\"] img.loaded') !== null",
     60_000
   )
   await waitFor(
@@ -416,8 +556,8 @@ try {
   console.log(`截图：.tools/${shotPrefix}-pdf-text.png`)
   await evaluate(cdp, "window.getSelection()?.removeAllRanges(); true")
 
-  const pdfName = await evaluate(cdp, "document.querySelector('.doc-name')?.textContent")
-  const pdfTotalText = await evaluate(cdp, "document.querySelector('.page-total')?.textContent")
+  const pdfName = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent")
+  const pdfTotalText = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .page-total')?.textContent")
   const pdfPages = Number.parseInt(String(pdfTotalText ?? '').replace(/\D/g, ''), 10)
   const pdfThumbs = await evaluate(cdp, "document.querySelectorAll('.thumb-item').length")
   console.log('PDF：', pdfName, '页数：', pdfPages, '缩略图：', pdfThumbs)
@@ -473,7 +613,276 @@ try {
   )
   console.log('目录跳页：3')
 
-  await evaluate(cdp, "document.querySelector('[data-action=\"close\"]')?.click()")
+  // ---- PDF → OFD 转换（真实引擎 + 保存对话框测试钩子） ----
+  await evaluate(cdp, "document.querySelector('[data-action=\"convert\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.convert-dialog') !== null", 5_000)
+  await sleep(300)
+  const convertTarget = await evaluate(
+    cdp,
+    "document.querySelector('.convert-card.target .convert-name')?.textContent?.trim()"
+  )
+  console.log('转换目标格式：', convertTarget)
+  if (convertTarget !== 'OFD') {
+    errors.push('转换对话框未按源格式推荐目标格式')
+  }
+  const convertShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-convert.png`), Buffer.from(convertShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-convert.png`)
+
+  await evaluate(cdp, "document.querySelector('.convert-actions .btn.primary')?.click()")
+  await waitFor(cdp, "document.querySelector('.convert-result') !== null", 120_000)
+  const convertReport = await evaluate(cdp, "document.querySelector('.convert-result')?.innerText")
+  const convertSaved = await evaluate(
+    cdp,
+    "document.querySelector('.convert-saved')?.textContent?.trim()"
+  )
+  console.log('转换结果：', JSON.stringify(convertReport))
+  console.log('转换输出：', convertSaved)
+  if (!convertSaved || !convertSaved.toLowerCase().endsWith('.ofd')) {
+    errors.push('转换输出路径异常')
+  }
+  if (!existsSync(convertOutput)) {
+    errors.push('转换未生成输出文件')
+  } else {
+    console.log('转换输出体积：', statSync(convertOutput).size)
+  }
+  const convertDoneShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-convert-done.png`), Buffer.from(convertDoneShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-convert-done.png`)
+  await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.convert-actions button')).find((button) => button.textContent?.trim() === '关闭')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.convert-dialog') === null", 5_000)
+
+  // ---- 单实例 / 命令行打开（模拟文件关联双击） ----
+  const secondEnv = { ...process.env }
+  delete secondEnv.ELECTRON_RUN_AS_NODE
+  const secondInstance = spawn(electronExe, ['.', convertOutput], {
+    cwd: desktop,
+    env: secondEnv,
+    stdio: 'ignore'
+  })
+  await new Promise((resolve) => secondInstance.once('exit', resolve))
+  await waitFor(cdp, "document.querySelectorAll('.doc-tab').length === 2", 30_000)
+  await waitFor(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('smoke-convert')",
+    30_000
+  )
+  console.log('命令行打开：第二实例已并入当前窗口（2 个标签）')
+  await evaluate(
+    cdp,
+    "document.querySelector('.doc-tab.active [data-action=\"doc-tab-close\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelectorAll('.doc-tab').length === 1", 15_000)
+  await waitFor(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) .format-badge')?.textContent?.trim() === 'PDF'",
+    10_000
+  )
+
+  // ---- 批量转换标签页 ----
+  const batchInputs = await evaluate(
+    cdp,
+    `(async () => {
+      const info = await window.adou.getBackendInfo()
+      const headers = { 'X-ADou-Token': info.token, 'Content-Type': 'application/json' }
+      const call = async (path) => (await fetch('http://127.0.0.1:' + info.port + path, { method: 'POST', headers })).json()
+      const ofd = await call('/api/documents/demo')
+      const pdf = await call('/api/documents/demo/pdf')
+      return [ofd.path, pdf.path]
+    })()`
+  )
+  writeFileSync(batchInputsFile, batchInputs.join('\n'), 'utf8')
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-batch\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.batch-drop') !== null", 5_000)
+  const batchTitle = await evaluate(cdp, "document.querySelector('.topbar-title h1')?.textContent")
+  if (batchTitle !== '批量转换') {
+    errors.push('批量转换标签页未打开')
+  }
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"batch-add\"]')?.click()")
+  await waitFor(cdp, "document.querySelectorAll('.batch-row').length === 2", 30_000)
+  await waitFor(
+    cdp,
+    "document.querySelectorAll('.batch-row[data-batch-row=\"pending\"]').length === 2",
+    30_000
+  )
+  const batchMeta = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.batch-row')).map((row) => row.innerText.replace(/\\n/g, ' | '))"
+  )
+  console.log('批量文件：', JSON.stringify(batchMeta))
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"batch-output\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.batch-dir')?.textContent?.includes('smoke-batch')", 5_000)
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"batch-start\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelectorAll('.batch-row[data-batch-row=\"done\"]').length === 2",
+    120_000
+  )
+  const batchSummary = await evaluate(
+    cdp,
+    "document.querySelector('.batch-summary')?.innerText.replace(/\\n/g, ' ')"
+  )
+  console.log('批量汇总：', batchSummary)
+  const batchShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-batch.png`), Buffer.from(batchShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-batch.png`)
+
+  const batchFiles = existsSync(batchOutDir) ? readdirSync(batchOutDir) : []
+  console.log('批量输出：', batchFiles.join(', '))
+  if (batchFiles.length !== 2) {
+    errors.push(`批量转换输出数量异常：${batchFiles.length}`)
+  }
+
+  // ---- 批量列表“查看” + 多标签 ----
+  await evaluate(
+    cdp,
+    "document.querySelector('[data-action=\"batch-view\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.main')?.dataset.view === 'viewer'", 10_000)
+  await waitFor(cdp, "document.querySelectorAll('.doc-tab').length === 2", 15_000)
+  const batchViewName = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent")
+  console.log('批量查看结果：', batchViewName)
+  if (!String(batchViewName).includes('示例文档.pdf')) {
+    errors.push('批量列表查看按钮未打开转换结果')
+  }
+  await evaluate(
+    cdp,
+    "document.querySelectorAll('.doc-tab')[0]?.querySelector('[data-action=\"doc-tab\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('PDF示例.pdf')", 10_000)
+  await evaluate(
+    cdp,
+    "document.querySelectorAll('.doc-tab')[1]?.querySelector('[data-action=\"doc-tab\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('示例文档.pdf')", 10_000)
+  console.log('标签切换：2 个标签正常')
+  const tabsShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-tabs.png`), Buffer.from(tabsShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-tabs.png`)
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-batch\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.batch-list') !== null", 5_000)
+
+  // ---- 合并标签页 ----
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-merge\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('[data-action=\"merge-add\"]') !== null", 5_000)
+  const mergeTitle = await evaluate(cdp, "document.querySelector('.topbar-title h1')?.textContent")
+  if (mergeTitle !== '合并文档') {
+    errors.push('合并标签页未打开')
+  }
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"merge-add\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelectorAll('.merge-row[data-merge-row=\"ready\"]').length === 2",
+    30_000
+  )
+  const mergeOrderBefore = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.merge-row .batch-name')).map((node) => node.textContent)"
+  )
+  await evaluate(
+    cdp,
+    "document.querySelector('[data-merge-index=\"0\"] [data-action=\"merge-down\"]')?.click()"
+  )
+  await sleep(250)
+  const mergeOrderAfter = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.merge-row .batch-name')).map((node) => node.textContent)"
+  )
+  console.log('合并顺序：', JSON.stringify(mergeOrderBefore), '→', JSON.stringify(mergeOrderAfter))
+  if (
+    mergeOrderBefore.length !== 2 ||
+    mergeOrderAfter[0] !== mergeOrderBefore[1] ||
+    mergeOrderAfter[1] !== mergeOrderBefore[0]
+  ) {
+    errors.push('合并列表顺序调整未生效')
+  }
+
+  await evaluate(
+    cdp,
+    "document.querySelector('[data-merge-index=\"0\"] [data-action=\"merge-view\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.main')?.dataset.view === 'viewer'", 10_000)
+  await waitFor(cdp, "document.querySelectorAll('.doc-tab').length === 3", 15_000)
+  const mergeViewName = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent")
+  console.log('合并列表查看：', mergeViewName)
+  if (!String(mergeViewName).includes('PDF示例.pdf')) {
+    errors.push('合并列表查看按钮未打开文件')
+  }
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-merge\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('[data-action=\"merge-start\"]') !== null", 5_000)
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"merge-format-ofd\"]')?.click()")
+  await evaluate(cdp, "document.querySelector('[data-action=\"merge-output\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('.merge-output-path')?.textContent?.includes('smoke-merge')",
+    5_000
+  )
+  const mergeShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-merge.png`), Buffer.from(mergeShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-merge.png`)
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"merge-start\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('[data-merge-result=\"done\"]') !== null", 120_000)
+  const mergeResult = await evaluate(
+    cdp,
+    "document.querySelector('[data-merge-result=\"done\"]')?.innerText.replace(/\\n/g, ' | ')"
+  )
+  console.log('合并结果：', JSON.stringify(mergeResult))
+  if (!String(mergeResult).includes('7 页')) {
+    errors.push('合并结果页数不是 7 页')
+  }
+  if (!existsSync(mergeOutput)) {
+    errors.push('合并未生成输出文件')
+  } else {
+    console.log('合并输出体积：', statSync(mergeOutput).size)
+  }
+
+  await evaluate(cdp, "document.querySelector('.merge-result-actions .btn')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('.main')?.dataset.view === 'viewer' && document.querySelector('.viewer-pane:not([hidden]) .page-total')?.textContent?.includes('7')",
+    60_000
+  )
+  await waitFor(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page=\"1\"] img.loaded') !== null",
+    60_000
+  )
+  const mergedPages = await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) .page-total')?.textContent")
+  console.log('合并文档打开页数：', mergedPages)
+  await waitFor(cdp, "document.querySelectorAll('.doc-tab').length === 4", 15_000)
+  const mergeOpenShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-merge-open.png`), Buffer.from(mergeOpenShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-merge-open.png`)
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"nav-viewer\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.main')?.dataset.view === 'viewer'", 5_000)
+
+  const tabsLeft = await evaluate(
+    cdp,
+    `(async () => {
+      for (let index = 0; index < 12; index += 1) {
+        const close = document.querySelector('[data-action="doc-tab-close"]')
+        if (!close) break
+        close.click()
+        await new Promise((resolve) => setTimeout(resolve, 120))
+      }
+      return document.querySelectorAll('.doc-tab').length
+    })()`
+  )
+  console.log('关闭全部标签后剩余：', tabsLeft)
+  if (tabsLeft !== 0) {
+    errors.push('标签未全部关闭')
+  }
   await waitFor(cdp, "document.querySelector('.empty') !== null", 15_000)
 
   await evaluate(cdp, "document.querySelector('[data-action=\"sidebar-toggle\"]')?.click()")
@@ -507,7 +916,8 @@ try {
   }
 
   await evaluate(cdp, 'setTimeout(() => window.close(), 50); true')
-  await sleep(2500)
+  // before-quit 会等待 Java 引擎退出，留足时间避免残留实例占用单实例锁
+  await sleep(6000)
 
   if (errors.length > 0) {
     console.error('运行时错误：')

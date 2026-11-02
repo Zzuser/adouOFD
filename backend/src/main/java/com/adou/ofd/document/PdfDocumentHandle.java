@@ -1,5 +1,6 @@
 package com.adou.ofd.document;
 
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -69,7 +70,8 @@ public final class PdfDocumentHandle implements DocumentHandle {
         boolean hasSignature;
         try {
             hasSignature = !document.getSignatureDictionaries().isEmpty();
-        } catch (IOException ex) {
+        } catch (RuntimeException ex) {
+            // PDFBox 3 解析签名失败时不抛 IOException
             hasSignature = false;
         }
         this.signed = hasSignature;
@@ -82,7 +84,8 @@ public final class PdfDocumentHandle implements DocumentHandle {
                 .setTempDir(scratchDir.toFile());
         PDDocument document = null;
         try {
-            document = PDDocument.load(path.toFile(), memory);
+            // PDFBox 3 用 StreamCacheCreateFunction 代替 MemoryUsageSetting 参数
+            document = Loader.loadPDF(path.toFile(), memory.streamCache);
             return new PdfDocumentHandle(document, workDir);
         } catch (IOException | RuntimeException ex) {
             if (document != null) {
