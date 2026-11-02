@@ -134,15 +134,16 @@ class ConversionServiceTest {
 
     @Test
     void plansShardSizeAndWorkersByHeap() {
-        assertEquals(1, ConversionEngine.planWorkers(1024));
-        assertEquals(2, ConversionEngine.planWorkers(2048));
-        assertEquals(3, ConversionEngine.planWorkers(3072));
+        assertEquals(1, ConversionEngine.planWorkers(1024, 8));
+        assertEquals(2, ConversionEngine.planWorkers(2048, 8));
+        assertEquals(3, ConversionEngine.planWorkers(3072, 8));
+        assertEquals(1, ConversionEngine.planWorkers(3072, 2), "低 CPU 机器不能超过 CPU/2");
 
         // 目标约 10 片；同时受单片内存预算约束（2G 堆 / 2 线程 → 最多 38 页一片）
-        assertEquals(20, ConversionEngine.planShardPages(200, 2048));
-        assertEquals(38, ConversionEngine.planShardPages(404, 2048));
-        assertEquals(38, ConversionEngine.planShardPages(2000, 2048), "超大文档也不能让单片超过内存预算");
-        assertEquals(20, ConversionEngine.planShardPages(60, 1024), "单片不小于 20 页");
+        assertEquals(20, ConversionEngine.planShardPages(200, 2048, 2));
+        assertEquals(38, ConversionEngine.planShardPages(404, 2048, 2));
+        assertEquals(38, ConversionEngine.planShardPages(2000, 2048, 2), "超大文档也不能让单片超过内存预算");
+        assertEquals(20, ConversionEngine.planShardPages(60, 1024, 1), "单片不小于 20 页");
     }
 
     @Test

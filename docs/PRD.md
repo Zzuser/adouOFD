@@ -468,7 +468,7 @@ DocumentHandle {
 
 ### 7.3 实测与待办
 
-- 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `e80e1799…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
+- 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `4baae9d3…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
 - Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
 - 当前阶段不做代码签名、不采购证书；发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
 - 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
@@ -634,7 +634,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-11-02 | Windows 文件图标 | Windows 11 / ICO 16–256px | ✅ | `AdouOFD.OFD` / `AdouOFD.PDF` 的 DefaultIcon 分别指向随包 `fileicons/ofd-file.ico`、`pdf-file.ico`；`.ofd`/`.pdf` OpenWith 与 Capabilities 映射到对应 ProgID；图标 16px 可辨、24px 起清晰；卸载清理后无遗留 |
 | 2026-11-02 | Inno Setup 安装包 | Inno Setup 6 / Windows 11 | ✅ | 安装包 180.8MB（SHA256 `22ee7843…`）；勾选关联安装后两个 ProgID/DefaultIcon/OpenWith/Capabilities 正确；同目录取消关联升级后注册项清理并写 `{"optedOut":true}`；启动安装版不自动回写；静默卸载后安装目录、配置与注册项均无残留；WPS `.ofd` 默认未覆盖 |
 | 2026-11-02 | Inno 版本升级 | 0.6.0 → 0.7.0 | ✅ | 0.6.0 安装到临时目录（勾选关联）；0.7.0 静默升级后版本 0.7.0、目录不变、后端 jar 为 0.7.0；未传 `/TASKS` 时保留已有文件关联与 `optedOut:false`；notices/licenses 随包存在；卸载后无残留 |
-| 2026-11-02 | 0.7.1 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.1-x64-inno.exe` 180.8MB，SHA256 `e80e1799…`；统一 50px 单行页头、功能化文案、隐私政策、GitHub CI/Release 工作流、签名申请材料；39/39 后端测试与 UI 冒烟通过 |
+| 2026-11-02 | 0.7.1 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.1-x64-inno.exe` 180.8MB，SHA256 `4baae9d3…`；统一 50px 单行页头、功能化文案、隐私政策、GitHub CI/Release 工作流、签名申请材料；39/39 后端测试与 UI 冒烟通过 |
 | 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
 | 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
 | 2026-11-02 | 0.6.0 打包 | electron-builder 26.18.0 | ✅ | 安装包 192MB（SHA256 `98a5193b…`），解包 466MB；打包版使用 `resources/jre` 启动 1.24s，完整 UI 冒烟通过；未签名 |

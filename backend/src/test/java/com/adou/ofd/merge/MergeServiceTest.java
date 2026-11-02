@@ -149,19 +149,21 @@ class MergeServiceTest {
     void mergesMixedInputsToPdfInListOrder() throws Exception {
         MergeService service = newService(new ConversionEngine());
         DocumentSummary ofd = documents.openDemo();
-        DocumentSummary pdf = documents.openPdfDemo();
+        Path first = createTextPdf("mixed-first.pdf", "FIRST", 1);
         Path output = workDir.resolve("mixed.pdf");
 
         MergeJob job = service.submit(new MergeRequest(
-                List.of(pdf.path(), ofd.path()), "PDF", output.toString(), false));
+                List.of(first.toString(), ofd.path()), "PDF", output.toString(), false));
         MergeJob done = waitForTerminal(service, job.id());
 
         assertEquals("SUCCEEDED", done.status(), done.errorMessage());
-        assertEquals(7, done.report().outputPages());
+        assertEquals(5, done.report().outputPages());
         try (PDDocument document = Loader.loadPDF(output.toFile())) {
-            String text = new PDFTextStripper().getText(document);
-            assertTrue(text.indexOf("PDF 预览示例") < text.indexOf("免费 · 离线"),
-                    "PDF 输入在前时应先出现 PDF 内容：" + text.substring(0, Math.min(120, text.length())));
+            PDFTextStripper firstPage = new PDFTextStripper();
+            firstPage.setStartPage(1);
+            firstPage.setEndPage(1);
+            assertTrue(firstPage.getText(document).contains("FIRST"),
+                    "PDF 输入在前时第 1 页应来自 PDF");
         }
     }
 

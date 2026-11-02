@@ -51,7 +51,7 @@ VersionInfoProductName=阿豆OFD
 VersionInfoProductVersion={#AppVersion}
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesesimplified"; MessagesFile: "{#RepoRoot}\scripts\inno\ChineseSimplified.isl"
 
 [Tasks]
 Name: "associate"; Description: "关联 .ofd / .pdf 文件类型（加入“打开方式”，不覆盖现有默认应用）"; GroupDescription: "文件关联："; Flags: checkedonce

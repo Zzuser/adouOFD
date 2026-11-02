@@ -367,7 +367,10 @@ public class ConversionEngine {
      * 目标 10 片左右；同时受单片内存预算约束，避免大文档出现单片过大。
      */
     static int planShardPages(int totalPages, long heapMb) {
-        int workers = planWorkers(heapMb);
+        return planShardPages(totalPages, heapMb, planWorkers(heapMb));
+    }
+
+    static int planShardPages(int totalPages, long heapMb, int workers) {
         long perShardBudgetMb = heapMb * 45 / 100 / Math.max(1, workers);
         int byMemory = (int) Math.max(SHARD_MIN_PAGES, perShardBudgetMb / HEAP_MB_PER_PAGE_SHARD);
         int byTarget = (int) Math.ceil(totalPages / (double) SHARD_TARGET_COUNT);
@@ -379,8 +382,12 @@ public class ConversionEngine {
      * 实测：2GB 堆下 2 线程稳定（峰值约 1.4GB），每线程约需 900MB 余量。
      */
     static int planWorkers(long heapMb) {
+        return planWorkers(heapMb, Runtime.getRuntime().availableProcessors());
+    }
+
+    static int planWorkers(long heapMb, int cpuCount) {
         int byHeap = (int) Math.max(1, Math.min(MAX_SHARD_WORKERS, heapMb / MB_PER_WORKER));
-        int byCpu = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+        int byCpu = Math.max(1, cpuCount / 2);
         return Math.max(1, Math.min(byHeap, byCpu));
     }
 
