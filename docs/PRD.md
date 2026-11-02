@@ -439,7 +439,7 @@ DocumentHandle {
 
 - 运行时组件、版权声明与许可名汇总在 `THIRD-PARTY-NOTICES.md`；完整许可文本与 Apache NOTICE 汇总随包放在 `resources/notices/licenses/`。
 - “关于”提供“第三方声明 / MIT 许可 / 打开许可目录”入口；Electron 的 `LICENSE.electron.txt` 与 `LICENSES.chromium.html` 保留在安装目录。
-- 组件清单覆盖 Electron、React、Node.js、ofdrw、PDFBox、Spring Boot、Tomcat、Jackson、Batik、BouncyCastle、Logback、UJMP、TwelveMonkeys、Jaxen、Dom4j、JSON-java、Inno Setup 等。
+- 组件清单覆盖 Electron、React、Node.js、ofdrw、PDFBox、Spring Boot、Tomcat、Jackson、Batik、BouncyCastle、Logback、UJMP、TwelveMonkeys、Jaxen、Dom4j、Inno Setup 等。
 
 ---
 
@@ -544,12 +544,13 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - Electron / React / Node.js / ofdrw / SLF4J / BouncyCastle：MIT（BouncyCastle 为 MIT 风格）。
 - PDFBox / FontBox / Batik / Spring Boot / Tomcat / Jackson / Apache Commons 等：Apache-2.0。
 - Logback：EPL-2.0 或 LGPL-2.1；Jakarta Annotation API：EPL-2.0 或 GPL-2.0 with Classpath Exception。
-- UJMP Core：LGPL-3.0（未修改的传递依赖）；JSON-java：JSON License；TwelveMonkeys/Jaxen：BSD-3-Clause；Dom4j：BSD 风格（Plexus）。
+- UJMP Core：LGPL-3.0（未修改的传递依赖）；TwelveMonkeys/Jaxen：BSD-3-Clause；Dom4j：BSD 风格（Plexus）。
+- **JSON-java 已排除**：UJMP 传递引入的 `org.json:json`（JSON License，非 OSI 批准）已在 `backend/pom.xml` 中排除，发行包不含该组件。
 - **iText 已移除**：ofdrw 2.5.1 起不再依赖 iText，依赖树无 AGPL 组件；公开分发不再受 AGPL 约束。
 - 版权与许可全文：`THIRD-PARTY-NOTICES.md` + `licenses/`；打包时复制到 `resources/notices/`，并可从“关于”查看。Apache 组件的 NOTICE 汇总在 `licenses/APACHE-NOTICES.txt`。
 - 隐私政策：`PRIVACY.md`，说明离线处理、本地日志/临时文件/注册表位置和清理方式；安装包复制到 `resources/notices/PRIVACY.md`，关于页可直接查看。
 - 安全政策：`SECURITY.md`，支持版本、私密漏洞报告范围与响应时间。
-- 开源代码签名：`docs/CODE-SIGNING.md` 汇总申请条件、当前状态、Provider 选项和 GitHub Actions 签名计划；当前构建未签名。
+- 代码签名政策：`docs/CODE-SIGNING.md` 说明签名提供方、团队角色、人工批准流程、签名范围与验证方式；签名步骤集成在 `release.yml`，由 `SIGNPATH_ENABLED` 控制开关。
 - 社区文档：`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`；GitHub CI/Release 工作流位于 `.github/workflows/`。
 
 ---

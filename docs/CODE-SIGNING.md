@@ -74,6 +74,7 @@ Windows 发行版的 Authenticode 签名由 **SignPath.io** 提供，代码签�
 
 - 应用代码以 **MIT** 许可发布（[LICENSE](../LICENSE)）。
 - 全部运行时依赖使用 OSI 批准的开源许可证（MIT / Apache-2.0 / BSD-3-Clause / EPL-2.0 / LGPL-2.1 / LGPL-3.0），**不含商业双授权（commercial dual-licensing）组件，不含 AGPL 组件，不含任何专有或闭源组件**。
+- 唯一的非 OSI 传递依赖 JSON-java（JSON License，经 `ofdrw-converter → org.ujmp:ujmp-core` 引入）已在 `backend/pom.xml` 中显式排除，`mvn dependency:tree` 复查为 0 命中，后端测试全部通过。
 - 第三方组件的许可证、版权归属与上游链接见 [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) 与 [licenses/](../licenses/)。
 
 ### 8. 凭据与密钥
@@ -159,6 +160,7 @@ All document processing happens locally; there is no telemetry, account or cloud
 
 - Application code is released under the **MIT** license ([LICENSE](../LICENSE)).
 - All runtime dependencies use OSI-approved licenses (MIT / Apache-2.0 / BSD-3-Clause / EPL-2.0 / LGPL-2.1 / LGPL-3.0). There are **no commercially dual-licensed components, no AGPL components and no proprietary or closed-source components**.
+- The only non-OSI transitive dependency, JSON-java (JSON License, pulled in via `ofdrw-converter → org.ujmp:ujmp-core`), is explicitly excluded in `backend/pom.xml`; `mvn dependency:tree` reports zero matches and the backend test suite passes.
 - See [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) and [licenses/](../licenses/) for licenses, copyright notices and upstream links.
 
 ### 8. Credentials

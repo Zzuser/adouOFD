@@ -49,6 +49,20 @@
             <groupId>org.ofdrw</groupId>
             <artifactId>ofdrw-full</artifactId>
             <version>${ofdrw.version}</version>
+            <exclusions>
+                <!--
+                  ofdrw-converter -> org.ujmp:ujmp-core -> org.json:json:20141113，
+                  而 JSON License（json.org）不是 OSI 批准许可证，且带
+                  "The Software shall be used for Good, not Evil" 条款。
+                  ujmp 中只有孤立的 org.ujmp.core.util.JsonUtil 引用 org.json，
+                  没有任何类引用 JsonUtil；本项目只用 Matrix / DenseDoubleMatrix2D
+                  与默认稠密矩阵工厂，运行期不触达该工具类，故整条排除。
+                -->
+                <exclusion>
+                    <groupId>org.json</groupId>
+                    <artifactId>json</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 与 ofdrw-converter 2.5.1 对齐，统一使用 PDFBox 3.0.8 -->

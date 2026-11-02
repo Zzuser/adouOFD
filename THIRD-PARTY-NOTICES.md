@@ -62,8 +62,9 @@ BSD-3-Clause 文本见 `licenses/BSD-3-Clause.txt`；各组件版权归其作者
 
 | 组件 | 用途 | 许可 |
 | --- | --- | --- |
-| JSON-java 20141113 | JSON 处理（ofdrw 旧版传递依赖；当前依赖声明中已不含，见 §六·3） | JSON License（非 OSI 批准），全文见 `licenses/JSON-LICENSE.txt` |
 | Inno Setup 6（安装器编译器与解包桩） | Windows 安装程序 | Inno Setup License（非 OSI，宽松许可，允许自由再分发），全文见 `licenses/Inno-Setup-LICENSE.txt` |
+
+> 旧版本曾通过 `org.ujmp:ujmp-core` 传递引入 JSON-java（JSON License，非 OSI 批准）。该依赖已在 `backend/pom.xml` 中显式排除，发行包不再包含该组件，`licenses/JSON-LICENSE.txt` 已删除。详见 §六·3。
 
 ## 二、构建工具（不随应用运行）
 
@@ -104,13 +105,23 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 
 - 依赖树中**不存在**“AGPL + 商业许可”“GPL + 商业许可”等商业双授权（commercial dual-licensing）模式的组件。
 - ofdrw 2.4 之前依赖 iText（AGPL）；本项目使用的 ofdrw 2.5.1 已彻底移除 iText，依赖树中不含 AGPL 组件。
+- 唯一的非 OSI 传递依赖（JSON-java，JSON License）已在 `backend/pom.xml` 中通过 `<exclusion>` 移除，`mvn dependency:tree` 复查结果为 0 命中。
 - 项目自身代码为 MIT；不含维护者或其关联方发布的专有、闭源组件，也不含任何需要付费解锁的功能。
 
-### 3. 两处非 OSI 许可证的说明
+### 3. 非 OSI 许可证的处理
 
-**（a）Inno Setup 6** —— 安装器编译器，仅在**构建期**使用，不随应用运行。它生成的解包桩（setup loader）按设计内嵌在安装包中，属工具链组成部分，不是本项目的源代码组件。该许可为宽松许可，允许自由再分发与商业使用，无商业双授权，也不要求分发本项目源码。
+**（a）JSON-java（JSON License）—— 已从依赖树中移除。** 该许可含 “The Software shall be used for Good, not Evil” 条款，**不是 OSI 批准许可证**。它此前由 `ofdrw-converter → org.ujmp:ujmp-core:0.3.0` 传递引入（compile 作用域，会被打进 fat jar）。处理方式是在 `backend/pom.xml` 的 `ofdrw-full` 依赖上排除 `org.json:json`：
 
-**（b）JSON-java 20141113（JSON License）** —— 该许可含 “The Software shall be used for Good, not Evil” 条款，**不是 OSI 批准许可证**，因此单独说明。该条目来自早期依赖链：核对 ofdrw 2.5.1 在 Maven Central 发布的 12 个模块 POM（ofdrw-core / reader / converter / layout / font / gm / gv / graphics2d / pkg / sign / tool / archive），**均未声明 `org.json:json` 依赖**，因此本项目当前构建不引入该组件。`licenses/JSON-LICENSE.txt` 与本节条目将在下一次清理提交中移除。若有人发现 `mvn dependency:tree -Dincludes=org.json:json` 仍有输出，请提 Issue 告知，我们将以 `<exclusions>` 排除或替换为同功能依赖处理。
+```xml
+<exclusion>
+  <groupId>org.json</groupId>
+  <artifactId>json</artifactId>
+</exclusion>
+```
+
+排除的安全性已逐层核对：`ujmp-core` 中只有孤立的 `org.ujmp.core.util.JsonUtil` 引用 `org.json`，ujmp 内部没有任何类引用 `JsonUtil`；ofdrw-converter 只使用 `org.ujmp.core.Matrix`、`DenseMatrix`、`DenseDoubleMatrix2D` 与 `DefaultDenseDoubleMatrix2DFactory`，运行期不会触达该工具类。排除后 `mvn dependency:tree` 中 `org.json:json` 命中数为 0，后端 39 个测试全部通过。`licenses/JSON-LICENSE.txt` 已随之删除。
+
+**（b）Inno Setup 6 —— 构建工具链，不随应用运行。** 它是安装器编译器，仅在构建期使用；它生成的解包桩（setup loader）按设计内嵌在安装包中，属工具链组成部分，不是本项目的源代码组件。该许可为宽松许可，允许自由再分发与商业使用，无商业双授权，也不要求分发本项目源码。
 
 ### 4. 签名范围
 
