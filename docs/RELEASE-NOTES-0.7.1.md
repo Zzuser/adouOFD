@@ -2,13 +2,15 @@
 
 发布日期：2026-11-02
 
+源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）
+
 ## 下载
 
 - 安装包：`阿豆OFD-0.7.1-x64-inno.exe`
 - 大小：180.8 MB
 - SHA256：见发布附件 `SHA256.txt`（由构建流程生成，校验安装包完整性）
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
-- 代码签名：未签名，Windows SmartScreen 可能提示“未知发布者”，请用 SHA256 校验
+- 代码签名：当前未签名，Windows SmartScreen 可能提示“未知发布者”，请用 SHA256 校验；开源代码签名申请材料见 `docs/CODE-SIGNING.md`
 
 ## 主要更新
 
@@ -19,8 +21,11 @@
 - 文档工具栏在窄窗口自动收为图标按钮，保留 tooltip 与 aria-label。
 - 移除装饰性/情感化文案，界面与文档改为功能描述：
   - 空状态改为“打开 OFD / PDF 文档”。
-  - 关于页移除品牌语，仅保留版本、环境、开源许可与仓库入口。
+  - 关于页移除品牌语，仅保留版本、环境、开源与隐私、仓库入口。
   - 侧栏移除英文装饰副标题。
+- 关于页新增隐私政策入口；`PRIVACY.md` 随安装包复制到 `resources/notices/`。
+- 新增安全政策、贡献指南、行为准则、支持说明与变更记录。
+- 新增 GitHub CI / Release 工作流和开源代码签名申请材料。
 - 更新 README、PRD、截图与发布说明；截图中的本地路径已脱敏。
 
 ## 升级说明
@@ -37,12 +42,12 @@
 
 ## 已知限制
 
-- 未做代码签名，未采购证书。
+- 当前构建未签名；已准备开源代码签名申请材料，见 `docs/CODE-SIGNING.md`。
 - PDF → OFD 的文字能否选中取决于源 PDF 字体；扫描件没有文字层，无法全文搜索。
 - OFD → PDF 矢量导出可能嵌入完整中文字体，文件体积较大。
 - 合并结果不保证保留各文件的目录/书签。
 - Windows 默认应用切换需要用户在系统界面确认。
 
-## 许可
+## 许可与隐私
 
-应用代码以 MIT 许可发布。第三方组件、版权声明与完整许可文本见 `THIRD-PARTY-NOTICES.md` 与 `licenses/`；安装包内位于 `resources/notices/`。
+应用代码以 MIT 许可发布。第三方组件、版权声明与完整许可文本见 `THIRD-PARTY-NOTICES.md` 与 `licenses/`；安装包内位于 `resources/notices/`。隐私政策见 `PRIVACY.md`，安全报告流程见 `SECURITY.md`。
