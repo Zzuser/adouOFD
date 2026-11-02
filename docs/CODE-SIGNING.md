@@ -44,7 +44,7 @@ Windows 发行版的 Authenticode 签名由 **SignPath.io** 提供，代码签�
 | **Approvers**（批准者） | [@Zzuser](https://github.com/Zzuser) | 批准每一次签名请求 |
 
 - 所有外部贡献均以 Pull Request 形式提出，合并前必须经 Reviewers 审核。构建脚本、`.github/workflows/`、`scripts/inno/`、依赖清单属于高敏感文件，审核时单独检查。
-- 所有项目成员（当前为 1 人）在 GitHub 与 SignPath 账户上均启用多因素认证（MFA / 2FA）。
+- **访问控制**：代码仓库与 SignPath 账户均要求多因素认证（MFA / 2FA）。GitHub 侧使用 TOTP 认证器并保存恢复码；SignPath 侧通过 Google 或 Microsoft 账户登录，登录保护（含 MFA）由该身份提供方提供；若改用 SignPath 提供的 Okta 用户名密码账户，则在 Okta 侧启用 MFA。SignPath 组织开通后立即按此配置。
 - 如引入新的常驻维护者，将先在本文件中登记角色后再赋予提交或批准权限。
 
 ### 4. 发布与人工批准
@@ -132,7 +132,7 @@ This project signs only the installer it builds from its own source. Third-party
 | **Approvers** | [@Zzuser](https://github.com/Zzuser) | Approves each signing request |
 
 - All outside contributions arrive as pull requests and must be reviewed before merge. Build scripts, `.github/workflows/`, `scripts/inno/` and dependency manifests are treated as high-sensitivity files.
-- All team members (currently one) use multi-factor authentication for GitHub and SignPath.
+- **Access control**: multi-factor authentication (MFA / 2FA) is required for both the code repository and the SignPath account. GitHub uses a TOTP authenticator app with saved recovery codes. SignPath sign-in uses a Google or Microsoft identity, so MFA is provided by that identity provider; if a SignPath-provided Okta account is used instead, MFA is enabled in Okta. This is configured as soon as the SignPath organization is created.
 - Any additional maintainer will be recorded here before receiving commit or approval rights.
 
 ### 4. Release process and manual approval
