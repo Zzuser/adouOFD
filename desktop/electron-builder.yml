@@ -22,6 +22,8 @@ extraResources:
   # 应用许可与第三方声明（关于页读取）
   - from: ../THIRD-PARTY-NOTICES.md
     to: notices/THIRD-PARTY-NOTICES.md
+  - from: ../PRIVACY.md
+    to: notices/PRIVACY.md
   - from: ../LICENSE
     to: notices/LICENSE.txt
   - from: ../licenses

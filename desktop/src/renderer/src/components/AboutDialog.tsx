@@ -14,7 +14,7 @@ interface AboutDialogProps {
   versions: AppVersions | null
 }
 
-type NoticeView = 'thirdParty' | 'license'
+type NoticeView = 'thirdParty' | 'license' | 'privacy'
 
 export function AboutDialog({ open, onClose, backend, health, versions }: AboutDialogProps) {
   const [notices, setNotices] = useState<LegalNotices | null>(null)
@@ -59,7 +59,13 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
   if (!open) return null
 
   const noticeText =
-    noticeView === 'thirdParty' ? notices?.thirdParty : noticeView === 'license' ? notices?.license : null
+    noticeView === 'thirdParty'
+      ? notices?.thirdParty
+      : noticeView === 'license'
+        ? notices?.license
+        : noticeView === 'privacy'
+          ? notices?.privacy
+          : null
 
   return (
     <div
@@ -86,12 +92,12 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
 
         <div className="about-licenses" data-about-licenses>
           <div className="about-licenses-head">
-            <span>开源许可</span>
+            <span>开源与隐私</span>
             <span className="about-license-badge">MIT</span>
           </div>
           <p>
             阿豆OFD 基于 Electron、React、ofdrw、Apache PDFBox、Spring Boot 等开源组件构建。
-            完整版权声明与许可文本随安装包提供。
+            完整版权声明、许可文本与隐私政策随安装包提供。
           </p>
           <div className="about-license-tags">
             <span>Electron · MIT</span>
@@ -117,6 +123,14 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
               onClick={() => setNoticeView('license')}
             >
               MIT 许可
+            </button>
+            <button
+              className="btn ghost small"
+              data-action="view-privacy"
+              disabled={!notices}
+              onClick={() => setNoticeView('privacy')}
+            >
+              隐私政策
             </button>
             <button
               className="btn ghost small"
@@ -159,7 +173,13 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
         >
           <div className="license-dialog" role="dialog" aria-modal="true">
             <div className="license-head">
-              <h3>{noticeView === 'thirdParty' ? '第三方组件与许可声明' : '阿豆OFD MIT 许可'}</h3>
+              <h3>
+                {noticeView === 'thirdParty'
+                  ? '第三方组件与许可声明'
+                  : noticeView === 'license'
+                    ? '阿豆OFD MIT 许可'
+                    : '隐私政策'}
+              </h3>
               <button
                 className="license-close"
                 data-action="license-close"

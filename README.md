@@ -14,7 +14,13 @@
   Electron 45.1.0 · Java 25 LTS · ofdrw 2.5.1 · PDFBox 3.0.8
 </p>
 
-> 仓库：<https://gitcode.com/Zzuser/adouOFD>  
+<p align="center">
+  <a href="https://github.com/Zzuser/adouOFD/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Zzuser/adouOFD/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Zzuser/adouOFD/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Zzuser/adouOFD"></a>
+  <a href="PRIVACY.md"><img alt="Privacy" src="https://img.shields.io/badge/privacy-offline%20%2F%20no%20telemetry-2F7A4F"></a>
+</p>
+
+> 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
 > 当前版本：**0.7.1**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 格式转换 + 合并 + Windows 文件关联）
 
 ## 品牌与图标
@@ -66,11 +72,11 @@
 | --- |
 | ![多标签查看](docs/screenshots/tabs.png) |
 
-更多：[全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
+更多：[全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [隐私政策](docs/screenshots/privacy.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
 
 ## 下载与安装
 
-仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，后续通过 Releases 提供：
+仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，或从 GitHub Releases 获取：<https://github.com/Zzuser/adouOFD/releases>。
 
 ```powershell
 cd desktop
@@ -83,7 +89,7 @@ npm run package:inno
 
 需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
 
-当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。
+当前阶段不做代码签名，Windows SmartScreen 可能提示“未知发布者”；请通过 SHA256 校验安装包完整性。开源代码签名申请材料与签名流程见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
 
 ## 快速开始
 
@@ -230,10 +236,16 @@ npm run stress:ui
 
 欢迎提交 Issue / Pull Request：
 
-- 仓库：<https://gitcode.com/Zzuser/adouOFD>
+- 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）
+- 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md)
+- 支持与问题反馈：[SUPPORT.md](SUPPORT.md)
+- 安全漏洞：[SECURITY.md](SECURITY.md)，请勿公开敏感文档
+- 变更记录：[CHANGELOG.md](CHANGELOG.md)
 - 提交前请运行后端测试、`npm run typecheck` 与 `npm run smoke:ui`
 - 不要提交用户文档、真实发票、密钥或大体积安装包
 
-## 许可
+## 许可与隐私
 
-应用代码以 [MIT License](LICENSE) 发布。第三方组件、版权与完整许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 与 [licenses/](licenses/)；安装包会将它们复制到 `resources/notices/`，也可从“关于 → 开源许可”查看。ofdrw 2.5.1 已移除 iText，依赖树中不再包含 AGPL 组件。
+应用代码以 [MIT License](LICENSE) 发布。第三方组件、版权与完整许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 与 [licenses/](licenses/)；安装包会将它们复制到 `resources/notices/`，也可从“关于 → 开源与隐私”查看。ofdrw 2.5.1 已移除 iText，依赖树中不再包含 AGPL 组件。
+
+隐私政策见 [PRIVACY.md](PRIVACY.md)：应用离线运行，不上传文档，不包含遥测、账号、广告或云同步；本地日志、临时文件和文件关联的存储位置与清理方式均有说明。

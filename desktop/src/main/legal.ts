@@ -36,7 +36,11 @@ export function readLegalNotices(): LegalNotices {
     [join(root, 'LICENSE.txt'), join(root, 'LICENSE'), join(root, '..', 'LICENSE')],
     '未找到应用许可文件。'
   )
-  return { thirdParty, license, noticesDir: root }
+  const privacy = readText(
+    [join(root, 'PRIVACY.md'), join(root, '..', 'PRIVACY.md')],
+    '未找到隐私政策文件。'
+  )
+  return { thirdParty, license, privacy, noticesDir: root }
 }
 
 export async function revealLegalNotices(): Promise<void> {

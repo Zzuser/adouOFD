@@ -203,6 +203,7 @@ export interface WindowsIntegrationStatus {
 export interface LegalNotices {
   thirdParty: string
   license: string
+  privacy: string
   noticesDir: string
 }
 

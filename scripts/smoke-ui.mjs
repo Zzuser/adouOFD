@@ -128,8 +128,8 @@ try {
     "document.querySelector('.about-licenses')?.innerText.replace(/\\n/g, ' | ')"
   )
   console.log('关于/许可：', JSON.stringify(aboutLicenses))
-  if (!String(aboutLicenses).includes('开源许可') || !String(aboutLicenses).includes('Electron')) {
-    errors.push('关于页开源许可区未正确显示')
+  if (!String(aboutLicenses).includes('开源与隐私') || !String(aboutLicenses).includes('Electron')) {
+    errors.push('关于页开源与隐私区未正确显示')
   }
   await waitFor(
     cdp,
@@ -147,6 +147,19 @@ try {
   const licenseShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-license.png`), Buffer.from(licenseShot.data, 'base64'))
   console.log(`截图：.tools/${shotPrefix}-license.png`)
+  await evaluate(cdp, "document.querySelector('[data-action=\"license-close\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.license-dialog') === null", 5_000)
+  await evaluate(cdp, "document.querySelector('[data-action=\"view-privacy\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.license-dialog') !== null", 10_000)
+  await sleep(350)
+  const privacyText = await evaluate(cdp, "document.querySelector('.license-text')?.innerText")
+  console.log('隐私政策长度：', String(privacyText ?? '').length)
+  if (!String(privacyText).includes('Privacy Policy') || !String(privacyText).includes('隐私政策')) {
+    errors.push('隐私政策未加载')
+  }
+  const privacyShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-privacy.png`), Buffer.from(privacyShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-privacy.png`)
   await evaluate(cdp, "document.querySelector('[data-action=\"license-close\"]')?.click()")
   await waitFor(cdp, "document.querySelector('.license-dialog') === null", 5_000)
   const aboutShot = await cdp.send('Page.captureScreenshot', { format: 'png' })

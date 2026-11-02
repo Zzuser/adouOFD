@@ -468,7 +468,7 @@ DocumentHandle {
 
 ### 7.3 实测与待办
 
-- 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `d79b59a6…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
+- 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `e80e1799…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
 - Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
 - 当前阶段不做代码签名、不采购证书；发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
 - 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
@@ -533,7 +533,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 大文件/恶意 OFD 导致内存或路径穿越 | 稳定性/安全 | 限制解压大小（ofdrw `setZipFileMaxSize`）、会话隔离、临时目录白名单、超时 |
 | Electron + 本地 HTTP 被本机其他程序调用 | 数据泄露/滥用 | 随机端口 + 每次启动 Token + 仅回环；后续改 IPC/自定义协议 |
 | 安装包体积与启动速度 | 体验 | jlink 裁剪已完成（272MB→Inno 181MB / NSIS 192MB）；后续评估 Electron 语言包裁剪与 7z 字典 |
-| 不做代码签名 | 信任与安装成功率 | 已确认当前阶段不做；提供 SHA256 校验与官网/Release 下载，后续视需要再评估 |
+| 代码签名 | 信任与安装成功率 | 已准备开源代码签名申请材料（SignPath / Certum 等），当前构建仍未签名；发布提供 SHA256 校验，签名流程见 `docs/CODE-SIGNING.md` |
 | OFD→PDF 矢量模式嵌入完整中文字体 | 输出体积过大（4 页示例约 78MB，19.6MB/页） | 已知问题；可切换图像导出；后续评估 `PDFExporter`（同类文档约 19.6MB）或字体子集化 |
 
 ---
@@ -547,6 +547,10 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - UJMP Core：LGPL-3.0（未修改的传递依赖）；JSON-java：JSON License；TwelveMonkeys/Jaxen：BSD-3-Clause；Dom4j：BSD 风格（Plexus）。
 - **iText 已移除**：ofdrw 2.5.1 起不再依赖 iText，依赖树无 AGPL 组件；公开分发不再受 AGPL 约束。
 - 版权与许可全文：`THIRD-PARTY-NOTICES.md` + `licenses/`；打包时复制到 `resources/notices/`，并可从“关于”查看。Apache 组件的 NOTICE 汇总在 `licenses/APACHE-NOTICES.txt`。
+- 隐私政策：`PRIVACY.md`，说明离线处理、本地日志/临时文件/注册表位置和清理方式；安装包复制到 `resources/notices/PRIVACY.md`，关于页可直接查看。
+- 安全政策：`SECURITY.md`，支持版本、私密漏洞报告范围与响应时间。
+- 开源代码签名：`docs/CODE-SIGNING.md` 汇总申请条件、当前状态、Provider 选项和 GitHub Actions 签名计划；当前构建未签名。
+- 社区文档：`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`；GitHub CI/Release 工作流位于 `.github/workflows/`。
 
 ---
 
@@ -630,7 +634,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-11-02 | Windows 文件图标 | Windows 11 / ICO 16–256px | ✅ | `AdouOFD.OFD` / `AdouOFD.PDF` 的 DefaultIcon 分别指向随包 `fileicons/ofd-file.ico`、`pdf-file.ico`；`.ofd`/`.pdf` OpenWith 与 Capabilities 映射到对应 ProgID；图标 16px 可辨、24px 起清晰；卸载清理后无遗留 |
 | 2026-11-02 | Inno Setup 安装包 | Inno Setup 6 / Windows 11 | ✅ | 安装包 180.8MB（SHA256 `22ee7843…`）；勾选关联安装后两个 ProgID/DefaultIcon/OpenWith/Capabilities 正确；同目录取消关联升级后注册项清理并写 `{"optedOut":true}`；启动安装版不自动回写；静默卸载后安装目录、配置与注册项均无残留；WPS `.ofd` 默认未覆盖 |
 | 2026-11-02 | Inno 版本升级 | 0.6.0 → 0.7.0 | ✅ | 0.6.0 安装到临时目录（勾选关联）；0.7.0 静默升级后版本 0.7.0、目录不变、后端 jar 为 0.7.0；未传 `/TASKS` 时保留已有文件关联与 `optedOut:false`；notices/licenses 随包存在；卸载后无残留 |
-| 2026-11-02 | 0.7.1 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.1-x64-inno.exe` 180.8MB，SHA256 `d79b59a6…`；统一 50px 单行页头、功能化文案、截图与 README/PRD 更新；39/39 后端测试与 UI 冒烟通过 |
+| 2026-11-02 | 0.7.1 发布包 | Inno Setup 6 | ✅ | `阿豆OFD-0.7.1-x64-inno.exe` 180.8MB，SHA256 `e80e1799…`；统一 50px 单行页头、功能化文案、隐私政策、GitHub CI/Release 工作流、签名申请材料；39/39 后端测试与 UI 冒烟通过 |
 | 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
 | 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
 | 2026-11-02 | 0.6.0 打包 | electron-builder 26.18.0 | ✅ | 安装包 192MB（SHA256 `98a5193b…`），解包 466MB；打包版使用 `resources/jre` 启动 1.24s，完整 UI 冒烟通过；未签名 |
@@ -664,8 +668,9 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - 引擎：`backend/`（Spring Boot 4.0.9 + ofdrw 2.5.1 + PDFBox 3.0.8，39 个测试全绿；OFD/PDF 统一句柄、目录、文字层、全文搜索、格式转换、合并、缺失资源与样式修复）。
 - 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠）。
 - Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF 文件图标 ICO + PNG）。
+- 合规与社区：`PRIVACY.md`、`SECURITY.md`、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`、`docs/CODE-SIGNING.md`、`.github/workflows/ci.yml`、`.github/workflows/release.yml`。
 - 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/build-inno.mjs`、`scripts/inno/adou-ofd.iss`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
-- 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、文件图标、批量转换、合并文档、800 页压测）。
+- 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、隐私政策、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、文件图标、批量转换、合并文档、800 页压测）。
 - 许可：[LICENSE](../LICENSE)、[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)、`licenses/`（完整许可文本与 Apache NOTICE 汇总）。
 - 压力夹具：`backend/src/test/java/com/adou/ofd/StressFixtureGenerator.java`（生成到 `.tools/stress`，不纳入版本库）。
 - 安装包：本机已验证 Inno Setup 生成与运行（0.7.1，未签名，约 180.8MB，含文件关联安装任务；NSIS 备用包约 192MB；均不纳入版本库）。

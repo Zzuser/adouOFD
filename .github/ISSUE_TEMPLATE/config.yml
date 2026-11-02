@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security policy
+    url: https://github.com/Zzuser/adouOFD/blob/main/SECURITY.md
+    about: Report vulnerabilities privately; do not attach sensitive documents.
+  - name: Privacy policy
+    url: https://github.com/Zzuser/adouOFD/blob/main/PRIVACY.md
+    about: How local data and network behavior work.
+  - name: Support
+    url: https://github.com/Zzuser/adouOFD/blob/main/SUPPORT.md
+    about: Documentation and issue reporting guidance.
