@@ -34,6 +34,8 @@
 
 完整 Apache-2.0 文本见 `licenses/Apache-2.0.txt`。各 Apache 组件随 jar 携带的 NOTICE 文本汇总见 `licenses/APACHE-NOTICES.txt`。
 
+上游项目与许可页面：Apache PDFBox <https://pdfbox.apache.org/> · Spring Boot / Spring Framework <https://github.com/spring-projects/spring-boot> · Apache Batik <https://xmlgraphics.apache.org/batik/> · Zip4j <https://github.com/srikanth-lingala/zip4j> · Jackson <https://github.com/FasterXML/jackson> · SnakeYAML <https://bitbucket.org/snakeyaml/snakeyaml>（均为 Apache-2.0）。
+
 ### BSD-3-Clause / BSD 风格
 
 | 组件 | 用途 | 许可 |
@@ -60,8 +62,8 @@ BSD-3-Clause 文本见 `licenses/BSD-3-Clause.txt`；各组件版权归其作者
 
 | 组件 | 用途 | 许可 |
 | --- | --- | --- |
-| JSON-java 20141113 | JSON 处理（ofdrw 传递依赖） | JSON License，全文见 `licenses/JSON-LICENSE.txt` |
-| Inno Setup 6（安装程序运行时） | Windows 安装程序 | Inno Setup License，全文见 `licenses/Inno-Setup-LICENSE.txt` |
+| JSON-java 20141113 | JSON 处理（ofdrw 旧版传递依赖；当前依赖声明中已不含，见 §六·3） | JSON License（非 OSI 批准），全文见 `licenses/JSON-LICENSE.txt` |
+| Inno Setup 6（安装器编译器与解包桩） | Windows 安装程序 | Inno Setup License（非 OSI，宽松许可，允许自由再分发），全文见 `licenses/Inno-Setup-LICENSE.txt` |
 
 ## 二、构建工具（不随应用运行）
 
@@ -86,6 +88,34 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 
 应用不内置商业字体文件。示例文档使用本机 Windows 字体生成，仅在运行时读取；用户文档中的字体由原文档自带或由本机字体库提供。
 
-## 六、免责声明
+## 六、许可核查声明（代码签名审核相关）
+
+### 1. 应用与运行时库均为 OSI 批准的开源许可证
+
+| 许可证 | OSI 批准 | 组件 |
+| --- | --- | --- |
+| MIT | 是 | Electron、React、Node.js、ofdrw、SLF4J、Bouncy Castle |
+| Apache-2.0 | 是 | PDFBox / FontBox / JBIG2、Spring Boot、Tomcat、Jackson、Batik、Zip4j、Commons、SnakeYAML |
+| BSD-3-Clause | 是 | TwelveMonkeys ImageIO、Jaxen、Dom4j |
+| EPL-2.0 | 是 | Logback、Jakarta Annotation API（均为 EPL-2.0 或 LGPL 双许可，二选一即可） |
+| LGPL-2.1 / LGPL-3.0 | 是 | Logback（备选）、UJMP Core（未修改的依赖） |
+
+### 2. 无商业双授权、无 AGPL、无专有代码
+
+- 依赖树中**不存在**“AGPL + 商业许可”“GPL + 商业许可”等商业双授权（commercial dual-licensing）模式的组件。
+- ofdrw 2.4 之前依赖 iText（AGPL）；本项目使用的 ofdrw 2.5.1 已彻底移除 iText，依赖树中不含 AGPL 组件。
+- 项目自身代码为 MIT；不含维护者或其关联方发布的专有、闭源组件，也不含任何需要付费解锁的功能。
+
+### 3. 两处非 OSI 许可证的说明
+
+**（a）Inno Setup 6** —— 安装器编译器，仅在**构建期**使用，不随应用运行。它生成的解包桩（setup loader）按设计内嵌在安装包中，属工具链组成部分，不是本项目的源代码组件。该许可为宽松许可，允许自由再分发与商业使用，无商业双授权，也不要求分发本项目源码。
+
+**（b）JSON-java 20141113（JSON License）** —— 该许可含 “The Software shall be used for Good, not Evil” 条款，**不是 OSI 批准许可证**，因此单独说明。该条目来自早期依赖链：核对 ofdrw 2.5.1 在 Maven Central 发布的 12 个模块 POM（ofdrw-core / reader / converter / layout / font / gm / gv / graphics2d / pkg / sign / tool / archive），**均未声明 `org.json:json` 依赖**，因此本项目当前构建不引入该组件。`licenses/JSON-LICENSE.txt` 与本节条目将在下一次清理提交中移除。若有人发现 `mvn dependency:tree -Dincludes=org.json:json` 仍有输出，请提 Issue 告知，我们将以 `<exclusions>` 排除或替换为同功能依赖处理。
+
+### 4. 签名范围
+
+本项目仅对**自己从源码构建**的 Windows 安装包使用项目证书签名；第三方预编译二进制（`.jar` / `.dll` / `.exe`）保持上游原貌，**不提交签名**。签名政策见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
+
+## 七、免责声明
 
 本软件按“现状”提供，不提供任何明示或暗示担保。用户应自行确认对所处理文档拥有合法使用权，并遵守所在地区法律法规及文档相关方要求。

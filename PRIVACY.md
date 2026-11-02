@@ -3,7 +3,8 @@
 **Project:** 阿豆OFD (ADou OFD)  
 **Effective date:** 2026-11-02  
 **Maintainer:** Zzuser  
-**Contact:** https://github.com/Zzuser/adouOFD/issues
+**Contact:** https://github.com/Zzuser/adouOFD/issues  
+**Code signing policy:** [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)
 
 ## English
 
@@ -19,6 +20,8 @@
 - Converted, merged or exported files are written only to locations chosen by the user.
 
 ### 3. Network activity
+
+**This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.**
 
 - Reading, searching, converting and merging do not require network access.
 - The application does not implement accounts, cloud sync, remote logging, telemetry, advertising, or automatic update checks.
@@ -64,6 +67,8 @@ Questions or privacy concerns: open an issue at https://github.com/Zzuser/adouOF
 - 转换、合并或导出结果只写入用户选择的位置。
 
 ### 3. 网络行为
+
+**本程序不会向其他联网系统传输任何信息，除非用户或安装/操作该程序的人明确要求。**
 
 - 阅读、搜索、转换和合并不需要联网。
 - 应用不包含账号、云同步、远程日志、遥测、广告或自动更新检查。
