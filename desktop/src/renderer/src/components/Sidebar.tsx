@@ -5,12 +5,13 @@ import {
   IconChevronRight,
   IconInfo,
   IconMerge,
+  IconPages,
   IconSettings,
   IconSwap,
   IconView
 } from './icons'
 
-export type AppView = 'viewer' | 'batch' | 'merge' | 'settings'
+export type AppView = 'viewer' | 'batch' | 'merge' | 'pages' | 'settings'
 
 interface SidebarProps {
   backend: BackendInfo
@@ -88,6 +89,15 @@ export function Sidebar({
         >
           <IconMerge size={18} />
           <span>合并文档</span>
+        </button>
+        <button
+          className={`nav-item nav-button ${view === 'pages' ? 'active' : ''}`}
+          data-action="nav-pages"
+          onClick={() => onNavigate('pages')}
+          title="拆分与插页"
+        >
+          <IconPages size={18} />
+          <span>拆分与插页</span>
         </button>
         <button
           className={`nav-item nav-button ${view === 'settings' ? 'active' : ''}`}

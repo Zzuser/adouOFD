@@ -25,10 +25,12 @@ public class DocumentService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
     private static final int MAX_SESSIONS = 8;
+    private static final int MAX_PREVIEWS = 6;
 
     private final DemoOfdFactory demoFactory;
     private final PdfDemoFactory pdfDemoFactory;
     private final Map<String, DocumentSession> sessions = new LinkedHashMap<>(16, 0.75f, true);
+    private final Map<String, DocumentSession> previews = new LinkedHashMap<>(16, 0.75f, true);
 
     public DocumentService(DemoOfdFactory demoFactory, PdfDemoFactory pdfDemoFactory) {
         this.demoFactory = demoFactory;
@@ -36,6 +38,17 @@ public class DocumentService {
     }
 
     public synchronized DocumentSummary open(String rawPath) {
+        return openSession(rawPath, false);
+    }
+
+    /**
+     * 拆分/插页页面预览专用会话：独立于阅读器标签，避免预览把已打开的文档挤出会话。
+     */
+    public synchronized DocumentSummary openPreview(String rawPath) {
+        return openSession(rawPath, true);
+    }
+
+    private DocumentSummary openSession(String rawPath, boolean preview) {
         if (rawPath == null || rawPath.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "请提供 OFD 或 PDF 文件路径");
         }
@@ -60,7 +73,11 @@ public class DocumentService {
         Path workDir = createWorkDir();
         try {
             DocumentSession session = loadSession(path, workDir, false);
-            register(session);
+            if (preview) {
+                registerPreview(session);
+            } else {
+                register(session);
+            }
             return session.summary();
         } catch (RuntimeException | IOException ex) {
             deleteRecursively(workDir);
@@ -118,7 +135,14 @@ public class DocumentService {
     }
 
     public synchronized Path render(String id, int page, int dpi) {
-        DocumentSession session = require(id);
+        return renderSession(require(id), page, dpi);
+    }
+
+    public synchronized Path renderPreview(String id, int page, int dpi) {
+        return renderSession(requirePreview(id), page, dpi);
+    }
+
+    private Path renderSession(DocumentSession session, int page, int dpi) {
         if (page < 1 || page > session.pageCount()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
                     "页码超出范围（1-" + session.pageCount() + "）");
@@ -132,11 +156,11 @@ public class DocumentService {
             }
             return png;
         } catch (IOException | RuntimeException ex) {
-            log.warn("页面渲染失败: document={}, page={}, dpi={}", id, page, safeDpi, ex);
+            log.warn("页面渲染失败: document={}, page={}, dpi={}", session.id(), page, safeDpi, ex);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
                     "页面渲染失败，请查看引擎日志", ex.getMessage());
         } catch (StackOverflowError error) {
-            log.error("页面渲染栈溢出: document={}, page={}, dpi={}", id, page, safeDpi);
+            log.error("页面渲染栈溢出: document={}, page={}, dpi={}", session.id(), page, safeDpi);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
                     "页面包含异常的资源引用，暂时无法渲染", "文档渲染递归溢出");
         }
@@ -149,10 +173,19 @@ public class DocumentService {
         }
     }
 
+    public synchronized void closePreview(String id) {
+        DocumentSession removed = previews.remove(id);
+        if (removed != null) {
+            closeSession(removed);
+        }
+    }
+
     @PreDestroy
     public synchronized void closeAll() {
         sessions.values().forEach(this::closeSession);
         sessions.clear();
+        previews.values().forEach(this::closeSession);
+        previews.clear();
     }
 
     private void closeSession(DocumentSession session) {
@@ -250,10 +283,27 @@ public class DocumentService {
         sessions.put(session.id(), session);
     }
 
+    private void registerPreview(DocumentSession session) {
+        while (previews.size() >= MAX_PREVIEWS) {
+            var eldest = previews.entrySet().iterator().next();
+            previews.remove(eldest.getKey());
+            closeSession(eldest.getValue());
+        }
+        previews.put(session.id(), session);
+    }
+
     private DocumentSession require(String id) {
         DocumentSession session = sessions.get(id);
         if (session == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "文档会话不存在或已关闭");
+        }
+        return session;
+    }
+
+    private DocumentSession requirePreview(String id) {
+        DocumentSession session = previews.get(id);
+        if (session == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "PREVIEW_NOT_FOUND", "页面预览会话不存在或已关闭");
         }
         return session;
     }

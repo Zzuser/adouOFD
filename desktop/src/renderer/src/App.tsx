@@ -8,6 +8,7 @@ import { DocTabs } from './components/DocTabs'
 import { EngineBadge } from './components/EngineBadge'
 import { EmptyState } from './components/EmptyState'
 import { MergePage } from './components/MergePage'
+import { PageToolsPage } from './components/PageToolsPage'
 import { PrintDialog } from './components/PrintDialog'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
@@ -412,18 +413,22 @@ export default function App() {
                     ? '批量转换'
                     : view === 'merge'
                       ? '合并文档'
-                      : view === 'settings'
-                        ? '设置'
-                        : '文档查看'}
+                      : view === 'pages'
+                        ? '拆分与插页'
+                        : view === 'settings'
+                          ? '设置'
+                          : '文档查看'}
                 </h1>
                 <span className="topbar-hint">
                   {view === 'batch'
                     ? '一次加入多个文件，逐个转换到另一种格式；文件只在本机处理。'
                     : view === 'merge'
                       ? '按列表顺序把多个 OFD / PDF 合并为一个文档；文件只在本机处理。'
-                      : view === 'settings'
-                        ? 'Windows 文件关联、默认应用与本地数据说明。'
-                        : '打开并阅读本地 OFD / PDF 文档。'}
+                      : view === 'pages'
+                        ? '按页或区间拆分文档，也可把另一个文档的页面插入到指定位置；文件只在本机处理。'
+                        : view === 'settings'
+                          ? 'Windows 文件关联、默认应用与本地数据说明。'
+                          : '打开并阅读本地 OFD / PDF 文档。'}
                 </span>
               </div>
               {backend.status !== 'ready' ? (
@@ -463,6 +468,17 @@ export default function App() {
 
           <div className="pane" hidden={view !== 'merge'}>
             <MergePage
+              backend={backend}
+              onOpenDocument={(path) => {
+                setView('viewer')
+                void openPath(path)
+              }}
+              onPrintResult={(path) => void printResultFile(path)}
+            />
+          </div>
+
+          <div className="pane" hidden={view !== 'pages'}>
+            <PageToolsPage
               backend={backend}
               onOpenDocument={(path) => {
                 setView('viewer')

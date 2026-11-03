@@ -5,11 +5,14 @@ import type {
   ConversionStart,
   DocumentSummary,
   EngineHealth,
+  InsertStart,
   MergeJob,
   MergeStart,
   OutlineItem,
+  PageToolJob,
   ProbeResult,
   SearchJob,
+  SplitStart,
   TextRun
 } from '@shared/types'
 
@@ -100,6 +103,26 @@ export function openDemo(info: BackendInfo): Promise<DocumentSummary> {
 
 export function openPdfDemo(info: BackendInfo): Promise<DocumentSummary> {
   return request<DocumentSummary>(info, '/api/documents/demo/pdf', { method: 'POST' })
+}
+
+export function openPreview(info: BackendInfo, path: string): Promise<DocumentSummary> {
+  return request<DocumentSummary>(info, '/api/previews', {
+    method: 'POST',
+    body: JSON.stringify({ path }),
+    signal: AbortSignal.timeout(60_000)
+  })
+}
+
+export async function closePreview(info: BackendInfo, id: string): Promise<void> {
+  const headers = new Headers()
+  if (info.token) headers.set('X-ADou-Token', info.token)
+  const response = await fetch(`${baseUrl(info)}/api/previews/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers
+  })
+  if (!response.ok) {
+    throw await readError(response)
+  }
 }
 
 export function fetchOutline(info: BackendInfo, id: string): Promise<OutlineItem[]> {
@@ -202,8 +225,37 @@ export function cancelMerge(info: BackendInfo, id: string): Promise<MergeJob> {
   })
 }
 
+export function startSplit(info: BackendInfo, payload: SplitStart): Promise<PageToolJob> {
+  return request<PageToolJob>(info, '/api/page-tools/splits', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export function startInsert(info: BackendInfo, payload: InsertStart): Promise<PageToolJob> {
+  return request<PageToolJob>(info, '/api/page-tools/inserts', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export function fetchPageTool(info: BackendInfo, id: string): Promise<PageToolJob> {
+  return request<PageToolJob>(info, `/api/page-tools/${encodeURIComponent(id)}`)
+}
+
+export function cancelPageTool(info: BackendInfo, id: string): Promise<PageToolJob> {
+  return request<PageToolJob>(info, `/api/page-tools/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST'
+  })
+}
+
 export function pageImageUrl(info: BackendInfo, id: string, page: number, dpi = 144): string {  const token = info.token ? encodeURIComponent(info.token) : ''
   return `${baseUrl(info)}/api/documents/${encodeURIComponent(id)}/pages/${page}?dpi=${dpi}&token=${token}`
+}
+
+export function previewImageUrl(info: BackendInfo, id: string, page: number, dpi = 24): string {
+  const token = info.token ? encodeURIComponent(info.token) : ''
+  return `${baseUrl(info)}/api/previews/${encodeURIComponent(id)}/pages/${page}?dpi=${dpi}&token=${token}`
 }
 
 export function messageOf(error: unknown): string {

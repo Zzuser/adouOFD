@@ -183,6 +183,66 @@ export interface MergeTargetOptions {
   target: string
 }
 
+export type SplitMode = 'PAGE' | 'CHUNK' | 'RANGES'
+export type InsertPositionMode = 'START' | 'BEFORE' | 'END'
+
+export interface PageOutput {
+  path: string
+  name: string
+  pages: number
+}
+
+export interface PageToolJob {
+  id: string
+  operation: 'SPLIT' | 'INSERT'
+  status: ConversionStatus
+  progress: number
+  phase: string
+  sourcePath: string
+  sourceName: string
+  sourcePages: number
+  insertPath: string | null
+  insertName: string | null
+  insertPages: number
+  outputPath: string | null
+  outputName: string | null
+  outputDir: string | null
+  outputs: PageOutput[]
+  outputPages: number
+  outputFiles: number
+  outputBytes: number
+  warnings: string[]
+  errorCode: string | null
+  errorMessage: string | null
+  createdAt: string
+  startedAt: string | null
+  finishedAt: string | null
+}
+
+export interface SplitStart {
+  sourcePath: string
+  mode: SplitMode
+  pagesPerFile?: number
+  ranges?: string
+  outputDir: string
+  baseName?: string
+}
+
+export interface InsertStart {
+  basePath: string
+  insertPath: string
+  insertRanges?: string
+  positionMode: InsertPositionMode
+  position?: number
+  outputPath: string
+  overwrite?: boolean
+}
+
+export interface PageOutputTargetOptions {
+  target: string
+  defaultName?: string
+}
+
 export interface AppVersions {
   app: string
   electron: string
@@ -280,7 +340,8 @@ export interface AdouApi {
   pickDocuments(): Promise<string[]>
   pickConversionTarget(options: ConversionTargetOptions): Promise<string | null>
   pickMergeTarget(options: MergeTargetOptions): Promise<string | null>
-  pickDirectory(): Promise<string | null>
+  pickPageTarget(options: PageOutputTargetOptions): Promise<string | null>
+  pickDirectory(options?: { title?: string }): Promise<string | null>
   getPathForFile(file: unknown): string
   revealPath(path: string): Promise<void>
   openExternal(url: string): Promise<void>

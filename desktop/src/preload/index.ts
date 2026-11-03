@@ -15,7 +15,8 @@ const api: AdouApi = {
   pickDocuments: () => ipcRenderer.invoke('dialog:open-documents'),
   pickConversionTarget: (options) => ipcRenderer.invoke('dialog:save-conversion', options),
   pickMergeTarget: (options) => ipcRenderer.invoke('dialog:save-merge', options),
-  pickDirectory: () => ipcRenderer.invoke('dialog:pick-directory'),
+  pickPageTarget: (options) => ipcRenderer.invoke('dialog:save-page-tool', options),
+  pickDirectory: (options) => ipcRenderer.invoke('dialog:pick-directory', options),
   getPathForFile: (file) => {
     try {
       return webUtils.getPathForFile(file as File)

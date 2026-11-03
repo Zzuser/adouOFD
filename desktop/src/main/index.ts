@@ -203,13 +203,18 @@ function registerIpc(): void {
     return result.canceled ? [] : result.filePaths
   })
 
-  ipcMain.handle('dialog:pick-directory', async () => {
-    const autoDir = process.env.ADOU_TEST_OUTPUT_DIR
+  ipcMain.handle('dialog:pick-directory', async (_event, payload: unknown) => {
+    const autoDir = process.env.ADOU_TEST_SPLIT_DIR ?? process.env.ADOU_TEST_OUTPUT_DIR
     if (autoDir) {
       return autoDir
     }
+    const optionsPayload = payload as { title?: unknown } | null
+    const title =
+      typeof optionsPayload?.title === 'string' && optionsPayload.title.trim()
+        ? optionsPayload.title.trim()
+        : '选择转换结果保存目录'
     const options: Electron.OpenDialogOptions = {
-      title: '选择转换结果保存目录',
+      title,
       buttonLabel: '选择',
       properties: ['openDirectory', 'createDirectory']
     }
@@ -266,6 +271,34 @@ function registerIpc(): void {
       title: `合并为 ${target} 并保存`,
       buttonLabel: '保存',
       defaultPath: join(app.getPath('documents'), `合并文档.${extension}`),
+      filters: [{ name: `${target} 文件`, extensions: [extension] }]
+    }
+    const result = mainWindow
+      ? await dialog.showSaveDialog(mainWindow, saveOptions)
+      : await dialog.showSaveDialog(saveOptions)
+    return result.canceled || !result.filePath ? null : result.filePath
+  })
+
+  ipcMain.handle('dialog:save-page-tool', async (_event, payload: unknown) => {
+    // 自动化冒烟：显式设置环境变量时跳过原生保存对话框
+    const autoSave = process.env.ADOU_TEST_INSERT_FILE
+    if (autoSave) {
+      return autoSave
+    }
+    const options = payload as { target?: unknown; defaultName?: unknown } | null
+    const target = typeof options?.target === 'string' ? options.target.toUpperCase() : ''
+    if (target !== 'PDF' && target !== 'OFD') {
+      return null
+    }
+    const extension = target.toLowerCase()
+    const rawName =
+      typeof options?.defaultName === 'string' && options.defaultName.trim()
+        ? basename(options.defaultName.trim()).replace(/\.[^.]+$/, '')
+        : '插入页面'
+    const saveOptions: Electron.SaveDialogOptions = {
+      title: '插入页面并保存',
+      buttonLabel: '保存',
+      defaultPath: join(app.getPath('documents'), `${rawName}.${extension}`),
       filters: [{ name: `${target} 文件`, extensions: [extension] }]
     }
     const result = mainWindow

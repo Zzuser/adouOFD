@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added a “拆分与插页” tab: split OFD/PDF by every page, every N pages, or custom page ranges; insert pages from another document at the start, before a chosen page, or at the end.
+- Mixed-format insertion converts inserted pages to the main document format; split and insert tasks share the heavy-task queue with progress, cancel, page-count verification and atomic output.
+- Added page previews with thumbnails, split-group coloring, selected-page dimming and insertion-position markers. Previews use dedicated sessions and do not evict viewer tabs.
+- Added backend tests for split/insert and preview sessions, plus real Electron coverage for split/insert previews and output files.
+
 ## 0.8.0 — 2026-11-02
 
 - Added an in-app print panel (`Ctrl+P` / “打印”) with live preview: printer selection, copies, grayscale, all/current/custom page ranges, odd/even pages, reverse order, paper size/orientation/margins, N-up (2/4/6/8/9 pages per sheet, row/column order, borders) and duplex.
