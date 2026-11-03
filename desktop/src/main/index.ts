@@ -1,11 +1,18 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { BackendManager } from './backend'
 import { parseDocumentPaths } from './document-args'
 import { readLegalNotices, revealLegalNotices } from './legal'
 import { listPrinters, parsePrintOptions, printDocument } from './print'
+import {
+  installTextAssetProtocol,
+  readTextFile,
+  registerTextAssetScheme,
+  writeTextFile
+} from './text-files'
+import { exportTextPdf } from './text-pdf'
 import {
   addRecentFile,
   clearRecentFiles,
@@ -29,10 +36,13 @@ app.setPath(
   userDataOverride ? resolve(userDataOverride) : join(app.getPath('appData'), 'adou-ofd')
 )
 app.setAppUserModelId('com.adou.ofd')
+registerTextAssetScheme()
 
 let mainWindow: BrowserWindow | null = null
 let backend: BackendManager | null = null
 let quitting = false
+let unsavedTextCount = 0
+let allowWindowClose = false
 const pendingFiles: string[] = parseDocumentPaths(process.argv, process.cwd())
 
 const hasLock = app.requestSingleInstanceLock()
@@ -57,6 +67,7 @@ if (!hasLock) {
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null)
     session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
+    installTextAssetProtocol()
 
     backend = new BackendManager()
     backend.onChange((info: BackendInfo) => {
@@ -83,6 +94,13 @@ if (!hasLock) {
 
   app.on('before-quit', (event) => {
     if (quitting) return
+    if (!allowWindowClose && unsavedTextCount > 0) {
+      event.preventDefault()
+      mainWindow?.show()
+      mainWindow?.focus()
+      if (!confirmDiscardChanges()) return
+      allowWindowClose = true
+    }
     event.preventDefault()
     quitting = true
     mainWindow?.hide()
@@ -94,6 +112,21 @@ if (!hasLock) {
       }
     })()
   })
+}
+
+function confirmDiscardChanges(): boolean {
+  if (!mainWindow || mainWindow.isDestroyed()) return true
+  const choice = dialog.showMessageBoxSync(mainWindow, {
+    type: 'warning',
+    title: '有未保存的修改',
+    message: `还有 ${unsavedTextCount} 个文本文件未保存。`,
+    detail: '退出会丢失这些修改。',
+    buttons: ['取消', '不保存并退出'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true
+  })
+  return choice === 1
 }
 
 function createWindow(): void {
@@ -117,6 +150,14 @@ function createWindow(): void {
   mainWindow = window
 
   window.once('ready-to-show', () => window.show())
+  window.on('close', (event) => {
+    if (allowWindowClose || unsavedTextCount === 0) return
+    event.preventDefault()
+    if (confirmDiscardChanges()) {
+      allowWindowClose = true
+      window.close()
+    }
+  })
   window.on('closed', () => {
     if (mainWindow === window) mainWindow = null
   })
@@ -170,11 +211,13 @@ function registerIpc(): void {
       return autoOpen
     }
     const options: Electron.OpenDialogOptions = {
-      title: '打开 OFD / PDF 文档',
+      title: '打开文档',
       buttonLabel: '打开',
       properties: ['openFile'],
       filters: [
+        { name: '支持的文件', extensions: ['ofd', 'pdf', 'md', 'markdown', 'txt'] },
         { name: 'OFD / PDF 文档', extensions: ['ofd', 'pdf'] },
+        { name: 'Markdown / 文本', extensions: ['md', 'markdown', 'txt'] },
         { name: 'OFD 文档', extensions: ['ofd'] },
         { name: 'PDF 文档', extensions: ['pdf'] }
       ]
@@ -185,8 +228,42 @@ function registerIpc(): void {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  ipcMain.handle('dialog:open-documents', async () => {
-    // 自动化冒烟/压测：ADOU_TEST_OPEN_FILES 支持“分号分隔路径”或“路径清单 txt”
+  ipcMain.handle('dialog:new-text', async (_event, rawKind: unknown) => {
+    const kind = rawKind === 'txt' ? 'txt' : 'md'
+    const autoTarget = process.env.ADOU_TEST_NEW_TEXT
+    let target = typeof autoTarget === 'string' ? autoTarget.trim() : ''
+    if (!target) {
+      const saveOptions: Electron.SaveDialogOptions = {
+        title: kind === 'md' ? '新建 Markdown 文档' : '新建文本文档',
+        buttonLabel: '创建',
+        defaultPath: join(
+          app.getPath('documents'),
+          kind === 'md' ? '未命名.md' : '未命名.txt'
+        ),
+        filters: [
+          {
+            name: kind === 'md' ? 'Markdown 文档' : '文本文档',
+            extensions: [kind]
+          }
+        ]
+      }
+      const result = mainWindow
+        ? await dialog.showSaveDialog(mainWindow, saveOptions)
+        : await dialog.showSaveDialog(saveOptions)
+      if (result.canceled || !result.filePath) return null
+      target = result.filePath
+    }
+    const extension = `.${kind}`
+    if (!target.toLowerCase().endsWith(extension)) target += extension
+    try {
+      writeFileSync(target, '', 'utf8')
+      return resolve(target)
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : '无法创建文件')
+    }
+  })
+
+  ipcMain.handle('dialog:open-documents', async () => {    // 自动化冒烟/压测：ADOU_TEST_OPEN_FILES 支持“分号分隔路径”或“路径清单 txt”
     const autoFiles = process.env.ADOU_TEST_OPEN_FILES
     if (autoFiles) {
       if (autoFiles.toLowerCase().endsWith('.txt') && existsSync(autoFiles)) {
@@ -363,6 +440,21 @@ function registerIpc(): void {
   ipcMain.handle('recent:add', (_event, payload: unknown) => addRecentFile(payload))
   ipcMain.handle('recent:remove', (_event, rawPath: unknown) => removeRecentFile(rawPath))
   ipcMain.handle('recent:clear', () => clearRecentFiles())
+
+  ipcMain.handle('text:read', (_event, rawPath: unknown) => readTextFile(rawPath))
+  ipcMain.handle('text:write', (_event, payload: unknown) => writeTextFile(payload))
+  ipcMain.handle('text:export-pdf', async (_event, payload: unknown) => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return { ok: false, error: '窗口不可用' }
+    }
+    return exportTextPdf(mainWindow, payload)
+  })
+  ipcMain.on('text:unsaved-count', (_event, rawCount: unknown) => {
+    unsavedTextCount =
+      typeof rawCount === 'number' && Number.isFinite(rawCount)
+        ? Math.max(0, Math.floor(rawCount))
+        : 0
+  })
 
   ipcMain.handle('document:print', async (_event, payload: unknown) => {
     if (!backend || backend.info.status !== 'ready' || !backend.info.port || !backend.info.token) {

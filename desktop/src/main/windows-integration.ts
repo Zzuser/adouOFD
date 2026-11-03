@@ -9,14 +9,14 @@ import type { WindowsIntegrationStatus } from '../shared/types'
 const execFileAsync = promisify(execFile)
 
 const APP_KEY = 'AdouOFD'
-const APP_DESCRIPTION = '免费、离线的 OFD / PDF 查看与处理工具'
+const APP_DESCRIPTION = '免费、离线的 OFD / PDF / Markdown 查看与处理工具'
 const REGISTERED_APPLICATIONS = 'Software\\RegisteredApplications'
 const CAPABILITIES_KEY = `Software\\${APP_KEY}\\Capabilities`
 const CONFIG_FILE = 'windows-integration.json'
 const LEGACY_PROG_ID = 'AdouOFD.Document'
 
 interface FileType {
-  extension: 'ofd' | 'pdf'
+  extension: string
   progId: string
   typeName: string
   iconFile: string
@@ -34,6 +34,12 @@ const FILE_TYPES: FileType[] = [
     progId: 'AdouOFD.PDF',
     typeName: 'PDF 文档',
     iconFile: 'pdf-file.ico'
+  },
+  {
+    extension: 'md',
+    progId: 'AdouOFD.MD',
+    typeName: 'Markdown 文档',
+    iconFile: 'md-file.ico'
   }
 ]
 const OUR_PROG_IDS = [...FILE_TYPES.map((type) => type.progId), LEGACY_PROG_ID]
@@ -206,10 +212,11 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
       registered: false,
       ofdDefault: false,
       pdfDefault: false,
+      mdDefault: false,
       optedOut: false
     }
   }
-  const [fileTypesRegistered, ofdDefault, pdfDefault] = await Promise.all([
+  const [fileTypesRegistered, ofdDefault, pdfDefault, mdDefault] = await Promise.all([
     Promise.all(
       FILE_TYPES.map(async (type) => {
         const command = await commandRegistered(type.progId)
@@ -218,7 +225,8 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
       })
     ),
     isDefaultFor('ofd'),
-    isDefaultFor('pdf')
+    isDefaultFor('pdf'),
+    isDefaultFor('md')
   ])
   return {
     supported,
@@ -227,6 +235,7 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
     registered: fileTypesRegistered.every(Boolean),
     ofdDefault,
     pdfDefault,
+    mdDefault,
     optedOut: readConfig().optedOut === true
   }
 }
@@ -311,7 +320,11 @@ export async function unregisterFileAssociations(): Promise<WindowsIntegrationSt
   if (!app.isPackaged) {
     throw new Error('开发模式不写入注册表，请使用安装版')
   }
-  if ((await userChoiceIsOurs('ofd')) || (await userChoiceIsOurs('pdf'))) {
+  if (
+    (await userChoiceIsOurs('ofd')) ||
+    (await userChoiceIsOurs('pdf')) ||
+    (await userChoiceIsOurs('md'))
+  ) {
     throw new Error('Windows 仍将阿豆OFD设为默认应用，请先在“默认应用”中更换后再移除')
   }
 

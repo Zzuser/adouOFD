@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <strong>免费、离线的 OFD / PDF 桌面阅读与处理工具</strong><br>
-  阅读 · 搜索 · 打印 · 转换 · 合并 · 拆分与插页 · Windows 文件关联
+  <strong>免费、离线的 OFD / PDF / Markdown 桌面阅读与编辑工具</strong><br>
+  阅读 · 搜索 · 打印 · 转换 · 合并 · 拆分与插页 · Markdown 编辑 · Windows 文件关联
 </p>
 
 <p align="center">
@@ -21,25 +21,27 @@
 </p>
 
 > 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**0.9.0**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 打印 + 格式转换 + 合并 + 拆分与插页 + Windows 文件关联）
+> 当前版本：**1.0.0**（OFD / PDF 阅读与处理 + Markdown / 文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF）
 
 ## 品牌与图标
 
 - 应用图标为灰白猫正脸头像，白色圆角底；空状态、引擎启动与关于页共用同一角色素材，阅读与处理界面不使用大幅插画。
 - 主色：豆绿 `#2F7A4F`；背景：奶油纸 `#F6F2E7`；高亮：眼金 `#E4B54B`；鼻粉 `#E8A6A0` 仅作微点缀。
-- **文件图标**：OFD 与 PDF 共用“奶油纸 + 对称金色折角（猫耳）+ 简约猫脸”版式，两只前爪搭在豆绿 / 印章红标签顶部，像把标签举在胸前；已写入 Windows `DefaultIcon`，16–256px 多尺寸 ICO。
+- **文件图标**：OFD / PDF / Markdown 共用“奶油纸 + 对称金色折角（猫耳）+ 简约猫脸”版式，两只前爪搭在豆绿 / 印章红 / 深灰蓝标签顶部，像把标签举在胸前；已写入 Windows `DefaultIcon`，16–256px 多尺寸 ICO。
 
-![阿豆 OFD / PDF 文件图标](docs/screenshots/file-icons.png)
+![阿豆 OFD / PDF / Markdown 文件图标](docs/screenshots/file-icons.png)
 
 ## 功能
 
-- **OFD / PDF 查看**：本地打开、拖拽或内置示例，支持电子发票、公文、合同等 OFD / PDF 文件
+- **OFD / PDF 查看**：本地打开或拖拽电子发票、公文、合同等 OFD / PDF 文件
+- **Markdown / 文本编辑**：打开或新建 `.md` / `.markdown` / `.txt`；源码编辑 + GFM 实时预览，支持表格、任务列表、代码高亮、本地图片与相对链接；分栏比例可拖动，标题目录跳转、编辑/预览同步滚动、`Ctrl+S` 保存；自动识别 UTF-8 / UTF-16 / GB18030 并保持 BOM 与 CRLF/LF；可把预览导出为 A4 PDF
+- **编码与保存安全**：文本最大 16 MB；原子写入；文件被其他程序修改时提示覆盖或重新加载；关闭标签和退出应用前确认未保存修改
 - **OFD ↔ PDF 转换**：阅读时一键转换，保留页面尺寸与文字；大文档自动分片 + 多线程转换，进度、取消、页数校验与质量提示
 - **批量转换标签页**：拖入多个文件、选好输出目录即可批量互转；逐个进度、可中途停止、同名自动改名；每行可直接“查看”源文件或转换结果
 - **合并文档标签页**：拖入多个 OFD / PDF，拖动或上下调整列表顺序，选择输出 OFD / PDF 后合并；混合格式会先转换到目标格式，最多 100 个文件；每个文件可一键查看
 - **拆分与插页标签页**：按页、每 N 页或自定义区间拆分 OFD / PDF；也可把另一个文档的指定页插入主文档开头、指定页前或末尾。混合格式自动转换，页面预览标出拆分组、选中页和插入位置
 - **多标签查看**：同时打开多个文档，标签切换保留阅读位置与缩放状态；最多同时打开 8 个
-- **Windows 文件关联**：安装版自动注册 `.ofd` / `.pdf` 的“打开方式”，分别使用 OFD / PDF 文件图标；双击文件会并入已打开窗口；不覆盖你已选择的默认应用，可在“设置”中修复/移除或打开系统默认应用设置
+- **Windows 文件关联**：安装版自动注册 `.ofd` / `.pdf` / `.md` 的“打开方式”，分别使用 OFD / PDF / Markdown 文件图标；双击文件会并入已打开窗口；不覆盖你已选择的默认应用，可在“设置”中修复/移除或打开系统默认应用设置
 - **连续多页预览**：页面按需渲染，大文档滚动不一次性加载全部高清图
 - **缩略图 + 目录**：缩略图高亮跳页；PDF Outline、OFD Outlines/Bookmarks 目录跳页并高亮当前章节
 - **缩放**：50%–300%、适合宽度、适合页面、Ctrl+滚轮，页面清晰可读
@@ -78,7 +80,11 @@
 | --- |
 | ![多标签查看](docs/screenshots/tabs.png) |
 
-更多：[打印面板](docs/screenshots/print-dialog.png) · [全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [隐私政策](docs/screenshots/privacy.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
+| Markdown 编辑 | 分栏与同步滚动 |
+| --- | --- |
+| ![Markdown 编辑](docs/screenshots/markdown.png) | ![Markdown 分栏](docs/screenshots/markdown-split.png) |
+
+更多：[导出 PDF](docs/screenshots/markdown-export.png) · [打印面板](docs/screenshots/print-dialog.png) · [全文搜索](docs/screenshots/search.png) · [设置 / Windows 文件关联](docs/screenshots/settings.png) · [第三方许可](docs/screenshots/license.png) · [隐私政策](docs/screenshots/privacy.png) · [目录页签](docs/screenshots/outline.png) · [OFD 文字选择](docs/screenshots/text-selection.png) · [PDF 文字选择](docs/screenshots/pdf-text-selection.png) · [侧栏折叠](docs/screenshots/sidebar-collapsed.png) · [800 页压力测试](docs/screenshots/stress-800p.png)
 
 ## 下载与安装
 
@@ -91,7 +97,7 @@ npm run backend:build
 npm run package:inno
 ```
 
-产物：`desktop/dist-inno/阿豆OFD-<version>-x64-inno.exe`（Inno Setup，按用户安装，无需管理员）。安装向导提供“关联 .ofd / .pdf 文件类型”任务，取消勾选则只安装程序、不写文件关联；构建会自动生成精简 JRE，不再内置完整 JDK。
+产物：`desktop/dist-inno/阿豆OFD-<version>-x64-inno.exe`（Inno Setup，按用户安装，无需管理员）。安装向导提供“关联 .ofd / .pdf / .md 文件类型”任务，取消勾选则只安装程序、不写文件关联；构建会自动生成精简 JRE，不再内置完整 JDK。
 
 需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
 
@@ -159,8 +165,10 @@ npm run dev:all
 
 | 操作 | 方式 |
 | --- | --- |
-| 打开文档 | “打开文档”、拖拽文件到窗口、双击已关联的 `.ofd` / `.pdf` |
-| 查看示例 | “OFD 示例 / PDF 示例” |
+| 打开文档 | “打开文档”、拖拽文件到窗口、双击已关联的 `.ofd` / `.pdf` / `.md` |
+| 新建文档 | 首页“新建 Markdown”或“新建文本”，选择保存位置后直接编辑 |
+| Markdown 编辑 | 分栏 / 编辑 / 预览三种模式；拖动中间分隔线调整宽度；`Ctrl+S` 保存；工具栏“目录”跳转标题 |
+| 导出 PDF | Markdown 工具栏“导出 PDF”，按 A4 排版导出当前预览 |
 | 文件关联 | 左侧“设置” → Windows 文件关联：注册/修复、设为默认、系统设置、移除 |
 | 开源许可 | “关于” → 开源许可：查看第三方声明、MIT 许可、打开许可目录 |
 | 翻页 | 顶部页码输入、‹ ›、`←` / `→` |
@@ -247,7 +255,7 @@ npm run stress:ui
 - **M1.2**：全文搜索（已实现）/ Windows 文件关联（已实现）/ 页面旋转（已实现）/ 最近文件（已实现）
 - **M2**：PDF ↔ OFD 转换（单文件 + 批量标签页已实现）
 - **M3**：合并（已实现，支持 OFD / PDF 混合与顺序调整）/ 拆分与插页（已实现）
-- **0.10.0**：文档属性、加密 PDF 密码打开（已实现，待发布）；PDF 注解显示、打印第二档（页码 / 页眉页脚 / 水印 / 多文档）后续推进
+- **1.0.0**：首个稳定版；页面旋转、最近文件、文档属性、加密 PDF 密码打开、Markdown / 文本编辑与导出 PDF；PDF 注解显示、打印第二档（页码 / 页眉页脚 / 水印 / 多文档）后续小版本推进
 - **M4**：安装包进一步瘦身（目标 <150MB）、自动更新
 
 ## 已知限制
@@ -258,6 +266,7 @@ npm run stress:ui
 - PDF 转 OFD 会在内存中构建整份文档：≤120 页单次转换（约 18 秒），更多页数自动拆成约 10 片、多线程转换后合并（404 页 / 27MB 手册：2GB 堆、约 60 秒、峰值约 1.5GB、输出 190MB）。引擎堆按物理内存 1/16 分配（1–2GB），内存仍不足时会明确提示并终止该任务（不会卡住界面）
 - OFD 竖排、带复杂 CTM 旋转的文字层仍需适配；PDF 多栏阅读顺序依赖 PDFBox
 - 加密 PDF 需输入打开密码；密码仅用于本次打开，不保存、不写入日志
+- Markdown / 文本编辑上限 16 MB；本地图片只展示已打开文档所在目录内的文件，网络图片不加载；Markdown 导出 PDF 使用 A4 与当前预览内容，不包含编辑器工具栏
 - 加密 PDF 的密码输入目前仅用于阅读器；批量转换、合并、拆分与插页遇到加密 PDF 会提示失败
 - 超大文档（1000+ 页 / 100MB+）尚未压测；页面与缩略图 DOM 会随浏览增长
 - 代码签名由 SignPath Foundation 提供；签名获批前发布的安装包未签名，详见[代码签名政策](docs/CODE-SIGNING.md)

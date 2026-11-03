@@ -7,6 +7,10 @@
   DeleteRegValue HKCU "Software\Classes\.pdf\OpenWithProgids" "AdouOFD.OFD"
   DeleteRegValue HKCU "Software\Classes\.pdf\OpenWithProgids" "AdouOFD.PDF"
   DeleteRegValue HKCU "Software\Classes\.pdf\OpenWithProgids" "AdouOFD.Document"
+  DeleteRegValue HKCU "Software\Classes\.md\OpenWithProgids" "AdouOFD.OFD"
+  DeleteRegValue HKCU "Software\Classes\.md\OpenWithProgids" "AdouOFD.PDF"
+  DeleteRegValue HKCU "Software\Classes\.md\OpenWithProgids" "AdouOFD.MD"
+  DeleteRegValue HKCU "Software\Classes\.md\OpenWithProgids" "AdouOFD.Document"
 
   ReadRegStr $1 HKCU "Software\AdouOFD" "PreviousOfdDefault"
   ReadRegStr $0 HKCU "Software\Classes\.ofd" ""
@@ -25,6 +29,7 @@
   ofd_default_done:
   DeleteRegKey HKCU "Software\Classes\AdouOFD.OFD"
   DeleteRegKey HKCU "Software\Classes\AdouOFD.PDF"
+  DeleteRegKey HKCU "Software\Classes\AdouOFD.MD"
   DeleteRegKey HKCU "Software\Classes\AdouOFD.Document"
   DeleteRegKey HKCU "Software\AdouOFD"
   DeleteRegValue HKCU "Software\RegisteredApplications" "AdouOFD"

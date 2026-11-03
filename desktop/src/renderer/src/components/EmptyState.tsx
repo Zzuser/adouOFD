@@ -2,15 +2,15 @@ import { useState } from 'react'
 import type { RecentFile } from '@shared/types'
 import mascotEmpty from '../assets/mascot-empty.webp'
 import mascotLoading from '../assets/mascot-loading.webp'
-import { IconClose, IconFile, IconFolder, IconLocation, IconSpark } from './icons'
+import { IconClose, IconFolder, IconLocation, IconPlus } from './icons'
 
 interface EmptyStateProps {
   ready: boolean
   busy: boolean
   engineStarting: boolean
   onOpen: () => void
-  onDemo: () => void
-  onPdfDemo: () => void
+  onNewMarkdown: () => void
+  onNewText: () => void
   onDropFiles: (files: FileList) => void
   recentFiles: RecentFile[]
   onOpenRecent: (entry: RecentFile) => void
@@ -24,8 +24,8 @@ export function EmptyState({
   busy,
   engineStarting,
   onOpen,
-  onDemo,
-  onPdfDemo,
+  onNewMarkdown,
+  onNewText,
   onDropFiles,
   recentFiles,
   onOpenRecent,
@@ -58,36 +58,39 @@ export function EmptyState({
         />
       </div>
 
-      <h2>{dragOver ? '松开以打开文档' : '打开 OFD / PDF 文档'}</h2>
-      <p>选择或拖入本地文件。文档仅在本机处理，不上传。</p>
+      <h2>{dragOver ? '松开以打开文档' : '打开或新建文档'}</h2>
+      <p>
+        选择或拖入本地 OFD / PDF / Markdown / 文本文件，也可新建 Markdown 或文本；
+        文档仅在本机处理，不上传。
+      </p>
 
       <div className="empty-actions">
         <button
           className="btn primary"
           data-action="open"
           onClick={onOpen}
-          disabled={!ready || busy}
+          disabled={busy}
         >
           {busy ? <span className="btn-spinner" /> : <IconFolder size={17} />}
           打开文档
         </button>
         <button
           className="btn ghost"
-          data-action="demo-ofd"
-          onClick={onDemo}
-          disabled={!ready || busy}
+          data-action="new-markdown"
+          onClick={onNewMarkdown}
+          disabled={busy}
         >
-          <IconSpark size={17} />
-          OFD 示例
+          <IconPlus size={17} />
+          新建 Markdown
         </button>
         <button
           className="btn ghost"
-          data-action="demo-pdf"
-          onClick={onPdfDemo}
-          disabled={!ready || busy}
+          data-action="new-text"
+          onClick={onNewText}
+          disabled={busy}
         >
-          <IconFile size={17} />
-          PDF 示例
+          <IconPlus size={17} />
+          新建文本
         </button>
       </div>
 
@@ -150,8 +153,8 @@ export function EmptyState({
         {engineStarting
           ? '本地引擎正在启动，通常需要 2–3 秒…'
           : ready
-            ? '支持 .ofd / .pdf · 多页 · 缩放 · 目录 · 文字复制'
-            : '本地引擎未就绪，请查看左侧状态或重试。'}
+            ? '支持 .ofd / .pdf / .md / .markdown / .txt · 阅读、编辑与实时预览'
+            : '本地引擎正在启动；Markdown / 文本可正常打开和新建。'}
       </div>
     </div>
   )

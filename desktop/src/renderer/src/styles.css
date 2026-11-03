@@ -724,6 +724,14 @@ button:focus-visible {
   padding: 2px 5px;
 }
 
+.doc-tab-dirty {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 .doc-tab-name {
   overflow: hidden;
   color: var(--muted);
@@ -872,6 +880,8 @@ button:focus-visible {
 .empty-actions {
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   margin-top: 24px;
 }

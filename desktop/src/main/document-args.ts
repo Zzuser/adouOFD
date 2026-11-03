@@ -2,7 +2,7 @@ import { existsSync, statSync } from 'node:fs'
 import { extname, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const DOCUMENT_EXTENSIONS = new Set(['.ofd', '.pdf'])
+const DOCUMENT_EXTENSIONS = new Set(['.ofd', '.pdf', '.md', '.markdown', '.txt'])
 
 /**
  * 从启动参数中提取可打开的文档路径。安装版由文件关联传入 `"<path>"`，

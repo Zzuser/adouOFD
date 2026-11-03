@@ -1,7 +1,15 @@
 # Changelog
 
-## Unreleased — 0.10.0
+## 1.0.0 — 2026-11-03
 
+First stable release: consolidates the 0.10.0 work (page rotation, recent files, document properties, encrypted PDF) with Markdown/text editing, PDF export and the 1.0 home-page refresh.
+
+- Redesigned the OFD/PDF file icons: matching gold folds read as cat ears, a minimal cat face sits above the label, and two paws hold the OFD/PDF label at chest height.
+- Added Markdown (`.md` / `.markdown`) and plain-text (`.txt`) viewing and editing: CodeMirror 6 editor with live GFM preview, tables, task lists, fenced-code highlighting, local images, relative links, split/edit/preview modes, a draggable split ratio, heading outline navigation and synchronized scrolling.
+- Added encoding-aware text I/O: UTF-8/BOM, UTF-16 LE/BE and GB18030 detection, BOM/CRLF/LF preservation, a 16 MB limit, atomic saves and external-change conflict detection. Text tabs open independently of the Java engine.
+- Added Markdown export to A4 PDF from the rendered preview, and “新建 Markdown / 新建文本” actions on the empty state; the OFD/PDF sample buttons were removed and the home copy now covers reading and editing.
+- Added `.md` file association (`AdouOFD.MD`, `md-file.ico`), Windows “Open with” and installer registration/cleanup; `.markdown` remains application-only.
+- Text files use an `adou-file://` protocol for local images, restricted to image files inside the opened document's directory; remote images are not loaded.
 - Added page rotation for OFD/PDF: rotate the current page or all pages by 90° in either direction, reset per page or for the whole document. Rotation is view-level and never modifies the source file; thumbnails, text selection, search positioning, print preview and printed output follow the rotated layout.
 - Added a recent-file list on the empty state: up to 20 files are stored locally, deduplicated, pruned when missing, and can be reopened, revealed in Explorer, removed individually or cleared.
 - Added a read-only document properties dialog: format, page count, file size, page sizes, PDF/OFD metadata and signature entries. It explicitly does not verify signatures.
@@ -9,6 +17,7 @@
 - Fixed OFD outline loading for single-document packages, kept the first visible thumbnails eager, and prevented a pending zoom anchor from overriding an explicit page jump.
 - Added `ADOU_USER_DATA` for the UI smoke test so automation uses an isolated user-data directory instead of the installed app's profile.
 - Added backend and UI smoke coverage for page rotation, rotated text selection/search, rotated print output, recent-file persistence, document properties and the encrypted-PDF password flow.
+- Added a dedicated Markdown/text UI smoke (`npm run smoke:text`) covering home-page creation, GFM rendering, local images, GB18030 editing/saving, split resizing, outline navigation, scroll sync, PDF export and unsaved-close handling; updated the main UI smoke to open copied demo documents without home-page sample buttons.
 
 ## 0.9.0 — 2026-11-03
 

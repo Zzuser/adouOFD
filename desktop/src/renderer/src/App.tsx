@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AppVersions, BackendInfo, DocumentSummary, EngineHealth, RecentFile } from '@shared/types'
+import type {
+  AppVersions,
+  BackendInfo,
+  DocumentSummary,
+  EngineHealth,
+  RecentFile,
+  RecentFileInput
+} from '@shared/types'
+import type { TextKind } from '@shared/text-paths'
+import { fileNameOf, isTextPath, textKindOf } from '@shared/text-paths'
 import type { RotationMap } from '@shared/rotation'
-import { closeDocument, fetchHealth, messageOf, openDemo, openDocument, openPdfDemo, ApiRequestError } from './api'
+import { closeDocument, fetchHealth, messageOf, openDocument, ApiRequestError } from './api'
 import { AboutDialog } from './components/AboutDialog'
 import { BatchConvert } from './components/BatchConvert'
 import { ConvertDialog } from './components/ConvertDialog'
@@ -14,16 +23,28 @@ import { PasswordDialog } from './components/PasswordDialog'
 import { PrintDialog } from './components/PrintDialog'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
+import { TextViewer, type TextViewerHandle } from './components/TextViewer'
 import { Viewer } from './components/Viewer'
 import { IconAlert } from './components/icons'
 
 const INITIAL_BACKEND: BackendInfo = { status: 'starting', port: null, token: null }
 const MAX_TABS = 8
 
-interface ViewerTab {
+interface DocumentTab {
+  type: 'document'
   key: string
   doc: DocumentSummary
 }
+
+interface TextTab {
+  type: 'text'
+  key: string
+  path: string
+  name: string
+  kind: TextKind
+}
+
+type Tab = DocumentTab | TextTab
 
 interface PrintTarget {
   doc: DocumentSummary
@@ -43,8 +64,11 @@ export default function App() {
   const [backend, setBackend] = useState<BackendInfo>(INITIAL_BACKEND)
   const [health, setHealth] = useState<EngineHealth | null>(null)
   const [versions, setVersions] = useState<AppVersions | null>(null)
-  const [tabs, setTabs] = useState<ViewerTab[]>([])
+  const [tabs, setTabs] = useState<Tab[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [dirtyTexts, setDirtyTexts] = useState<Record<string, boolean>>({})
+  const [closeTarget, setCloseTarget] = useState<string | null>(null)
+  const [closeSaving, setCloseSaving] = useState(false)
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,10 +88,19 @@ export default function App() {
     }
   })
 
-  const tabsRef = useRef<ViewerTab[]>([])
+  const tabsRef = useRef<Tab[]>([])
   const activeIdRef = useRef<string | null>(null)
+  const dirtyTextsRef = useRef<Record<string, boolean>>({})
+  const textHandlesRef = useRef(new Map<string, TextViewerHandle>())
+  const deferredFilesRef = useRef<string[]>([])
   const activeTab = tabs.find((tab) => tab.key === activeId) ?? null
-  const doc = activeTab?.doc ?? null
+  const doc = activeTab?.type === 'document' ? activeTab.doc : null
+  const closeTabItem = closeTarget ? tabs.find((tab) => tab.key === closeTarget) ?? null : null
+  const closeTabName = closeTabItem
+    ? closeTabItem.type === 'document'
+      ? closeTabItem.doc.name
+      : closeTabItem.name
+    : ''
   const ready = backend.status === 'ready'
 
   useEffect(() => {
@@ -77,6 +110,15 @@ export default function App() {
   useEffect(() => {
     activeIdRef.current = activeId
   }, [activeId])
+
+  useEffect(() => {
+    dirtyTextsRef.current = dirtyTexts
+  }, [dirtyTexts])
+
+  useEffect(() => {
+    const count = Object.values(dirtyTexts).filter(Boolean).length
+    window.adou.setUnsavedTextCount(count)
+  }, [dirtyTexts])
 
   useEffect(() => {
     let alive = true
@@ -136,28 +178,29 @@ export default function App() {
     return () => window.clearTimeout(timer)
   }, [printNotice])
 
-  const recordRecent = useCallback((summary: DocumentSummary) => {
-    if (summary.demo) return
-    const kind = summary.kind === 'PDF' ? 'PDF' : 'OFD'
+  const recordRecent = useCallback((entry: RecentFileInput) => {
     void window.adou
-      .addRecentFile({
-        path: summary.path,
-        name: summary.name,
-        kind,
-        pageCount: summary.pageCount
-      })
+      .addRecentFile(entry)
       .then(setRecentFiles)
       .catch(() => undefined)
   }, [])
 
   const showDocument = useCallback(
     (summary: DocumentSummary) => {
-      recordRecent(summary)
+      if (!summary.demo) {
+        recordRecent({
+          path: summary.path,
+          name: summary.name,
+          kind: summary.kind === 'PDF' ? 'PDF' : 'OFD',
+          pageCount: summary.pageCount
+        })
+      }
       const current = tabsRef.current
       const existing = current.find(
         (tab) =>
-          tab.doc.id === summary.id ||
-          (!summary.demo && tab.doc.path.toLowerCase() === summary.path.toLowerCase())
+          tab.type === 'document' &&
+          (tab.doc.id === summary.id ||
+            (!summary.demo && tab.doc.path.toLowerCase() === summary.path.toLowerCase()))
       )
       if (existing) {
         activeIdRef.current = existing.key
@@ -170,7 +213,7 @@ export default function App() {
         setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
         return
       }
-      const next = [...current, { key: summary.id, doc: summary }]
+      const next: Tab[] = [...current, { type: 'document', key: summary.id, doc: summary }]
       tabsRef.current = next
       setTabs(next)
       activeIdRef.current = summary.id
@@ -180,14 +223,64 @@ export default function App() {
     [backend, recordRecent]
   )
 
+  const openTextFile = useCallback(
+    (path: string) => {
+      const kind = textKindOf(path)
+      if (!kind) return false
+      const existing = tabsRef.current.find(
+        (tab): tab is TextTab =>
+          tab.type === 'text' && tab.path.toLowerCase() === path.toLowerCase()
+      )
+      if (existing) {
+        activeIdRef.current = existing.key
+        setActiveId(existing.key)
+        setView('viewer')
+        setError(null)
+        recordRecent({ path, name: existing.name, kind, pageCount: 0 })
+        return true
+      }
+      if (tabsRef.current.length >= MAX_TABS) {
+        setError(`最多同时打开 ${MAX_TABS} 个标签，请先关闭标签`)
+        return true
+      }
+      const key = `text:${path.toLowerCase()}`
+      const tab: TextTab = { type: 'text', key, path, name: fileNameOf(path), kind }
+      const next = [...tabsRef.current, tab]
+      tabsRef.current = next
+      setTabs(next)
+      activeIdRef.current = key
+      setActiveId(key)
+      setView('viewer')
+      setError(null)
+      recordRecent({ path, name: tab.name, kind, pageCount: 0 })
+      return true
+    },
+    [recordRecent]
+  )
+
+  const createText = useCallback(
+    async (kind: 'md' | 'txt') => {
+      try {
+        const path = await window.adou.createTextFile(kind)
+        if (path) openTextFile(path)
+      } catch (reason) {
+        setError(messageOf(reason))
+      }
+    },
+    [openTextFile]
+  )
+
   const openPath = useCallback(
-    async (path: string, password?: string) => {
+    async (path: string, password?: string) => {      if (isTextPath(path)) {
+        openTextFile(path)
+        return
+      }
       if (!ready) {
         setError('本地引擎尚未就绪，请稍候再试')
         return
       }
       const existing = tabsRef.current.find(
-        (tab) => tab.doc.path.toLowerCase() === path.toLowerCase()
+        (tab) => tab.type === 'document' && tab.doc.path.toLowerCase() === path.toLowerCase()
       )
       if (existing) {
         activeIdRef.current = existing.key
@@ -195,7 +288,12 @@ export default function App() {
         setView('viewer')
         setError(null)
         setPasswordTarget(null)
-        recordRecent(existing.doc)
+        if (existing.type === 'document') recordRecent({
+          path: existing.doc.path,
+          name: existing.doc.name,
+          kind: existing.doc.kind === 'PDF' ? 'PDF' : 'OFD',
+          pageCount: existing.doc.pageCount
+        })
         return
       }
       if (tabsRef.current.length >= MAX_TABS) {
@@ -228,14 +326,20 @@ export default function App() {
         setBusy(false)
       }
     },
-    [backend, ready, showDocument, recordRecent]
+    [backend, ready, showDocument, recordRecent, openTextFile]
   )
 
   const openQueuedFiles = useCallback(async () => {
-    if (!ready) return
     const paths = await window.adou.takePendingFiles()
+    const deferred: string[] = []
     for (const path of paths) {
-      await openPath(path)
+      if (isTextPath(path) || ready) await openPath(path)
+      else deferred.push(path)
+    }
+    if (deferred.length > 0) deferredFilesRef.current.push(...deferred)
+    if (ready) {
+      const waiting = deferredFilesRef.current.splice(0)
+      for (const path of waiting) await openPath(path)
     }
   }, [openPath, ready])
 
@@ -265,71 +369,13 @@ export default function App() {
   }, [openQueuedFiles])
 
   useEffect(() => {
-    if (ready) void openQueuedFiles()
-  }, [ready, openQueuedFiles])
+    void openQueuedFiles()
+  }, [openQueuedFiles])
 
   const pickDocument = useCallback(async () => {
-    if (!ready) {
-      setError('本地引擎尚未就绪，请稍候再试')
-      return
-    }
     const path = await window.adou.pickDocument()
     if (path) await openPath(path)
-  }, [openPath, ready])
-  const openSample = useCallback(async () => {
-    if (!ready) {
-      setError('本地引擎尚未就绪，请稍候再试')
-      return
-    }
-    const existing = tabsRef.current.find((tab) => tab.doc.demo && tab.doc.kind === 'OFD')
-    if (existing) {
-      activeIdRef.current = existing.key
-      setActiveId(existing.key)
-      setView('viewer')
-      return
-    }
-    if (tabsRef.current.length >= MAX_TABS) {
-      setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
-      return
-    }
-    setBusy(true)
-    setError(null)
-    try {
-      showDocument(await openDemo(backend))
-    } catch (reason) {
-      setError(messageOf(reason))
-    } finally {
-      setBusy(false)
-    }
-  }, [backend, ready, showDocument])
-
-  const openPdfSample = useCallback(async () => {
-    if (!ready) {
-      setError('本地引擎尚未就绪，请稍候再试')
-      return
-    }
-    const existing = tabsRef.current.find((tab) => tab.doc.demo && tab.doc.kind === 'PDF')
-    if (existing) {
-      activeIdRef.current = existing.key
-      setActiveId(existing.key)
-      setView('viewer')
-      return
-    }
-    if (tabsRef.current.length >= MAX_TABS) {
-      setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
-      return
-    }
-    setBusy(true)
-    setError(null)
-    try {
-      showDocument(await openPdfDemo(backend))
-    } catch (reason) {
-      setError(messageOf(reason))
-    } finally {
-      setBusy(false)
-    }
-  }, [backend, ready, showDocument])
-
+  }, [openPath])
   const dropFiles = useCallback(
     (files: FileList) => {
       const file = files[0]
@@ -339,8 +385,8 @@ export default function App() {
         setError('无法读取拖入文件的路径，请使用“打开文档”按钮')
         return
       }
-      if (!/\.(ofd|pdf)$/i.test(path)) {
-        setError('当前支持打开 .ofd 与 .pdf 文件')
+      if (!/\.(ofd|pdf|md|markdown|txt)$/i.test(path)) {
+        setError('当前支持打开 .ofd / .pdf / .md / .markdown / .txt 文件')
         return
       }
       void openPath(path)
@@ -375,7 +421,7 @@ export default function App() {
     void window.adou.revealPath(path)
   }, [])
 
-  const closeTab = useCallback(
+  const finalizeClose = useCallback(
     (id: string) => {
       const current = tabsRef.current
       const index = current.findIndex((tab) => tab.key === id)
@@ -384,17 +430,69 @@ export default function App() {
       const next = current.filter((tab) => tab.key !== id)
       tabsRef.current = next
       setTabs(next)
+      setDirtyTexts((previous) => {
+        if (!(id in previous)) return previous
+        const copy = { ...previous }
+        delete copy[id]
+        return copy
+      })
+      textHandlesRef.current.delete(id)
       if (activeIdRef.current === id) {
         const neighbor = next[Math.min(index, next.length - 1)] ?? null
         activeIdRef.current = neighbor?.key ?? null
         setActiveId(neighbor?.key ?? null)
         setConvertOpen(false)
       }
-      if (backend.status === 'ready') {
+      if (closing.type === 'document' && backend.status === 'ready') {
         void closeDocument(backend, closing.doc.id).catch(() => undefined)
       }
     },
     [backend]
+  )
+
+  const requestCloseTab = useCallback(
+    (id: string) => {
+      const tab = tabsRef.current.find((item) => item.key === id)
+      if (tab?.type === 'text') {
+        const handle = textHandlesRef.current.get(id)
+        const dirty = handle ? handle.isDirty() : dirtyTextsRef.current[id]
+        if (dirty) {
+          setCloseTarget(id)
+          return
+        }
+      }
+      finalizeClose(id)
+    },
+    [finalizeClose]
+  )
+
+  const saveAndClose = useCallback(async () => {
+    const target = closeTarget
+    if (!target) return
+    const handle = textHandlesRef.current.get(target)
+    setCloseSaving(true)
+    let saved = true
+    try {
+      saved = handle ? await handle.save() : true
+    } finally {
+      setCloseSaving(false)
+    }
+    setCloseTarget(null)
+    if (saved) finalizeClose(target)
+  }, [closeTarget, finalizeClose])
+
+  const setTextDirty = useCallback((key: string, dirty: boolean) => {
+    setDirtyTexts((previous) =>
+      previous[key] === dirty ? previous : { ...previous, [key]: dirty }
+    )
+  }, [])
+
+  const registerTextHandle = useCallback(
+    (key: string, handle: TextViewerHandle | null) => {
+      if (handle) textHandlesRef.current.set(key, handle)
+      else textHandlesRef.current.delete(key)
+    },
+    []
   )
 
   const switchTab = useCallback((id: string) => {
@@ -450,9 +548,9 @@ export default function App() {
       }
       if (preparingPrintRef.current) return
       const existing = tabsRef.current.find(
-        (tab) => tab.doc.path.toLowerCase() === path.toLowerCase()
+        (tab) => tab.type === 'document' && tab.doc.path.toLowerCase() === path.toLowerCase()
       )
-      if (existing) {
+      if (existing && existing.type === 'document') {
         setPrintTarget({ doc: existing.doc, page: 1, rotations: {}, transient: false })
         return
       }
@@ -498,13 +596,14 @@ export default function App() {
               <DocTabs
                 tabs={tabs.map((tab) => ({
                   id: tab.key,
-                  name: tab.doc.name,
-                  kind: tab.doc.kind,
-                  path: tab.doc.path
+                  name: tab.type === 'document' ? tab.doc.name : tab.name,
+                  kind: tab.type === 'document' ? tab.doc.kind : tab.kind,
+                  path: tab.type === 'document' ? tab.doc.path : tab.path,
+                  dirty: tab.type === 'text' && Boolean(dirtyTexts[tab.key])
                 }))}
                 activeId={activeId}
                 onSelect={switchTab}
-                onClose={closeTab}
+                onClose={requestCloseTab}
                 onOpen={() => void pickDocument()}
               />
               {backend.status !== 'ready' ? (
@@ -536,7 +635,7 @@ export default function App() {
                         ? '按页或区间拆分文档，也可把另一个文档的页面插入到指定位置；文件只在本机处理。'
                         : view === 'settings'
                           ? 'Windows 文件关联、默认应用与本地数据说明。'
-                          : '打开并阅读本地 OFD / PDF 文档。'}
+                          : '阅读与编辑本地 OFD / PDF / Markdown / 文本文档。'}
                 </span>
               </div>
               {backend.status !== 'ready' ? (
@@ -562,7 +661,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className={`content ${view === 'viewer' && doc ? 'has-doc' : ''}`}>
+        <section className={`content ${view === 'viewer' && tabs.length > 0 ? 'has-doc' : ''}`}>
           <div className="pane" hidden={view !== 'batch'}>
             <BatchConvert
               backend={backend}
@@ -607,8 +706,8 @@ export default function App() {
                 busy={busy}
                 engineStarting={backend.status === 'starting'}
                 onOpen={() => void pickDocument()}
-                onDemo={() => void openSample()}
-                onPdfDemo={() => void openPdfSample()}
+                onNewMarkdown={() => void createText('md')}
+                onNewText={() => void createText('txt')}
                 onDropFiles={dropFiles}
                 recentFiles={recentFiles}
                 onOpenRecent={(entry) => void openRecent(entry)}
@@ -623,15 +722,26 @@ export default function App() {
                   hidden={tab.key !== activeId}
                   key={tab.key}
                 >
-                  <Viewer
-                    backend={backend}
-                    doc={tab.doc}
-                    active={tab.key === activeId && view === 'viewer'}
-                    printOpen={Boolean(printTarget)}
-                    onClose={() => closeTab(tab.key)}
-                    onConvert={() => setConvertOpen(true)}
-                    onPrint={(page, rotations) => requestPrint(tab.doc, page, rotations)}
-                  />
+                  {tab.type === 'document' ? (
+                    <Viewer
+                      backend={backend}
+                      doc={tab.doc}
+                      active={tab.key === activeId && view === 'viewer'}
+                      printOpen={Boolean(printTarget)}
+                      onClose={() => requestCloseTab(tab.key)}
+                      onConvert={() => setConvertOpen(true)}
+                      onPrint={(page, rotations) => requestPrint(tab.doc, page, rotations)}
+                    />
+                  ) : (
+                    <TextViewer
+                      ref={(handle) => registerTextHandle(tab.key, handle)}
+                      path={tab.path}
+                      active={tab.key === activeId && view === 'viewer'}
+                      onDirtyChange={(dirty) => setTextDirty(tab.key, dirty)}
+                      onOpenPath={(path) => void openPath(path)}
+                      onClose={() => requestCloseTab(tab.key)}
+                    />
+                  )}
                 </div>
               ))
             )}
@@ -681,6 +791,49 @@ export default function App() {
         onSubmit={(password) => void submitPassword(password)}
         onCancel={cancelPassword}
       />
+
+      {closeTabItem ? (
+        <div className="text-close-backdrop" role="dialog" aria-modal="true">
+          <div className="text-close-dialog">
+            <h3>保存修改？</h3>
+            <p>
+              “{closeTabName}”还有未保存的修改。关闭后这些修改会丢失。
+            </p>
+            <div className="text-close-actions">
+              <button
+                type="button"
+                className="btn ghost small"
+                disabled={closeSaving}
+                onClick={() => setCloseTarget(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn ghost small danger-text"
+                data-action="text-close-discard"
+                disabled={closeSaving}
+                onClick={() => {
+                  const target = closeTarget
+                  setCloseTarget(null)
+                  if (target) finalizeClose(target)
+                }}
+              >
+                不保存关闭
+              </button>
+              <button
+                type="button"
+                className="btn primary small"
+                data-action="text-close-save"
+                disabled={closeSaving}
+                onClick={() => void saveAndClose()}
+              >
+                {closeSaving ? '保存中…' : '保存并关闭'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {printNotice ? (
         <div

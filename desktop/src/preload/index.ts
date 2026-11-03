@@ -47,7 +47,12 @@ const api: AdouApi = {
   listRecentFiles: () => ipcRenderer.invoke('recent:list'),
   addRecentFile: (entry) => ipcRenderer.invoke('recent:add', entry),
   removeRecentFile: (path) => ipcRenderer.invoke('recent:remove', path),
-  clearRecentFiles: () => ipcRenderer.invoke('recent:clear')
+  clearRecentFiles: () => ipcRenderer.invoke('recent:clear'),
+  readTextFile: (path) => ipcRenderer.invoke('text:read', path),
+  writeTextFile: (options) => ipcRenderer.invoke('text:write', options),
+  createTextFile: (kind) => ipcRenderer.invoke('dialog:new-text', kind),
+  exportTextPdf: (options) => ipcRenderer.invoke('text:export-pdf', options),
+  setUnsavedTextCount: (count) => ipcRenderer.send('text:unsaved-count', count)
 }
 
 contextBridge.exposeInMainWorld('adou', api)

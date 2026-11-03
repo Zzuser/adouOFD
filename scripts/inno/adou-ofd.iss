@@ -1,6 +1,6 @@
 ﻿#define AppName "阿豆OFD"
 #ifndef AppVersion
-  #define AppVersion "0.9.0"
+  #define AppVersion "1.0.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\..\desktop\dist-inno-stage\win-unpacked"
@@ -54,7 +54,7 @@ VersionInfoProductVersion={#AppVersion}
 Name: "chinesesimplified"; MessagesFile: "{#RepoRoot}\scripts\inno\ChineseSimplified.isl"
 
 [Tasks]
-Name: "associate"; Description: "关联 .ofd / .pdf 文件类型（加入“打开方式”，不覆盖现有默认应用）"; GroupDescription: "文件关联："; Flags: checkedonce
+Name: "associate"; Description: "关联 .ofd / .pdf / .md 文件类型（加入“打开方式”，不覆盖现有默认应用）"; GroupDescription: "文件关联："; Flags: checkedonce
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："; Flags: checkedonce
 
 [Files]
@@ -71,9 +71,10 @@ Filename: "{app}\阿豆OFD.exe"; Description: "启动阿豆OFD"; Flags: nowait p
 const
   ProgIdOfd = 'AdouOFD.OFD';
   ProgIdPdf = 'AdouOFD.PDF';
+  ProgIdMd = 'AdouOFD.MD';
   LegacyProgId = 'AdouOFD.Document';
   AppKey = 'AdouOFD';
-  AppDescription = '免费、离线的 OFD / PDF 查看与处理工具';
+  AppDescription = '免费、离线的 OFD / PDF / Markdown 查看与处理工具';
 
 var
   PreviousOfdDefault: String;
@@ -95,7 +96,7 @@ end;
 
 function IsOurProgId(const Value: String): Boolean;
 begin
-  Result := (Value = ProgIdOfd) or (Value = ProgIdPdf) or (Value = LegacyProgId);
+  Result := (Value = ProgIdOfd) or (Value = ProgIdPdf) or (Value = ProgIdMd) or (Value = LegacyProgId);
 end;
 
 function TasksSpecified: Boolean;
@@ -120,8 +121,10 @@ begin
   Result :=
     RegValueExists(HKCU, 'Software\Classes\' + ProgIdOfd + '\shell\open\command', '') and
     RegValueExists(HKCU, 'Software\Classes\' + ProgIdPdf + '\shell\open\command', '') and
+    RegValueExists(HKCU, 'Software\Classes\' + ProgIdMd + '\shell\open\command', '') and
     RegValueExists(HKCU, 'Software\Classes\.ofd\OpenWithProgids', ProgIdOfd) and
-    RegValueExists(HKCU, 'Software\Classes\.pdf\OpenWithProgids', ProgIdPdf);
+    RegValueExists(HKCU, 'Software\Classes\.pdf\OpenWithProgids', ProgIdPdf) and
+    RegValueExists(HKCU, 'Software\Classes\.md\OpenWithProgids', ProgIdMd);
 end;
 
 function HasUserChoice(const Ext: String): Boolean;
@@ -211,8 +214,12 @@ begin
   WriteProgId(ProgIdPdf, 'PDF 文档', 'pdf-file.ico');
   RegWriteStringValue(HKCU, 'Software\Classes\.pdf\OpenWithProgids', ProgIdPdf, '');
 
+  WriteProgId(ProgIdMd, 'Markdown 文档', 'md-file.ico');
+  RegWriteStringValue(HKCU, 'Software\Classes\.md\OpenWithProgids', ProgIdMd, '');
+
   RegDeleteValue(HKCU, 'Software\Classes\.ofd\OpenWithProgids', LegacyProgId);
   RegDeleteValue(HKCU, 'Software\Classes\.pdf\OpenWithProgids', LegacyProgId);
+  RegDeleteValue(HKCU, 'Software\Classes\.md\OpenWithProgids', LegacyProgId);
   if (not HasUserChoice('ofd')) and (not HasUserChoice('pdf')) then
     RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + LegacyProgId);
 
@@ -226,6 +233,8 @@ begin
     '.ofd', ProgIdOfd);
   RegWriteStringValue(HKCU, 'Software\' + AppKey + '\Capabilities\FileAssociations',
     '.pdf', ProgIdPdf);
+  RegWriteStringValue(HKCU, 'Software\' + AppKey + '\Capabilities\FileAssociations',
+    '.md', ProgIdMd);
   RegWriteStringValue(HKCU, 'Software\RegisteredApplications', AppKey,
     'Software\' + AppKey + '\Capabilities');
   RegWriteStringValue(HKCU, 'Software\' + AppKey, 'PreviousOfdDefault',
@@ -246,6 +255,10 @@ begin
   RegDeleteValue(HKCU, 'Software\Classes\.pdf\OpenWithProgids', ProgIdOfd);
   RegDeleteValue(HKCU, 'Software\Classes\.pdf\OpenWithProgids', ProgIdPdf);
   RegDeleteValue(HKCU, 'Software\Classes\.pdf\OpenWithProgids', LegacyProgId);
+  RegDeleteValue(HKCU, 'Software\Classes\.md\OpenWithProgids', ProgIdOfd);
+  RegDeleteValue(HKCU, 'Software\Classes\.md\OpenWithProgids', ProgIdPdf);
+  RegDeleteValue(HKCU, 'Software\Classes\.md\OpenWithProgids', ProgIdMd);
+  RegDeleteValue(HKCU, 'Software\Classes\.md\OpenWithProgids', LegacyProgId);
 
   Saved := '';
   RegQueryStringValue(HKCU, 'Software\' + AppKey, 'PreviousOfdDefault', Saved);
@@ -260,6 +273,7 @@ begin
 
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + ProgIdOfd);
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + ProgIdPdf);
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + ProgIdMd);
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + LegacyProgId);
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\' + AppKey);
   RegDeleteValue(HKCU, 'Software\RegisteredApplications', AppKey);

@@ -81,7 +81,7 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
         <img className="about-mascot" src={mascotEmpty} alt="阿豆" draggable={false} />
         <h2 id="about-title">阿豆OFD</h2>
         <div className="about-version">v{versions?.app ?? '0.7.1'} · MIT License</div>
-        <p className="about-desc">本地 OFD / PDF 阅读与处理工具，文档不上传。</p>
+        <p className="about-desc">本地 OFD / PDF / Markdown 阅读与处理工具，文档不上传。</p>
 
         <div className="about-versions">
           <div><span>Java</span><b>{health?.javaVersion ?? '—'}</b></div>

@@ -59,6 +59,10 @@ const printCustomPdf = join(outDir, 'smoke-print-custom.pdf')
 const printPdfOutput = join(outDir, 'smoke-print-pdf.pdf')
 const printRotatedPdf = join(outDir, 'smoke-print-rotated.pdf')
 const encryptedFixture = join(root, 'scripts', 'fixtures', 'encrypted.pdf')
+const demoOfdCopy = join(outDir, 'ui-demo.ofd')
+const demoPdfCopy = join(outDir, 'ui-demo.pdf')
+rmSync(demoOfdCopy, { force: true })
+rmSync(demoPdfCopy, { force: true })
 rmSync(printTestPdf, { force: true })
 rmSync(printNupPdf, { force: true })
 rmSync(printEightPdf, { force: true })
@@ -69,6 +73,12 @@ rmSync(printRotatedPdf, { force: true })
 const smokeAppData = join(outDir, 'smoke-appdata')
 rmSync(smokeAppData, { recursive: true, force: true })
 mkdirSync(join(smokeAppData, 'adou-ofd'), { recursive: true })
+const secondEnv = {
+  ...process.env,
+  APPDATA: smokeAppData,
+  ADOU_USER_DATA: join(smokeAppData, 'adou-ofd')
+}
+delete secondEnv.ELECTRON_RUN_AS_NODE
 
 const errors = []
 let allowOpen422 = false
@@ -243,7 +253,43 @@ try {
     errors.push('CSP 未生效')
   }
 
-  await evaluate(cdp, "document.querySelector('[data-action=\"demo-ofd\"]')?.click()")
+  const prepareDemoCopy = async (kind, target, expectedTabs) => {
+    rmSync(target, { force: true })
+    const summary = await evaluate(
+      cdp,
+      `(async () => {
+        const info = await window.adou.getBackendInfo()
+        const response = await fetch('http://127.0.0.1:' + info.port + '/api/documents/demo${kind === 'pdf' ? '/pdf' : ''}', {
+          method: 'POST',
+          headers: { 'X-ADou-Token': info.token }
+        })
+        if (!response.ok) throw new Error('demo ' + response.status)
+        return response.json()
+      })()`
+    )
+    copyFileSync(summary.path, target)
+    await evaluate(
+      cdp,
+      `(async () => {
+        const info = await window.adou.getBackendInfo()
+        await fetch('http://127.0.0.1:' + info.port + '/api/documents/${summary.id}', {
+          method: 'DELETE',
+          headers: { 'X-ADou-Token': info.token }
+        })
+        return true
+      })()`
+    )
+    const second = spawn(electronExe, ['.', target], {
+      cwd: desktop,
+      env: secondEnv,
+      stdio: 'ignore'
+    })
+    await new Promise((resolve) => second.once('exit', resolve))
+    await waitFor(cdp, `document.querySelectorAll('.doc-tab').length === ${expectedTabs}`, 30_000)
+    return target
+  }
+
+  await prepareDemoCopy('ofd', demoOfdCopy, 1)
   await waitFor(
     cdp,
     "document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page=\"1\"] img.loaded') !== null",
@@ -267,9 +313,9 @@ try {
     cdp,
     "window.adou.listRecentFiles().then((list) => list.length)"
   )
-  console.log('最近文件（内置示例后）：', recentAfterDemo)
-  if (recentAfterDemo !== 0) {
-    errors.push('内置示例不应写入最近文件')
+  console.log('最近文件（打开示例副本后）：', recentAfterDemo)
+  if (recentAfterDemo < 1) {
+    errors.push('打开文档后未写入最近文件')
   }
 
   await waitFor(
@@ -1004,7 +1050,7 @@ try {
 
   await evaluate(cdp, "document.querySelector('[data-action=\"close\"]')?.click()")
   await waitFor(cdp, "document.querySelector('.empty') !== null", 15_000)
-  await evaluate(cdp, "document.querySelector('[data-action=\"demo-pdf\"]')?.click()")
+  await prepareDemoCopy('pdf', demoPdfCopy, 1)
   await waitFor(
     cdp,
     "document.querySelector('.format-badge')?.textContent?.trim() === 'PDF'",
@@ -1199,12 +1245,6 @@ try {
   await waitFor(cdp, "document.querySelector('.convert-dialog') === null", 5_000)
 
   // ---- 单实例 / 命令行打开（模拟文件关联双击） ----
-  const secondEnv = {
-    ...process.env,
-    APPDATA: smokeAppData,
-    ADOU_USER_DATA: join(smokeAppData, 'adou-ofd')
-  }
-  delete secondEnv.ELECTRON_RUN_AS_NODE
   const secondInstance = spawn(electronExe, ['.', convertOutput], {
     cwd: desktop,
     env: secondEnv,
@@ -1218,6 +1258,12 @@ try {
     30_000
   )
   console.log('命令行打开：第二实例已并入当前窗口（2 个标签）')
+  await waitFor(
+    cdp,
+    "Array.from(document.querySelectorAll('.viewer-pane:not([hidden]) .thumb-item img')).every((img) => img.complete && img.naturalWidth > 0)",
+    30_000
+  )
+  await sleep(300)
   await evaluate(
     cdp,
     "document.querySelector('.doc-tab.active [data-action=\"doc-tab-close\"]')?.click()"
@@ -1321,7 +1367,7 @@ try {
     cdp,
     "document.querySelectorAll('.doc-tab')[0]?.querySelector('[data-action=\"doc-tab\"]')?.click()"
   )
-  await waitFor(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('PDF示例.pdf')", 10_000)
+  await waitFor(cdp, "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('ui-demo.pdf')", 10_000)
   await evaluate(
     cdp,
     "document.querySelectorAll('.doc-tab')[1]?.querySelector('[data-action=\"doc-tab\"]')?.click()"

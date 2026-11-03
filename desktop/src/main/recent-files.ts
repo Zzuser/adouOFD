@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { RecentFile } from '../shared/types'
+import { textKindOf } from '../shared/text-paths'
 
 const MAX_RECENT_FILES = 20
 const STORE_NAME = 'recent-files.json'
@@ -18,10 +19,12 @@ function sanitize(raw: unknown): RecentFile | null {
   if (typeof raw !== 'object' || raw === null) return null
   const value = raw as Record<string, unknown>
   const path = typeof value.path === 'string' ? value.path.trim() : ''
-  if (!path || path.length > 4096 || !/\.(ofd|pdf)$/i.test(path)) return null
+  if (!path || path.length > 4096 || !/\.(ofd|pdf|md|markdown|txt)$/i.test(path)) return null
   const tempPrefix = `${join(app.getPath('temp'), 'adou-')}`.toLowerCase()
   if (path.toLowerCase().startsWith(tempPrefix)) return null
-  const kind = value.kind === 'PDF' || /\.pdf$/i.test(path) ? 'PDF' : 'OFD'
+  const textKind = textKindOf(path)
+  const kind =
+    textKind ?? (value.kind === 'PDF' || /\.pdf$/i.test(path) ? 'PDF' : 'OFD')
   const name =
     typeof value.name === 'string' && value.name.trim()
       ? value.name.trim().slice(0, 260)

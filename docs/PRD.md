@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 | --- | --- |
 | 产品名称 | 阿豆OFD（ADou OFD） |
-| 文档版本 | v0.9.0（M0 + M1.1 + PDF + 目录/折叠 + 逐字选择 + 转换 + 合并 + 拆分/插页 + 全文搜索 + 打印 + Windows 集成） |
+| 文档版本 | v1.0.0（OFD/PDF 阅读与处理 + Markdown/文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF） |
 | 日期 | 2026-11-03 |
-| 阶段 | 0.9.0：预览、搜索、打印、转换、合并、拆分与插页、多标签、Windows 文件关联、Inno 安装包、统一页头与功能化文案 |
+| 阶段 | 1.0.0：预览、搜索、打印、转换、合并、拆分与插页、多标签、Windows 文件关联、Markdown/文本编辑、Inno 安装包、统一页头与功能化文案 |
 | 形态 | Windows 桌面软件（Electron 壳 + Java 本地引擎），后续扩展 macOS |
 | 许可 | 应用免费；第三方依赖许可见 §11 |
 
@@ -15,7 +15,7 @@
 
 ### 1.1 一句话定位
 
-**免费、离线、可安装的 OFD / PDF 桌面工具**：看得清、转得稳、合得准、拆得开。
+**免费、离线、可安装的 OFD / PDF / Markdown 桌面工具**：看得清、转得稳、合得准、拆得开、写得顺。
 
 ### 1.2 背景与痛点
 
@@ -29,6 +29,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 
 - **财务/行政人员**：批量查看、合并电子发票，按报销单归档。
 - **公文/档案工作者**：OFD 与 PDF 互转、拆分归档。
+- **文档写作者**：在同一离线工具内编写 Markdown / 文本文档，实时预览并导出 PDF。
 - **开发者/技术用户**：需要一个可离线、可脚本化、无广告的 OFD 工具。
 
 ### 1.4 价值主张
@@ -57,7 +58,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 
 > M0 不追求功能完整，目标是**打通“界面 → 本地引擎 → ofdrw → 页面回显”全链路**，并验证最新稳定工具链的兼容性。
 
-### 2.2 M1.1（已完成）与 M1.2（待办）
+### 2.2 M1.1（已完成）与 M1.2（已完成）
 
 **已完成：预览增强**
 
@@ -76,11 +77,12 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 - **打印**：阅读器“打印”或 `Ctrl+P` 打开应用内打印面板，左侧设置、右侧实时预览与分张导航；支持打印机（含系统默认）、份数、灰度、全部/当前页/自定义范围、奇偶页、逆序、纸张大小/方向/页边距（默认/无边距/自定义）、每张多页（2/4/6/8/9 页，按行/按列、打印边框）与双面打印。主进程按设置生成打印页并由隐藏窗口直接发送到所选打印机，OFD / PDF 共用同一渲染路径；页面按 300 / 200 / 150 DPI 随页数自适应渲染，失败时在面板内提示。单文件转换结果、批量转换结果行与合并结果均提供“打印”入口，直接打开打印面板；若结果已在标签中则复用会话，否则临时打开并在关闭面板后释放，不新增标签。
 - **压力测试**：800 页矢量 PDF、100 页/20MB 图片 PDF、91 页 OFD；引擎与 UI 打开/跳页/缩略图/目录压测通过，详见 `docs/STRESS-TEST.md`。
 
-**M1.2 待办：完整阅读器**
+**M1.2 已完成：完整阅读器**
 
-- 页面旋转、文档属性与签章面板。
-- 最近打开、拖拽打开全屏。
-- 大文档内存上限与页面卸载策略。
+- 页面旋转（当前页 / 全部页，视图级，不修改源文件）。
+- 文档属性只读面板（格式、页数、体积、页面尺寸、元数据、签名条目，不验签）。
+- 最近打开（最多 20 条，去重、缺失清理、定位/移除/清空）。
+- 加密 PDF 密码打开（密码仅用于本次打开，不保存、不写日志）。
 
 ### 2.3 M2：格式转换
 
@@ -119,13 +121,24 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 
 - 合并/拆分后完整性校验扩展（页面尺寸汇总、书签策略）。
 
-### 2.5 M4：安装与发布
+### 2.5 Markdown 与文本编辑（1.0.0，已实现）
+
+- 支持 `.md` / `.markdown` / `.txt`：打开对话框、拖放、启动参数 / 第二实例与最近文件均接入；文本标签不依赖 Java 引擎，引擎启动期间也可打开。
+- 编辑体验：CodeMirror 6 编辑器（Markdown 语法高亮、行号、查找、撤销、Tab 缩进、空文档占位）+ `react-markdown` / `remark-gfm` / `rehype-highlight` / `rehype-slug`；分栏、编辑、预览三种模式；分栏比例可拖动（20%–80%，本地记忆，双击 1:1）；标题目录弹层；编辑/预览同步滚动（默认开启，可关闭）。
+- 文件读写：UTF-8/BOM、UTF-16 LE/BE、GB18030 自动识别，保存时保持编码与 BOM、CRLF/LF；16 MB 上限；同目录临时文件 + rename 原子写入；基于 mtime 的外部修改冲突提示（覆盖保存 / 重新加载）；只允许保存本会话打开过的文本文件。
+- 本地资源：`adou-file://` 自定义协议只提供已打开文本文件所在目录内的图片（png/jpg/jpeg/gif/webp/bmp/avif/ico/svg），其余返回 403；CSP 放行 `adou-file:`；网络图片不加载。
+- 首页：空状态提供“打开文档 / 新建 Markdown / 新建文本”，移除 OFD/PDF 示例按钮；新建通过保存对话框创建空文件后直接进入编辑器。
+- 导出：Markdown 预览可通过 `webContents.printToPDF` 导出 A4 PDF，使用打印样式只输出渲染后的正文，包含本地图片、表格、代码高亮与分页控制。
+- 关闭保护：多标签脏标记；关闭标签提供“保存并关闭 / 不保存关闭 / 取消”；退出应用时如有未保存内容弹出原生确认。
+- Windows：`.md` 注册独立 ProgID `AdouOFD.MD` 与 `md-file.ico`，加入“打开方式”与默认应用列表；`.markdown` 仅应用内支持，不注册系统关联。
+
+### 2.6 M4：安装与发布
 
 - Windows Inno Setup 安装包（含文件关联安装任务）、NSIS 备用构建。
 - 应用图标、文件关联、开始菜单、卸载清理。
 - 自动更新（可选，默认关闭）、崩溃日志与一键导出诊断信息。
 
-### 2.6 非目标（当前不做）
+### 2.7 非目标（当前不做）
 
 - 在线协作、云存储、账号体系。
 - OFD 编辑（改文字、改版面）与签章制作。
@@ -397,16 +410,17 @@ DocumentHandle {
 ### 6.1 进程职责
 
 - **Main**：窗口生命周期、原生对话框、引擎进程管理、日志、单实例锁、文件关联启动参数与每用户注册表注册。
-- **Preload**：仅暴露白名单 API（`pickDocument`、`getBackendInfo`、`onBackendStatus`、`revealPath`、`getPathForFile`、待打开文件队列、Windows 集成、应用版本）。
-- **Renderer**：纯 UI，无 Node 权限，不直接读文件系统。
+- **Preload**：仅暴露白名单 API（`pickDocument`、文本文档读写/新建/导出、`getBackendInfo`、`onBackendStatus`、`revealPath`、`getPathForFile`、待打开文件队列、Windows 集成、应用版本）。
+- **Renderer**：纯 UI，无 Node 权限，不直接读文件系统；文本内容与图片通过受限 IPC / 自定义协议访问。
 
 ### 6.2 安全基线
 
 - `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。
 - 禁止 `window.open`、外部导航、`webview`；外链交给系统浏览器。
-- CSP：`default-src 'self'`；`img-src`/`connect-src` 仅允许自身与 `http://127.0.0.1:*`；开发期额外放行 Vite HMR。
+- CSP：`default-src 'self'`；`img-src`/`connect-src` 仅允许自身与 `http://127.0.0.1:*`，文本本地图片额外放行 `adou-file:`；开发期额外放行 Vite HMR。
 - 已实测：渲染进程 `require` / `process` 均不可见，`window.open` 被拦截，CSP 生效。
-- 原生对话框选择文件；渲染进程不能拼任意路径去写文件（写操作仅在 M2 后通过“保存对话框”授权路径）。
+- 原生对话框选择文件；渲染进程不能拼任意路径去写文件（写操作通过“保存对话框”授权路径；文本保存仅允许本会话打开过的文件）。
+- `adou-file://` 只读取已打开文本文件所在目录内的图片，并限制图片扩展名与体积；Markdown 中的网络图片不加载。
 - 发布前检查：依赖审计、ASAR 完整性、安装包 SHA256。
 
 ### 6.3 视觉方向
@@ -424,14 +438,15 @@ DocumentHandle {
 - 布局：左侧 236px 应用导航（可折叠为 72px 图标栏）；所有 tab 使用统一的 50px 单行页头——查看器为文档标签栏，批量/合并/设置/空状态为“标题 + 内联说明”；查看器文档信息与操作合并为单行紧凑工具栏；阅读区左侧“缩略图 / 目录”导航面板、中间连续页面画布；底部悬浮缩放/页码工具条；空状态与加载态均有明确反馈。
 - 精简：侧栏导航为“文档查看 / 批量转换 / 合并文档 / 设置 / 关于”，Windows 文件关联放在独立“设置”页；引擎详细信息仍在“关于”弹层。
 - “关于”：展示版本、MIT 许可、Java/ofdrw/Spring Boot/Electron 版本、本地运行状态、开源组件摘要、第三方声明与完整许可文本入口。
-- 文档栏显示 OFD/PDF 格式徽标；空状态提供“打开文档 / OFD 示例 / PDF 示例”三个入口。
+- 文档栏显示 OFD / PDF / MD / TXT 格式徽标；空状态提供“打开文档 / 新建 Markdown / 新建文本”三个入口。
+- Markdown 编辑页：左侧源码、右侧实时预览；中间分隔线可拖动；顶部工具栏提供分栏/编辑/预览、目录、同步滚动、保存、重新加载、导出 PDF 与关闭。
 - 目录条目按层级缩进、显示目标页码；当前章节高亮，点击跳页。
 
 ### 6.4 当前交互（M1.1）
 
 1. 启动：品牌区 + 引擎状态芯片（启动中/已就绪/失败可重试）；应用导航可折叠。
-2. 打开文档：支持 `.ofd` / `.pdf`，拖拽或原生对话框；默认连续多页视图 + 适合宽度。
-3. 示例：OFD 示例 4 页、PDF 示例 3 页（带 6 项目录），均无需外部文件即可体验。
+2. 打开文档：支持 `.ofd` / `.pdf` / `.md` / `.markdown` / `.txt`，拖拽或原生对话框；OFD/PDF 默认连续多页视图 + 适合宽度；文本文件直接进入编辑器。
+3. 新建：首页“新建 Markdown / 新建文本”，选择保存位置后创建空文件并进入编辑器。
 4. 导航面板：缩略图 / 目录双页签；缩略图点击跳页，目录点击跳页并高亮当前章节。
 5. 页码：顶部输入框可直接跳页，或使用上下页按钮、←/→ 快捷键。
 6. 缩放：底部工具条提供缩小/放大、比例菜单、适合宽度、适合页面；支持 Ctrl+滚轮。
@@ -442,12 +457,14 @@ DocumentHandle {
 11. 多标签：查看器顶部标签栏，支持点击切换、关闭、`+` 打开新文档；批量转换/合并列表的“查看”按钮直接打开或激活对应标签；最多 8 个标签。
 12. 设置：左侧“设置”独立页，包含 Windows 文件关联（注册/修复、设为默认、系统设置、移除）和本地/隐私说明；与“关于”分离。
 13. 关于：展示版本信息与开源许可摘要，可打开第三方声明、MIT 许可和随包许可目录。
+14. Markdown/文本：分栏/编辑/预览切换；拖动分隔线调整宽度；目录跳转章节；同步滚动开关；`Ctrl+S` 保存；编码/换行/行数/字数状态；外部修改冲突提示；Markdown“导出 PDF”；未保存关闭确认。
+15. Windows 文件关联：`.ofd` / `.pdf` / `.md` 分别使用独立 ProgID 与图标，加入“打开方式”和默认应用列表；`.markdown` 不注册系统关联。
 
 ### 6.5 版本与安装升级
 
 - 版本以 `desktop/package.json` 为主源；后端 `pom.xml`、`application.yml`、Inno `AppVersion` 同步。构建脚本把版本传给 ISCC，安装包文件名与 `VersionInfoVersion` 使用同一版本。
 - Inno Setup 使用固定 `AppId`，启用 `UsePreviousAppDir` / `UsePreviousTasks`，同版本或更高版本安装时按升级处理并保留安装目录、任务选择；卸载信息显示当前版本。
-- 安装任务“关联 .ofd / .pdf 文件类型”默认勾选；取消勾选会清理旧关联并写入 `optedOut`，应用启动不自动回写。
+- 安装任务“关联 .ofd / .pdf / .md 文件类型”默认勾选；取消勾选会清理旧关联并写入 `optedOut`，应用启动不自动回写。
 
 ### 6.6 开源许可展示
 
@@ -467,7 +484,7 @@ DocumentHandle {
 ├─ resources/
 │  ├─ app.asar                 渲染进程与主进程代码
 │  ├─ backend/adou-ofd-backend.jar
-│  ├─ fileicons/               ofd-file.ico / pdf-file.ico（Windows 文件类型图标）
+│  ├─ fileicons/               ofd-file.ico / pdf-file.ico / md-file.ico（Windows 文件类型图标）
 │  └─ jre/                     Java 25 运行时（scripts/build-jre.mjs 用 jlink 裁剪，约 54MB）
 └─ ...
 ```
@@ -477,14 +494,14 @@ DocumentHandle {
 1. `npm run backend:build`（`mvn -DskipTests package`）产出可执行 fat jar。
 2. `npm run jre:build`（`scripts/build-jre.mjs`）用 jlink 生成最小 JRE：17 个模块（含 `java.desktop`、`java.xml`、`jdk.charsets`、`jdk.localedata`、`jdk.crypto.ec`），`--include-locales=zh,en`，产物约 54MB。
 3. `npm run package:inno` 先由 electron-builder 生成临时 `win-unpacked`（注入 jar、jre、fileicons），再调用 Inno Setup 6 编译安装包；`package:win` 保留 NSIS 备用构建。
-4. 安装向导任务页提供“关联 .ofd / .pdf 文件类型”（默认勾选，升级时保留选择）：勾选时写入两个 ProgID、DefaultIcon、OpenWithProgids、RegisteredApplications/Capabilities；取消勾选时清理这些注册项并写入 `optedOut`，应用启动不会再自动关联。
+4. 安装向导任务页提供“关联 .ofd / .pdf / .md 文件类型”（默认勾选，升级时保留选择）：勾选时写入三个 ProgID、DefaultIcon、OpenWithProgids、RegisteredApplications/Capabilities；取消勾选时清理这些注册项并写入 `optedOut`，应用启动不会再自动关联。
 5. 安装包按用户安装（HKCU，无需管理员），支持自定义目录；卸载时恢复注册前的 `.ofd` 默认值并删除关联注册项。
 
 ### 7.3 实测与待办
 
 - 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `4baae9d3…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
-- Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
-- 当前阶段不做代码签名、不采购证书；发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
+- Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF`/`AdouOFD.MD` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
+- 代码签名：SignPath Foundation 免费开源签名申请已提交（2026-11-02），等待审核；获批前发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
 - 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
 - 自动更新源与回滚策略（M4 评估）。
 
@@ -549,6 +566,10 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 安装包体积与启动速度 | 体验 | jlink 裁剪已完成（272MB→Inno 181MB / NSIS 192MB）；后续评估 Electron 语言包裁剪与 7z 字典 |
 | 代码签名 | 信任与安装成功率 | 已准备开源代码签名申请材料（SignPath / Certum 等），当前构建仍未签名；发布提供 SHA256 校验，签名流程见 `docs/CODE-SIGNING.md` |
 | OFD→PDF 矢量模式嵌入完整中文字体 | 输出体积过大（4 页示例约 78MB，19.6MB/页） | 已知问题；可切换图像导出；后续评估 `PDFExporter`（同类文档约 19.6MB）或字体子集化 |
+| 文本编码/换行识别 | 打开乱码或保存后换行改变 | 自动识别 UTF-8/BOM、UTF-16 LE/BE、GB18030；保存保持编码、BOM 与 CRLF/LF；独立 Markdown 冒烟覆盖 GB18030 与 CRLF |
+| 文本外部修改冲突 | 覆盖其他程序的修改 | 保存前比较 mtime，冲突时要求“覆盖保存 / 重新加载”；同目录临时文件 + rename 原子写入 |
+| 本地图片越界 / 网络图片 | 隐私与任意文件读取 | `adou-file://` 仅提供已打开文本文件目录内图片并校验扩展名；网络图片不加载 |
+| Markdown 导出 PDF 版面 | 页边距、分页与图片缺失 | 打印样式只输出正文，导出时窗口背景改白；页面 breaks 控制；冒烟验证 A4 3 页、可被本应用重新打开 |
 
 ---
 
@@ -627,7 +648,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-10-30 | 多页渲染全扫描 | JDK 25.0.5 | ✅ | 4 页 × 24/144/180/216/300 DPI 全部渲染成功 |
 | 2026-10-30 | PDF 示例打开/渲染 | JDK 25.0.5 | ✅ | 3 页 A4；96 DPI 渲染 >700px；24 DPI 缩略图正常 |
 | 2026-10-30 | 真实 PDF 打开/渲染 | JDK 25.0.5 | ✅ | 297×210mm 横向页面；96 DPI 输出 1122×793 PNG |
-| 2026-10-30 | 加密 PDF | JDK 25.0.5 | ✅ | 当时返回 `PDF_ENCRYPTED`，未创建残留会话；0.10.0 起改为密码流程 |
+| 2026-10-30 | 加密 PDF | JDK 25.0.5 | ✅ | 当时返回 `PDF_ENCRYPTED`，未创建残留会话；1.0.0 起改为密码流程 |
 | 2026-10-30 | UI PDF 预览 | Electron 45.1.0 | ✅ | PDF 徽标、3 页/3 缩略图、翻页到第 2 页、无运行时错误 |
 | 2026-10-30 | 文档目录 | Electron 45.1.0 | ✅ | PDF 示例 6 项目录（含二级）、目录跳页到第 3 页；OFD 无目录空状态 |
 | 2026-10-30 | 应用导航折叠 | Electron 45.1.0 | ✅ | 236px ↔ 72px，阅读区自适应，状态持久化 |
@@ -661,6 +682,9 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-11-03 | 页面旋转 UI | Electron 45.1.0 | ✅ | 当前页/全部页左右旋转与重置；页面 718×1015 → 718×508，缩略图同步横向，文字层 transform 生效；旋转后文字仍可选中 124 字；旋转页搜索命中定位正确；打印产物内嵌位图 2480×3508 → 3508×2480 |
 | 2026-11-03 | 最近文件 UI | Electron 45.1.0 | ✅ | 示例不写入；非示例文件写入磁盘；重启后列表恢复；重新打开、单条移除、清空、缺失文件清理均通过；应用临时目录文件被过滤 |
 | 2026-11-03 | 文档属性与加密 PDF | JDK 25.0.5 / Electron 45.1.0 | ✅ | OFD/PDF 元数据与签名只读展示（明确不验签）；加密 PDF 未提供密码返回 `PDF_PASSWORD_REQUIRED`，错误密码 `PDF_PASSWORD_INVALID`，正确密码打开；密码未落盘、未写入日志；后端 55/55 测试通过 |
+| 2026-11-03 | Markdown / 文本编辑 | Electron 45.1.0 | ✅ | 首页新建 Markdown；GFM 表格 2 行、任务列表 2 项、代码高亮、本地图片 `adou-file://` 加载；分栏 50%→35%、双击复位；目录 2 项跳转；同步滚动开/关；GB18030 `.txt` 识别与保存、LF 保持；不保存关闭不落盘、保存并关闭写入；最近文件 MD/TXT；`smoke:text` 通过 |
+| 2026-11-03 | Markdown 导出 PDF | Electron 45.1.0 | ✅ | 导出版 202,414 B / A4 3 页；页边距为白色；可被本应用重新打开；截图见 `docs/screenshots/markdown-export.png` |
+| 2026-11-03 | 移除首页示例按钮 | Electron 45.1.0 | ✅ | 空状态仅保留“打开文档 / 新建 Markdown / 新建文本”；`smoke:ui` 改为复制后端示例文件并通过第二实例打开 `ui-demo.ofd` / `ui-demo.pdf`，完整回归通过 |
 | 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
 | 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
 | 2026-11-02 | 打印面板（OFD / PDF） | Electron 45.1.0 | ✅ | OFD 示例默认 4 页/4 张 A4；2-up 输出 2 页、每页 2 张页面图，按列预览顺序 `[1,3,2,4]`；范围 2-4 + 逆序 + A5 横向 + 无边距 + 灰度输出 3 页 209.9×148.2mm（首页为第 4 页）；PDF 示例灰度输出 3 页 A4；无效范围 9-12 禁用打印；`Ctrl+P` 打开面板；转换/批量/合并结果打印入口分别加载 3/4/7 页且不新增标签；系统静默发送需用户用实际打印机验证 |
@@ -680,24 +704,25 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 4. **ADR-004 React + TypeScript + electron-vite**：UI 复杂度会随阅读器/任务队列增长，需要组件化与类型约束；不引入 UI 框架，控制体积。
 5. **ADR-005 转换默认新文件输出**：绝不原地修改用户文档，降低数据损失风险。
 6. **ADR-006 连续滚动 + 缩略图 + 按缩放选择渲染 DPI**：页面按需加载，缩略图固定 24 DPI，主页面 96–300 DPI；兼顾清晰度、内存与首次渲染速度；代价是缩放时部分页面会重新请求。
-7. **ADR-007 PDF 使用 PDFBox 2.0.27 并保持会话级 PDDocument**：与 ofdrw-converter 依赖版本严格对齐，避免 PDFBox 3.x API 不兼容；会话持有 PDDocument 以提升多页/缩放性能，渲染串行化保证线程安全。
+7. **ADR-007 PDF 使用 PDFBox 3.0.8 并保持会话级 PDDocument**：升级到 PDFBox 3.x 以获得持续维护与加密/字体兼容性；会话持有 PDDocument 以提升多页/缩放性能，渲染串行化保证线程安全。
 8. **ADR-008 统一 DocumentHandle 与文档目录**：OFD/PDF 共用会话句柄接口，各自持有解析器；OFD 复用 OFDReader/ImageMaker，PDF 复用 PDDocument；目录统一为 `{title,page,level}`，UI 双页签展示。压测证明大文件渲染与目录解析可用。
 9. **ADR-009 文字层叠加而非更换预览库**：保留现有 PNG 预览，后端按页输出归一化文本行，前端叠加透明文字层；OFD/PDF 均可框选复制，避免引入 PDF.js 与 OFD 转 PDF 的兼容/性能成本。扫描件无文本层为已知限制。
 
 ---
 
-## 15. M0 + M1.1 + PDF + 目录/折叠 + 文字选择 + 压测交付物
+## 15. M0 + M1.1 + PDF + 目录/折叠 + 文字选择 + Markdown/文本编辑 + 压测交付物
 
 ### 15.1 交付物
 
 - 设计：[docs/PRD.md](PRD.md)。
 - 压测：[docs/STRESS-TEST.md](STRESS-TEST.md)。
 - 引擎：`backend/`（Spring Boot 4.0.9 + ofdrw 2.5.1 + PDFBox 3.0.8，49 个测试全绿；OFD/PDF 统一句柄、目录、文字层、全文搜索、格式转换、合并、拆分、插页、页面预览、缺失资源与样式修复）。
-- 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、应用内打印面板、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠）。
-- Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF 文件图标 ICO + PNG）。
+- 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、应用内打印面板、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠、Markdown/文本编辑与导出 PDF）。
+- 文本编辑：`desktop/src/main/text-files.ts`（编码/换行/原子保存/冲突）、`text-pdf.ts`（打印样式导出 PDF）、`desktop/src/shared/text-paths.ts`、`markdown-outline.ts`、`desktop/src/renderer/src/components/TextViewer.tsx`、`TextEditor.tsx`、`MarkdownPreview.tsx`、`text.css`。
+- Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除，OFD/PDF/MD）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF/MD 文件图标 ICO + PNG）。
 - 合规与社区：`PRIVACY.md`、`SECURITY.md`、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`、`docs/CODE-SIGNING.md`、`.github/workflows/ci.yml`、`.github/workflows/release.yml`。
-- 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/build-inno.mjs`、`scripts/inno/adou-ofd.iss`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
-- 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、隐私政策、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、打印面板、文件图标、批量转换、合并文档、800 页压测）。
+- 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/build-inno.mjs`、`scripts/inno/adou-ofd.iss`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/smoke-text.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
+- 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、隐私政策、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、打印面板、文件图标、批量转换、合并文档、Markdown 编辑/分栏/导出、800 页压测）。
 - 许可：[LICENSE](../LICENSE)、[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)、`licenses/`（完整许可文本与 Apache NOTICE 汇总）。
 - 压力夹具：`backend/src/test/java/com/adou/ofd/StressFixtureGenerator.java`（生成到 `.tools/stress`，不纳入版本库）。
 - 安装包：本机已验证 Inno Setup 生成与运行（0.9.0，未签名，180.8MB，SHA256 `ce9d14df…`，含文件关联安装任务；NSIS 备用包约 192MB；均不纳入版本库）。

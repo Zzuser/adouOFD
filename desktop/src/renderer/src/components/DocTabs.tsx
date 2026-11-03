@@ -6,6 +6,7 @@ export interface DocTabItem {
   name: string
   kind: string
   path: string
+  dirty?: boolean
 }
 
 interface DocTabsProps {
@@ -49,6 +50,9 @@ export function DocTabs({ tabs, activeId, onSelect, onClose, onOpen }: DocTabsPr
           >
             <span className={`format-badge ${tab.kind.toLowerCase()}`}>{tab.kind}</span>
             <span className="doc-tab-name">{tab.name}</span>
+            {tab.dirty ? (
+              <span className="doc-tab-dirty" title="有未保存的修改" aria-label="有未保存的修改" />
+            ) : null}
           </button>
           <button
             type="button"

@@ -63,7 +63,7 @@ export function WindowsIntegrationPanel() {
         </span>
       </div>
       <p>
-        加入 .ofd / .pdf 的“打开方式”和 Windows 默认应用列表；不会覆盖你已选择的 PDF
+        加入 .ofd / .pdf / .md 的“打开方式”和 Windows 默认应用列表；不会覆盖你已选择的 PDF
         默认应用。
       </p>
       <div className="integration-actions">
@@ -124,6 +124,8 @@ export function WindowsIntegrationPanel() {
         {status.ofdDefault ? '.ofd：阿豆OFD' : '.ofd：等待系统确认'}
         {' · '}
         {status.pdfDefault ? '.pdf：阿豆OFD' : '.pdf：保持系统默认'}
+        {' · '}
+        {status.mdDefault ? '.md：阿豆OFD' : '.md：保持系统默认'}
         {status.optedOut ? ' · 已关闭自动注册' : ''}
       </p>
       {!status.canRegister ? (

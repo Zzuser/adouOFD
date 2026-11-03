@@ -1,4 +1,5 @@
 import type { RotationMap } from './rotation'
+import type { TextEncoding, TextEol, TextKind } from './text-paths'
 
 export type BackendStatus = 'starting' | 'ready' | 'error' | 'stopped'
 
@@ -89,10 +90,13 @@ export interface DocumentSummary {
   pages: PageMeta[]
 }
 
+export type RecentFileKind = 'OFD' | 'PDF' | TextKind
+export type NewTextKind = 'md' | 'txt'
+
 export interface RecentFile {
   path: string
   name: string
-  kind: 'OFD' | 'PDF'
+  kind: RecentFileKind
   pageCount: number
   openedAt: number
 }
@@ -100,8 +104,43 @@ export interface RecentFile {
 export interface RecentFileInput {
   path: string
   name: string
-  kind: 'OFD' | 'PDF'
+  kind: RecentFileKind
   pageCount: number
+}
+
+export interface TextFileData {
+  path: string
+  name: string
+  content: string
+  encoding: TextEncoding
+  eol: TextEol
+  size: number
+  modifiedAt: number
+}
+
+export interface TextFileWriteOptions {
+  path: string
+  content: string
+  encoding: TextEncoding
+  eol: TextEol
+  expectedModifiedAt?: number | null
+}
+
+export interface TextFileWriteResult {
+  ok: boolean
+  code?: 'CONFLICT' | 'IO_ERROR'
+  message?: string
+  size?: number
+  modifiedAt?: number
+  onDiskModifiedAt?: number
+}
+
+export interface TextPdfExportResult {
+  ok: boolean
+  canceled?: boolean
+  path?: string
+  size?: number
+  error?: string
 }
 
 export interface SignatureInfo {
@@ -288,6 +327,7 @@ export interface WindowsIntegrationStatus {
   registered: boolean
   ofdDefault: boolean
   pdfDefault: boolean
+  mdDefault: boolean
   optedOut: boolean
 }
 
@@ -393,4 +433,9 @@ export interface AdouApi {
   addRecentFile(entry: RecentFileInput): Promise<RecentFile[]>
   removeRecentFile(path: string): Promise<RecentFile[]>
   clearRecentFiles(): Promise<void>
+  readTextFile(path: string): Promise<TextFileData>
+  writeTextFile(options: TextFileWriteOptions): Promise<TextFileWriteResult>
+  createTextFile(kind: NewTextKind): Promise<string | null>
+  exportTextPdf(options: { sourcePath: string }): Promise<TextPdfExportResult>
+  setUnsavedTextCount(count: number): void
 }

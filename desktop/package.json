@@ -1,6 +1,6 @@
 {
   "name": "adou-ofd",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "阿豆OFD — 免费、离线的 OFD / PDF 桌面阅读与处理工具",
   "main": "./out/main/index.js",
   "author": "Zzuser",
@@ -28,6 +28,7 @@
     "package:inno": "npm run build && npm run jre:build && node ../scripts/build-inno.mjs",
     "package:dir": "npm run build && npm run jre:build && electron-builder --win dir --x64",
     "smoke:ui": "node ../scripts/smoke-ui.mjs",
+    "smoke:text": "node ../scripts/smoke-text.mjs",
     "backend:build": "node ../scripts/build-backend.mjs",
     "jre:build": "node ../scripts/build-jre.mjs",
     "stress:fixtures": "node ../scripts/stress-fixtures.mjs",
@@ -41,6 +42,12 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
     "@swc/core": "1.16.20",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",
@@ -49,6 +56,12 @@
     "electron": "45.1.0",
     "electron-builder": "26.18.0",
     "electron-vite": "6.0.0",
+    "highlight.js": "^11.11.1",
+    "iconv-lite": "^0.7.3",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "typescript": "7.0.2",
     "vite": "8.3.5"
   }
