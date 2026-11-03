@@ -11,8 +11,8 @@
 - 大小：180.8 MB
 - SHA256：见发布附件 `SHA256-0.7.1.txt`（由构建流程生成，校验安装包完整性）
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
-- 代码签名：Windows 发布包的 Authenticode 签名由 SignPath Foundation 免费开源签名计划提供，证书由 SignPath Foundation 签发；当前申请审核中，未签名版本请用 SHA256 校验。流程见 `docs/CODE-SIGNING.md`。
-- Code signing: Windows releases use the SignPath Foundation free open-source code-signing program (application under review); the certificate is issued to SignPath Foundation.
+- 代码签名：未做代码签名，请用 SHA256 校验。
+- Code signing: this release is unsigned; verify the installer with the SHA256 asset.
 
 ## 主要更新
 
@@ -44,7 +44,7 @@
 
 ## 已知限制
 
-- 当前申请 SignPath Foundation 开源代码签名；获批前构建未签名，见 `docs/CODE-SIGNING.md`。
+- 未做代码签名，请用 SHA256 校验完整性。
 - PDF → OFD 的文字能否选中取决于源 PDF 字体；扫描件没有文字层，无法全文搜索。
 - OFD → PDF 矢量导出可能嵌入完整中文字体，文件体积较大。
 - 合并结果不保证保留各文件的目录/书签。

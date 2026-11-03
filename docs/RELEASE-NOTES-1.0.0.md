@@ -10,8 +10,8 @@
 - 大小：以 Release 附件为准
 - SHA256：见发布附件 `SHA256-1.0.0.txt`
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
-- 代码签名：SignPath Foundation 开源签名申请审核中；1.0.0 安装包**未签名**，请使用 SHA256 校验。流程见 `docs/CODE-SIGNING.md`。
-- Code signing: the SignPath Foundation open-source signing application is under review. The 1.0.0 installer is **unsigned**; verify it with the SHA256 asset.
+- 代码签名：代码签名申请未获批准；1.0.0 安装包**未签名**，请使用 SHA256 校验。
+- Code signing: the signing application was declined (not approved). The 1.0.0 installer is **unsigned**; verify it with the SHA256 asset.
 
 ## 1.0 主要更新
 
@@ -64,7 +64,7 @@
 
 - Markdown / 文本编辑上限 16 MB；本地图片只展示已打开文档所在目录内的图片，网络图片不加载。
 - Markdown 导出 PDF 固定 A4 与当前预览内容，不包含编辑器工具栏；超宽表格可能被裁切。
-- 当前 SignPath Foundation 开源签名申请审核中，构建未签名，SmartScreen 可能提示“未知发布者”。
+- 当前 代码签名申请未获批准，构建未签名，SmartScreen 可能提示“未知发布者”。
 - PDF → OFD 的文字能否选中取决于源 PDF 字体；扫描件没有文字层，无法全文搜索。
 - OFD → PDF 矢量导出可能嵌入完整中文字体，文件体积较大。
 - 合并/拆分结果不保证保留各文件的目录/书签。

@@ -10,8 +10,8 @@
 - 大小：以 Release 附件为准
 - SHA256：见发布附件 `SHA256-0.8.0.txt`
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
-- 代码签名：SignPath Foundation 开源签名申请审核中；0.8.0 安装包**未签名**，请使用 SHA256 校验。流程见 `docs/CODE-SIGNING.md`。
-- Code signing: the SignPath Foundation open-source signing application is under review. The 0.8.0 installer is **unsigned**; verify it with the SHA256 asset.
+- 代码签名：代码签名申请未获批准；0.8.0 安装包**未签名**，请使用 SHA256 校验。
+- Code signing: the signing application was declined (not approved). The 0.8.0 installer is **unsigned**; verify it with the SHA256 asset.
 
 ## 主要更新
 
@@ -59,7 +59,7 @@
 - 当前打印是页面图像（300/200/150 DPI），超大文档的准备时间与内存随页数增长。
 - 纸张、双面、颜色能力取决于打印机驱动；暂不提供驱动属性（纸盒、打印质量）面板。
 - 小册子、拆分/裁切、仅打印文档不含标注、水印/页码/页眉页脚属于后续版本。
-- 当前 SignPath Foundation 开源签名申请审核中，构建未签名。
+- 当前 代码签名申请未获批准，构建未签名。
 - PDF → OFD 的文字能否选中取决于源 PDF 字体；扫描件没有文字层，无法全文搜索。
 - OFD → PDF 矢量导出可能嵌入完整中文字体，文件体积较大。
 - 合并结果不保证保留各文件的目录/书签。

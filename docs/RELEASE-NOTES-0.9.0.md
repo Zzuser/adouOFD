@@ -10,8 +10,8 @@
 - 大小：以 Release 附件为准
 - SHA256：见发布附件 `SHA256-0.9.0.txt`
 - 平台：Windows 10 / 11 x64，按用户安装，无需管理员权限，自带精简 Java 运行时
-- 代码签名：SignPath Foundation 开源签名申请审核中；0.9.0 安装包**未签名**，请使用 SHA256 校验。流程见 `docs/CODE-SIGNING.md`。
-- Code signing: the SignPath Foundation open-source signing application is under review. The 0.9.0 installer is **unsigned**; verify it with the SHA256 asset.
+- 代码签名：代码签名申请未获批准；0.9.0 安装包**未签名**，请使用 SHA256 校验。
+- Code signing: the signing application was declined (not approved). The 0.9.0 installer is **unsigned**; verify it with the SHA256 asset.
 
 ## 主要更新
 
@@ -61,7 +61,7 @@
 - “每页一份”会生成多个文件；单次最多生成 300 个拆分文件，超出时请改用每 N 页或按区间拆分。
 - OFD 拆分/插页会先复制并修复样式/资源再处理；大文档的耗时随页数增长。
 - 混合格式插页的文字可选中性取决于源文件的转换能力边界。
-- 当前 SignPath Foundation 开源签名申请审核中，构建未签名。
+- 当前 代码签名申请未获批准，构建未签名。
 - PDF → OFD 的文字能否选中取决于源 PDF 字体；扫描件没有文字层，无法全文搜索。
 - OFD → PDF 矢量导出可能嵌入完整中文字体，文件体积较大。
 - 合并结果不保证保留各文件的目录/书签。
