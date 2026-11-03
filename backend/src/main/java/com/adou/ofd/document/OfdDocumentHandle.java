@@ -12,9 +12,12 @@ import org.ofdrw.core.basicStructure.doc.bookmark.Bookmark;
 import org.ofdrw.core.basicStructure.doc.bookmark.Bookmarks;
 import org.ofdrw.core.basicStructure.outlines.CT_OutlineElem;
 import org.ofdrw.core.basicStructure.outlines.Outlines;
+import org.ofdrw.core.basicStructure.ofd.docInfo.CT_DocInfo;
 import org.ofdrw.core.basicType.ST_Box;
 import org.ofdrw.core.basicType.ST_ID;
 import org.ofdrw.core.basicType.ST_RefID;
+import org.ofdrw.core.signatures.Signature;
+import org.ofdrw.core.signatures.Signatures;
 import org.ofdrw.core.basicStructure.pageObj.layer.block.TextObject;
 import org.ofdrw.reader.ContentExtractor;
 import org.ofdrw.reader.OFDReader;
@@ -28,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,13 +124,86 @@ public final class OfdDocumentHandle implements DocumentHandle {
     }
 
     @Override
+    public synchronized DocumentMetadata metadata() {
+        Map<String, String> values = new LinkedHashMap<>();
+        List<SignatureInfo> signatures = new ArrayList<>();
+        String warning = null;
+        try {
+            var ofd = reader.getOFDDir().getOfd();
+            if (ofd != null) {
+                put(values, "ofdVersion", ofd.getVersion());
+                var body = ofd.getDocBody();
+                CT_DocInfo info = body == null ? null : body.getDocInfo();
+                if (info != null) {
+                    put(values, "title", info.getTile());
+                    put(values, "author", info.getAuthor());
+                    put(values, "subject", info.getSubject());
+                    put(values, "abstract", info.getAbstract());
+                    put(values, "creator", info.getCreator());
+                    put(values, "creatorVersion", info.getCreatorVersion());
+                    put(values, "docId", info.getDocID());
+                    if (info.getKeywords() != null) {
+                        put(values, "keywords", String.join("、", info.getKeywords().getKeywords()));
+                    }
+                    if (info.getCreationDate() != null) {
+                        values.put("creationDate", info.getCreationDate().toString());
+                    }
+                    if (info.getModDate() != null) {
+                        values.put("modificationDate", info.getModDate().toString());
+                    }
+                    if (info.getDocUsage() != null) {
+                        values.put("docUsage", info.getDocUsage().toString());
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            warning = "部分文档属性读取失败";
+        }
+        try {
+            Signatures signs = reader.getDefaultSignatures();
+            if (signs != null && signs.getSignatures() != null) {
+                for (Signature signature : signs.getSignatures()) {
+                    String id = trim(signature.getID());
+                    String type = signature.getType() == null ? null : signature.getType().toString();
+                    String location = signature.getBaseLoc() == null
+                            ? null
+                            : trim(signature.getBaseLoc().getLoc());
+                    signatures.add(new SignatureInfo(
+                            id == null ? null : "签名条目 " + id,
+                            type == null ? null : "类型：" + type,
+                            location,
+                            null));
+                }
+            }
+        } catch (RuntimeException ex) {
+            warning = warning == null ? "签名信息读取失败" : warning + "；签名信息读取失败";
+        }
+        return new DocumentMetadata(values, signatures, warning);
+    }
+
+    private static void put(Map<String, String> values, String key, String value) {
+        String trimmed = trim(value);
+        if (trimmed != null) {
+            values.put(key, trimmed);
+        }
+    }
+
+    private static String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    @Override
     public synchronized List<OutlineItem> outline() {
         if (outlineCache != null) {
             return outlineCache;
         }
         List<OutlineItem> items = new ArrayList<>();
         try {
-            Document document = reader.getDoc(1);
+            Document document = reader.cdDefaultDoc();
             if (document != null) {
                 Map<String, Integer> bookmarkPages = new HashMap<>();
                 Bookmarks bookmarks = document.getBookmarks();
@@ -251,12 +328,17 @@ public final class OfdDocumentHandle implements DocumentHandle {
     }
 
     @Override
-    public synchronized Path render(int page, int dpi) throws IOException {
+    public synchronized Path render(int page, int dpi, int rotate) throws IOException {
         if (page < 1 || page > pages.size()) {
             throw new IOException("页码超出范围");
         }
+        int rotation = ((rotate % 360) + 360) % 360;
+        if (rotation % 90 != 0) {
+            throw new IOException("旋转角度必须是 90 的倍数");
+        }
         int actualDpi = cappedDpi(page, dpi);
-        Path outputDir = workDir.resolve("render").resolve("ofd-p" + page + "-" + actualDpi);
+        Path outputDir = workDir.resolve("render")
+                .resolve("ofd-p" + page + "-" + actualDpi + (rotation == 0 ? "" : "-r" + rotation));
         Path png = outputDir.resolve("page.png");
         if (Files.isRegularFile(png) && Files.size(png) > 0) {
             return png;
@@ -271,6 +353,7 @@ public final class OfdDocumentHandle implements DocumentHandle {
         if (image == null) {
             throw new IOException("OFD 页面渲染结果为空");
         }
+        image = ImageRotation.rotate(image, rotation);
         if (!ImageIO.write(image, "PNG", png.toFile())) {
             throw new IOException("OFD 页面 PNG 编码失败");
         }

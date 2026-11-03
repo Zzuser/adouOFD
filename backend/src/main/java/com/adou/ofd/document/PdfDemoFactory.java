@@ -1,6 +1,7 @@
 package com.adou.ofd.document;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -41,6 +42,13 @@ public class PdfDemoFactory {
                 writePage(document, page, regular, bold, useChinese, pageNo);
             }
             addOutline(document, useChinese);
+            PDDocumentInformation info = new PDDocumentInformation();
+            info.setTitle(useChinese ? "阿豆OFD PDF 示例" : "ADou OFD PDF Sample");
+            info.setAuthor("阿豆OFD");
+            info.setSubject(useChinese ? "本地渲染与打印示例" : "Offline rendering and printing sample");
+            info.setCreator("阿豆OFD");
+            info.setProducer("Apache PDFBox");
+            document.setDocumentInformation(info);
             document.save(target.toFile());
         }
         return target;

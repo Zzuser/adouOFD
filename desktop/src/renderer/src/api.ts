@@ -3,6 +3,7 @@ import type {
   BackendInfo,
   ConversionJob,
   ConversionStart,
+  DocumentProperties,
   DocumentSummary,
   EngineHealth,
   InsertStart,
@@ -90,15 +91,29 @@ export function fetchHealth(info: BackendInfo): Promise<EngineHealth> {
   return request<EngineHealth>(info, '/api/health')
 }
 
-export function openDocument(info: BackendInfo, path: string): Promise<DocumentSummary> {
+export function openDocument(
+  info: BackendInfo,
+  path: string,
+  password?: string
+): Promise<DocumentSummary> {
   return request<DocumentSummary>(info, '/api/documents/open', {
     method: 'POST',
-    body: JSON.stringify({ path })
+    body: JSON.stringify(password ? { path, password } : { path })
   })
 }
 
 export function openDemo(info: BackendInfo): Promise<DocumentSummary> {
   return request<DocumentSummary>(info, '/api/documents/demo', { method: 'POST' })
+}
+
+export function fetchDocumentProperties(
+  info: BackendInfo,
+  id: string
+): Promise<DocumentProperties> {
+  return request<DocumentProperties>(
+    info,
+    `/api/documents/${encodeURIComponent(id)}/properties`
+  )
 }
 
 export function openPdfDemo(info: BackendInfo): Promise<DocumentSummary> {
@@ -249,8 +264,16 @@ export function cancelPageTool(info: BackendInfo, id: string): Promise<PageToolJ
   })
 }
 
-export function pageImageUrl(info: BackendInfo, id: string, page: number, dpi = 144): string {  const token = info.token ? encodeURIComponent(info.token) : ''
-  return `${baseUrl(info)}/api/documents/${encodeURIComponent(id)}/pages/${page}?dpi=${dpi}&token=${token}`
+export function pageImageUrl(
+  info: BackendInfo,
+  id: string,
+  page: number,
+  dpi = 144,
+  rotate = 0
+): string {
+  const token = info.token ? encodeURIComponent(info.token) : ''
+  const rotation = rotate ? `&rotate=${rotate}` : ''
+  return `${baseUrl(info)}/api/documents/${encodeURIComponent(id)}/pages/${page}?dpi=${dpi}${rotation}&token=${token}`
 }
 
 export function previewImageUrl(info: BackendInfo, id: string, page: number, dpi = 24): string {

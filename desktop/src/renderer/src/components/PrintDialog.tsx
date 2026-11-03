@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { BackendInfo, DocumentSummary, PrinterInfo, PrintLayoutOptions } from '@shared/types'
+import { rotationOf, type RotationMap } from '@shared/rotation'
 import {
   buildPrintSheets,
   DEFAULT_PRINT_LAYOUT,
@@ -39,10 +40,18 @@ interface PrintDialogProps {
   backend: BackendInfo
   doc: DocumentSummary
   currentPage: number
+  rotations: RotationMap
   onClose: () => void
 }
 
-export function PrintDialog({ open, backend, doc, currentPage, onClose }: PrintDialogProps) {
+export function PrintDialog({
+  open,
+  backend,
+  doc,
+  currentPage,
+  rotations,
+  onClose
+}: PrintDialogProps) {
   const [layout, setLayout] = useState<PrintLayoutOptions>(() => initialLayout(currentPage, doc.pageCount))
   const [printers, setPrinters] = useState<PrinterInfo[]>([])
   const [printerState, setPrinterState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -206,6 +215,7 @@ export function PrintDialog({ open, backend, doc, currentPage, onClose }: PrintD
         id: doc.id,
         name: doc.name,
         pages: doc.pages,
+        rotations,
         layout
       })
       if (result.ok) {
@@ -218,7 +228,7 @@ export function PrintDialog({ open, backend, doc, currentPage, onClose }: PrintD
     } finally {
       setBusy(false)
     }
-  }, [canPrint, doc.id, doc.name, doc.pages, layout, onClose])
+  }, [canPrint, doc.id, doc.name, doc.pages, layout, onClose, rotations])
 
   if (!open) return null
 
@@ -579,7 +589,14 @@ export function PrintDialog({ open, backend, doc, currentPage, onClose }: PrintD
                           <>
                             <img
                               data-page={page}
-                              src={pageImageUrl(backend, doc.id, page, 96)}
+                              data-rotation={rotationOf(rotations, page) || undefined}
+                              src={pageImageUrl(
+                                backend,
+                                doc.id,
+                                page,
+                                96,
+                                rotationOf(rotations, page)
+                              )}
                               alt={`第 ${page} 页`}
                               draggable={false}
                             />

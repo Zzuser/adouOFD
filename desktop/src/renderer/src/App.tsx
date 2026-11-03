@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AppVersions, BackendInfo, DocumentSummary, EngineHealth } from '@shared/types'
-import { closeDocument, fetchHealth, messageOf, openDemo, openDocument, openPdfDemo } from './api'
+import type { AppVersions, BackendInfo, DocumentSummary, EngineHealth, RecentFile } from '@shared/types'
+import type { RotationMap } from '@shared/rotation'
+import { closeDocument, fetchHealth, messageOf, openDemo, openDocument, openPdfDemo, ApiRequestError } from './api'
 import { AboutDialog } from './components/AboutDialog'
 import { BatchConvert } from './components/BatchConvert'
 import { ConvertDialog } from './components/ConvertDialog'
@@ -9,6 +10,7 @@ import { EngineBadge } from './components/EngineBadge'
 import { EmptyState } from './components/EmptyState'
 import { MergePage } from './components/MergePage'
 import { PageToolsPage } from './components/PageToolsPage'
+import { PasswordDialog } from './components/PasswordDialog'
 import { PrintDialog } from './components/PrintDialog'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
@@ -26,7 +28,15 @@ interface ViewerTab {
 interface PrintTarget {
   doc: DocumentSummary
   page: number
+  rotations: RotationMap
   transient: boolean
+}
+
+interface PasswordTarget {
+  path: string
+  name: string
+  message: string
+  invalid: boolean
 }
 
 export default function App() {
@@ -35,12 +45,15 @@ export default function App() {
   const [versions, setVersions] = useState<AppVersions | null>(null)
   const [tabs, setTabs] = useState<ViewerTab[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [convertOpen, setConvertOpen] = useState(false)
   const [view, setView] = useState<AppView>('viewer')
   const [printTarget, setPrintTarget] = useState<PrintTarget | null>(null)
+  const [passwordTarget, setPasswordTarget] = useState<PasswordTarget | null>(null)
+  const [passwordBusy, setPasswordBusy] = useState(false)
   const [printNotice, setPrintNotice] = useState<{ kind: 'preparing' | 'error'; message: string } | null>(null)
   const preparingPrintRef = useRef(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -81,6 +94,19 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    let alive = true
+    void window.adou
+      .listRecentFiles()
+      .then((list) => {
+        if (alive) setRecentFiles(list)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  useEffect(() => {
     if (backend.status !== 'ready') {
       setHealth(null)
       return
@@ -110,8 +136,23 @@ export default function App() {
     return () => window.clearTimeout(timer)
   }, [printNotice])
 
+  const recordRecent = useCallback((summary: DocumentSummary) => {
+    if (summary.demo) return
+    const kind = summary.kind === 'PDF' ? 'PDF' : 'OFD'
+    void window.adou
+      .addRecentFile({
+        path: summary.path,
+        name: summary.name,
+        kind,
+        pageCount: summary.pageCount
+      })
+      .then(setRecentFiles)
+      .catch(() => undefined)
+  }, [])
+
   const showDocument = useCallback(
     (summary: DocumentSummary) => {
+      recordRecent(summary)
       const current = tabsRef.current
       const existing = current.find(
         (tab) =>
@@ -136,11 +177,11 @@ export default function App() {
       setActiveId(summary.id)
       setView('viewer')
     },
-    [backend]
+    [backend, recordRecent]
   )
 
   const openPath = useCallback(
-    async (path: string) => {
+    async (path: string, password?: string) => {
       if (!ready) {
         setError('本地引擎尚未就绪，请稍候再试')
         return
@@ -153,23 +194,41 @@ export default function App() {
         setActiveId(existing.key)
         setView('viewer')
         setError(null)
+        setPasswordTarget(null)
+        recordRecent(existing.doc)
         return
       }
       if (tabsRef.current.length >= MAX_TABS) {
+        setPasswordTarget(null)
         setError(`最多同时打开 ${MAX_TABS} 个文档，请先关闭标签`)
         return
       }
       setBusy(true)
       setError(null)
       try {
-        showDocument(await openDocument(backend, path))
+        const summary = await openDocument(backend, path, password)
+        setPasswordTarget(null)
+        showDocument(summary)
       } catch (reason) {
-        setError(messageOf(reason))
+        if (
+          reason instanceof ApiRequestError &&
+          (reason.code === 'PDF_PASSWORD_REQUIRED' || reason.code === 'PDF_PASSWORD_INVALID')
+        ) {
+          setPasswordTarget({
+            path,
+            name: path.split(/[\\/]/).pop() || path,
+            message: reason.message,
+            invalid: reason.code === 'PDF_PASSWORD_INVALID'
+          })
+        } else {
+          setPasswordTarget(null)
+          setError(messageOf(reason))
+        }
       } finally {
         setBusy(false)
       }
     },
-    [backend, ready, showDocument]
+    [backend, ready, showDocument, recordRecent]
   )
 
   const openQueuedFiles = useCallback(async () => {
@@ -179,6 +238,25 @@ export default function App() {
       await openPath(path)
     }
   }, [openPath, ready])
+
+  const submitPassword = useCallback(
+    async (password: string) => {
+      const target = passwordTarget
+      if (!target) return
+      setPasswordBusy(true)
+      try {
+        await openPath(target.path, password)
+      } finally {
+        setPasswordBusy(false)
+      }
+    },
+    [openPath, passwordTarget]
+  )
+
+  const cancelPassword = useCallback(() => {
+    setPasswordTarget(null)
+    setPasswordBusy(false)
+  }, [])
 
   useEffect(() => {
     return window.adou.onOpenFiles(() => {
@@ -270,6 +348,33 @@ export default function App() {
     [openPath]
   )
 
+  const openRecent = useCallback(
+    async (entry: RecentFile) => {
+      await openPath(entry.path)
+      const list = await window.adou.listRecentFiles().catch(() => null)
+      if (list) setRecentFiles(list)
+    },
+    [openPath]
+  )
+
+  const removeRecent = useCallback(async (path: string) => {
+    const list = await window.adou.removeRecentFile(path).catch(() => null)
+    if (list) setRecentFiles(list)
+  }, [])
+
+  const clearRecent = useCallback(async () => {
+    try {
+      await window.adou.clearRecentFiles()
+      setRecentFiles([])
+    } catch {
+      // 最近文件清空失败不阻塞主流程
+    }
+  }, [])
+
+  const revealRecent = useCallback((path: string) => {
+    void window.adou.revealPath(path)
+  }, [])
+
   const closeTab = useCallback(
     (id: string) => {
       const current = tabsRef.current
@@ -322,9 +427,12 @@ export default function App() {
     })
   }, [])
 
-  const requestPrint = useCallback((targetDoc: DocumentSummary, page: number) => {
-    setPrintTarget({ doc: targetDoc, page, transient: false })
-  }, [])
+  const requestPrint = useCallback(
+    (targetDoc: DocumentSummary, page: number, rotations: RotationMap = {}) => {
+      setPrintTarget({ doc: targetDoc, page, rotations, transient: false })
+    },
+    []
+  )
 
   const closePrintTarget = useCallback(() => {
     const target = printTarget
@@ -345,7 +453,7 @@ export default function App() {
         (tab) => tab.doc.path.toLowerCase() === path.toLowerCase()
       )
       if (existing) {
-        setPrintTarget({ doc: existing.doc, page: 1, transient: false })
+        setPrintTarget({ doc: existing.doc, page: 1, rotations: {}, transient: false })
         return
       }
       if (tabsRef.current.length >= MAX_TABS) {
@@ -360,7 +468,7 @@ export default function App() {
       try {
         const summary = await openDocument(backend, path)
         setPrintNotice(null)
-        setPrintTarget({ doc: summary, page: 1, transient: true })
+        setPrintTarget({ doc: summary, page: 1, rotations: {}, transient: true })
       } catch (reason) {
         setPrintNotice({ kind: 'error', message: messageOf(reason) })
       } finally {
@@ -502,6 +610,11 @@ export default function App() {
                 onDemo={() => void openSample()}
                 onPdfDemo={() => void openPdfSample()}
                 onDropFiles={dropFiles}
+                recentFiles={recentFiles}
+                onOpenRecent={(entry) => void openRecent(entry)}
+                onRevealRecent={revealRecent}
+                onRemoveRecent={(path) => void removeRecent(path)}
+                onClearRecent={() => void clearRecent()}
               />
             ) : (
               tabs.map((tab) => (
@@ -517,7 +630,7 @@ export default function App() {
                     printOpen={Boolean(printTarget)}
                     onClose={() => closeTab(tab.key)}
                     onConvert={() => setConvertOpen(true)}
-                    onPrint={(page) => requestPrint(tab.doc, page)}
+                    onPrint={(page, rotations) => requestPrint(tab.doc, page, rotations)}
                   />
                 </div>
               ))
@@ -554,9 +667,20 @@ export default function App() {
           backend={backend}
           doc={printTarget.doc}
           currentPage={printTarget.page}
+          rotations={printTarget.rotations}
           onClose={closePrintTarget}
         />
       ) : null}
+
+      <PasswordDialog
+        open={Boolean(passwordTarget)}
+        fileName={passwordTarget?.name ?? ''}
+        message={passwordTarget?.message ?? ''}
+        invalid={passwordTarget?.invalid ?? false}
+        busy={passwordBusy}
+        onSubmit={(password) => void submitPassword(password)}
+        onCancel={cancelPassword}
+      />
 
       {printNotice ? (
         <div

@@ -16,7 +16,13 @@ public interface DocumentHandle extends AutoCloseable {
 
     List<TextRun> pageText(int page) throws IOException;
 
-    Path render(int page, int dpi) throws IOException;
+    DocumentMetadata metadata();
+
+    Path render(int page, int dpi, int rotate) throws IOException;
+
+    default Path render(int page, int dpi) throws IOException {
+        return render(page, dpi, 0);
+    }
 
     @Override
     void close() throws IOException;

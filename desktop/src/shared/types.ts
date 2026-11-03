@@ -1,3 +1,5 @@
+import type { RotationMap } from './rotation'
+
 export type BackendStatus = 'starting' | 'ready' | 'error' | 'stopped'
 
 export interface BackendInfo {
@@ -85,6 +87,35 @@ export interface DocumentSummary {
   signed: boolean
   demo: boolean
   pages: PageMeta[]
+}
+
+export interface RecentFile {
+  path: string
+  name: string
+  kind: 'OFD' | 'PDF'
+  pageCount: number
+  openedAt: number
+}
+
+export interface RecentFileInput {
+  path: string
+  name: string
+  kind: 'OFD' | 'PDF'
+  pageCount: number
+}
+
+export interface SignatureInfo {
+  name: string | null
+  reason: string | null
+  location: string | null
+  signTime: string | null
+}
+
+export interface DocumentProperties {
+  summary: DocumentSummary
+  metadata: Record<string, string>
+  signatures: SignatureInfo[]
+  warning: string | null
 }
 
 export interface ApiError {
@@ -319,6 +350,7 @@ export interface PrintDocumentOptions {
   id: string
   name: string
   pages: PageMeta[]
+  rotations: RotationMap
   layout: PrintLayoutOptions
 }
 
@@ -357,4 +389,8 @@ export interface AdouApi {
   revealLegalNotices(): Promise<void>
   listPrinters(): Promise<PrinterInfo[]>
   printDocument(options: PrintDocumentOptions): Promise<PrintDocumentResult>
+  listRecentFiles(): Promise<RecentFile[]>
+  addRecentFile(entry: RecentFileInput): Promise<RecentFile[]>
+  removeRecentFile(path: string): Promise<RecentFile[]>
+  clearRecentFiles(): Promise<void>
 }

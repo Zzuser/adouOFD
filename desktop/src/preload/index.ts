@@ -43,7 +43,11 @@ const api: AdouApi = {
   readLegalNotices: () => ipcRenderer.invoke('legal:read'),
   revealLegalNotices: () => ipcRenderer.invoke('legal:reveal'),
   listPrinters: () => ipcRenderer.invoke('printer:list'),
-  printDocument: (options) => ipcRenderer.invoke('document:print', options)
+  printDocument: (options) => ipcRenderer.invoke('document:print', options),
+  listRecentFiles: () => ipcRenderer.invoke('recent:list'),
+  addRecentFile: (entry) => ipcRenderer.invoke('recent:add', entry),
+  removeRecentFile: (path) => ipcRenderer.invoke('recent:remove', path),
+  clearRecentFiles: () => ipcRenderer.invoke('recent:clear')
 }
 
 contextBridge.exposeInMainWorld('adou', api)

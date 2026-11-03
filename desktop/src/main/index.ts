@@ -1,11 +1,17 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { BackendManager } from './backend'
 import { parseDocumentPaths } from './document-args'
 import { readLegalNotices, revealLegalNotices } from './legal'
 import { listPrinters, parsePrintOptions, printDocument } from './print'
+import {
+  addRecentFile,
+  clearRecentFiles,
+  listRecentFiles,
+  removeRecentFile
+} from './recent-files'
 import {
   ensureRegisteredOnStartup,
   getWindowsIntegration,
@@ -17,7 +23,11 @@ import type { BackendInfo } from '../shared/types'
 
 const APP_NAME = '阿豆OFD'
 app.setName(APP_NAME)
-app.setPath('userData', join(app.getPath('appData'), 'adou-ofd'))
+const userDataOverride = process.env.ADOU_USER_DATA
+app.setPath(
+  'userData',
+  userDataOverride ? resolve(userDataOverride) : join(app.getPath('appData'), 'adou-ofd')
+)
 app.setAppUserModelId('com.adou.ofd')
 
 let mainWindow: BrowserWindow | null = null
@@ -348,6 +358,11 @@ function registerIpc(): void {
   ipcMain.handle('legal:reveal', () => revealLegalNotices())
 
   ipcMain.handle('printer:list', () => listPrinters(mainWindow?.webContents))
+
+  ipcMain.handle('recent:list', () => listRecentFiles())
+  ipcMain.handle('recent:add', (_event, payload: unknown) => addRecentFile(payload))
+  ipcMain.handle('recent:remove', (_event, rawPath: unknown) => removeRecentFile(rawPath))
+  ipcMain.handle('recent:clear', () => clearRecentFiles())
 
   ipcMain.handle('document:print', async (_event, payload: unknown) => {
     if (!backend || backend.info.status !== 'ready' || !backend.info.port || !backend.info.token) {

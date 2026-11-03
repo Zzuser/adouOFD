@@ -112,7 +112,7 @@ class PdfEngineSmokeTest {
     }
 
     @Test
-    void encryptedPdfIsRejectedWithFriendlyCode() throws Exception {
+    void encryptedPdfRequiresPassword() throws Exception {
         Path dir = Files.createTempDirectory("adou-pdf-encrypted-");
         Path encrypted = dir.resolve("encrypted.pdf");
         try (PDDocument document = new PDDocument()) {
@@ -127,7 +127,7 @@ class PdfEngineSmokeTest {
         DocumentService service = new DocumentService(new DemoOfdFactory(), new PdfDemoFactory("0.7.1"));
         try {
             ApiException error = assertThrows(ApiException.class, () -> service.open(encrypted.toString()));
-            assertEquals("PDF_ENCRYPTED", error.getCode());
+            assertEquals("PDF_PASSWORD_REQUIRED", error.getCode());
         } finally {
             service.closeAll();
         }

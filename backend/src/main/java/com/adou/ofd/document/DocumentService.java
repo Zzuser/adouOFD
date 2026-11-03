@@ -38,17 +38,21 @@ public class DocumentService {
     }
 
     public synchronized DocumentSummary open(String rawPath) {
-        return openSession(rawPath, false);
+        return open(rawPath, null);
+    }
+
+    public synchronized DocumentSummary open(String rawPath, String password) {
+        return openSession(rawPath, false, password);
     }
 
     /**
      * 拆分/插页页面预览专用会话：独立于阅读器标签，避免预览把已打开的文档挤出会话。
      */
     public synchronized DocumentSummary openPreview(String rawPath) {
-        return openSession(rawPath, true);
+        return openSession(rawPath, true, null);
     }
 
-    private DocumentSummary openSession(String rawPath, boolean preview) {
+    private DocumentSummary openSession(String rawPath, boolean preview, String password) {
         if (rawPath == null || rawPath.isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "请提供 OFD 或 PDF 文件路径");
         }
@@ -72,7 +76,7 @@ public class DocumentService {
 
         Path workDir = createWorkDir();
         try {
-            DocumentSession session = loadSession(path, workDir, false);
+            DocumentSession session = loadSession(path, workDir, false, password);
             if (preview) {
                 registerPreview(session);
             } else {
@@ -89,7 +93,7 @@ public class DocumentService {
         Path workDir = createWorkDir();
         try {
             Path demoPath = demoFactory.generate(workDir);
-            DocumentSession session = loadSession(demoPath, workDir, true);
+            DocumentSession session = loadSession(demoPath, workDir, true, null);
             register(session);
             return session.summary();
         } catch (RuntimeException | IOException ex) {
@@ -102,7 +106,7 @@ public class DocumentService {
         Path workDir = createWorkDir();
         try {
             Path demoPath = pdfDemoFactory.generate(workDir);
-            DocumentSession session = loadSession(demoPath, workDir, true);
+            DocumentSession session = loadSession(demoPath, workDir, true, null);
             register(session);
             return session.summary();
         } catch (RuntimeException | IOException ex) {
@@ -113,6 +117,25 @@ public class DocumentService {
 
     public synchronized DocumentSummary summary(String id) {
         return require(id).summary();
+    }
+
+    public synchronized DocumentProperties properties(String id) {
+        DocumentSession session = require(id);
+        try {
+            DocumentMetadata metadata = session.handle().metadata();
+            return new DocumentProperties(
+                    session.summary(),
+                    metadata.metadata(),
+                    metadata.signatures(),
+                    metadata.warning());
+        } catch (RuntimeException ex) {
+            log.warn("文档属性读取失败: document={}", id, ex);
+            return new DocumentProperties(
+                    session.summary(),
+                    Map.of(),
+                    List.of(),
+                    "文档属性读取失败");
+        }
     }
 
     public synchronized List<OutlineItem> outline(String id) {
@@ -135,32 +158,43 @@ public class DocumentService {
     }
 
     public synchronized Path render(String id, int page, int dpi) {
-        return renderSession(require(id), page, dpi);
+        return render(id, page, dpi, 0);
+    }
+
+    public synchronized Path render(String id, int page, int dpi, int rotate) {
+        return renderSession(require(id), page, dpi, rotate);
     }
 
     public synchronized Path renderPreview(String id, int page, int dpi) {
-        return renderSession(requirePreview(id), page, dpi);
+        return renderSession(requirePreview(id), page, dpi, 0);
     }
 
-    private Path renderSession(DocumentSession session, int page, int dpi) {
+    private Path renderSession(DocumentSession session, int page, int dpi, int rotate) {
         if (page < 1 || page > session.pageCount()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
                     "页码超出范围（1-" + session.pageCount() + "）");
         }
+        if (rotate % 90 != 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ROTATION",
+                    "旋转角度必须是 90 的倍数");
+        }
         int safeDpi = Math.min(300, Math.max(24, dpi));
+        int safeRotate = ((rotate % 360) + 360) % 360;
 
         try {
-            Path png = session.handle().render(page, safeDpi);
+            Path png = session.handle().render(page, safeDpi, safeRotate);
             if (!isUsable(png)) {
                 throw new IOException("渲染结果为空");
             }
             return png;
         } catch (IOException | RuntimeException ex) {
-            log.warn("页面渲染失败: document={}, page={}, dpi={}", session.id(), page, safeDpi, ex);
+            log.warn("页面渲染失败: document={}, page={}, dpi={}, rotate={}",
+                    session.id(), page, safeDpi, safeRotate, ex);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
                     "页面渲染失败，请查看引擎日志", ex.getMessage());
         } catch (StackOverflowError error) {
-            log.error("页面渲染栈溢出: document={}, page={}, dpi={}", session.id(), page, safeDpi);
+            log.error("页面渲染栈溢出: document={}, page={}, dpi={}, rotate={}",
+                    session.id(), page, safeDpi, safeRotate);
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
                     "页面包含异常的资源引用，暂时无法渲染", "文档渲染递归溢出");
         }
@@ -207,18 +241,20 @@ public class DocumentService {
         }
     }
 
-    private DocumentSession loadSession(Path path, Path workDir, boolean demo) throws IOException {
+    private DocumentSession loadSession(Path path, Path workDir, boolean demo, String password)
+            throws IOException {
         String fileName = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (fileName.endsWith(".pdf")) {
-            return loadPdfSession(path, workDir, demo);
+            return loadPdfSession(path, workDir, demo, password);
         }
         return loadOfdSession(path, workDir, demo);
     }
 
-    private DocumentSession loadPdfSession(Path path, Path workDir, boolean demo) throws IOException {
+    private DocumentSession loadPdfSession(Path path, Path workDir, boolean demo, String password)
+            throws IOException {
         DocumentHandle handle = null;
         try {
-            handle = PdfDocumentHandle.open(path, workDir);
+            handle = PdfDocumentHandle.open(path, workDir, password);
             return new DocumentSession(
                     UUID.randomUUID().toString(),
                     path.getFileName().toString(),
@@ -233,8 +269,11 @@ public class DocumentService {
                     handle);
         } catch (InvalidPasswordException ex) {
             closeHandleQuietly(handle);
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "PDF_ENCRYPTED",
-                    "PDF 已加密，暂不支持打开");
+            boolean missingPassword = password == null || password.isEmpty();
+            throw new ApiException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    missingPassword ? "PDF_PASSWORD_REQUIRED" : "PDF_PASSWORD_INVALID",
+                    missingPassword ? "PDF 已加密，请输入打开密码" : "PDF 密码不正确，请重试");
         } catch (IOException | RuntimeException ex) {
             closeHandleQuietly(handle);
             throw ex;

@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { BackendInfo, DocumentSummary, OutlineItem, SearchHit } from '@shared/types'
+import {
+  displaySize,
+  displayYForRotation,
+  rotateBy,
+  rotationOf,
+  type RotationMap
+} from '@shared/rotation'
 import { fetchOutline, messageOf } from '../api'
 import { DocumentNav, type NavTab } from './DocumentNav'
 import { PageCanvas, type SearchHighlight } from './PageCanvas'
+import { PropertiesDialog } from './PropertiesDialog'
+import { RotateMenu } from './RotateMenu'
 import { SearchPanel } from './SearchPanel'
 import { ZoomMenu, type ZoomMode } from './ZoomMenu'
 import {
@@ -12,6 +21,7 @@ import {
   IconFile,
   IconFitPage,
   IconFitWidth,
+  IconInfo,
   IconLocation,
   IconMinus,
   IconPages,
@@ -43,7 +53,7 @@ interface ViewerProps {
   printOpen: boolean
   onClose: () => void
   onConvert: () => void
-  onPrint: (page: number) => void
+  onPrint: (page: number, rotations: RotationMap) => void
 }
 
 export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, onPrint }: ViewerProps) {
@@ -62,6 +72,8 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchHits, setSearchHits] = useState<SearchHit[]>([])
   const [activeSearchHit, setActiveSearchHit] = useState<SearchHit | null>(null)
+  const [rotations, setRotations] = useState<RotationMap>({})
+  const [propertiesOpen, setPropertiesOpen] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Array<HTMLDivElement | null>>([])
@@ -88,6 +100,8 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     setSearchOpen(false)
     setSearchHits([])
     setActiveSearchHit(null)
+    setRotations({})
+    setPropertiesOpen(false)
     anchorPageRef.current = null
     programmaticTargetRef.current = null
     if (programmaticTimerRef.current != null) {
@@ -133,8 +147,13 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
   }, [doc.id])
 
   const firstPage = doc.pages[0]
-  const baseWidth = Math.max(1, (firstPage?.widthMm || 210) * PX_PER_MM)
-  const baseHeight = Math.max(1, (firstPage?.heightMm || 297) * PX_PER_MM)
+  const firstPageSize = displaySize(
+    (firstPage?.widthMm || 210) * PX_PER_MM,
+    (firstPage?.heightMm || 297) * PX_PER_MM,
+    rotationOf(rotations, 1)
+  )
+  const baseWidth = Math.max(1, firstPageSize.width)
+  const baseHeight = Math.max(1, firstPageSize.height)
 
   const effectiveZoom = useMemo(() => {
     if (zoomMode === 'custom') {
@@ -184,6 +203,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
   const goToPage = useCallback(
     (page: number, smooth = true) => {
       const target = clamp(Math.round(page), 1, doc.pageCount)
+      anchorPageRef.current = null
       setRenderedPages((previous) => {
         if (previous.has(target)) return previous
         const next = new Set(previous)
@@ -268,12 +288,13 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
         const target = sheet ?? slot
         const rootRect = root.getBoundingClientRect()
         const rect = target.getBoundingClientRect()
+        const displayY = displayYForRotation(rotationOf(rotations, page), hit.x, hit.y)
         const top =
-          root.scrollTop + (rect.top - rootRect.top) + hit.y * rect.height - rootRect.height * 0.32
+          root.scrollTop + (rect.top - rootRect.top) + displayY * rect.height - rootRect.height * 0.32
         root.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
       })
     },
-    [doc.pageCount, goToPage]
+    [doc.pageCount, goToPage, rotations]
   )
 
   useEffect(() => {
@@ -355,7 +376,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     anchorPageRef.current = null
     const frame = requestAnimationFrame(() => goToPage(target, false))
     return () => cancelAnimationFrame(frame)
-  }, [effectiveZoom, goToPage])
+  }, [effectiveZoom, goToPage, rotations])
 
   const zoomBy = useCallback((factor: number) => {
     const next = clamp(effectiveZoomRef.current * factor, MIN_ZOOM, MAX_ZOOM)
@@ -384,9 +405,42 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     setFirstPageReady(true)
   }, [])
 
+  const applyRotation = useCallback(
+    (scope: 'current' | 'all', delta: 90 | -90) => {
+      anchorPageRef.current = currentPageRef.current
+      setRotations((previous) => {
+        const next: RotationMap = { ...previous }
+        const pages =
+          scope === 'all'
+            ? Array.from({ length: doc.pageCount }, (_, index) => index + 1)
+            : [currentPageRef.current]
+        for (const page of pages) {
+          const value = rotateBy(rotationOf(previous, page), delta)
+          if (value === 0) {
+            delete next[page]
+          } else {
+            next[page] = value
+          }
+        }
+        return next
+      })
+    },
+    [doc.pageCount]
+  )
+
+  const resetRotation = useCallback((scope: 'current' | 'all') => {
+    anchorPageRef.current = currentPageRef.current
+    setRotations((previous) => {
+      if (scope === 'all') return {}
+      const next = { ...previous }
+      delete next[currentPageRef.current]
+      return next
+    })
+  }, [])
+
   const requestPrint = useCallback(() => {
-    if (backend.status === 'ready') onPrint(currentPage)
-  }, [backend.status, currentPage, onPrint])
+    if (backend.status === 'ready') onPrint(currentPage, rotations)
+  }, [backend.status, currentPage, onPrint, rotations])
 
   useEffect(() => {
     const root = scrollRef.current
@@ -403,6 +457,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
   useEffect(() => {
     if (!active) return
     const handler = (event: KeyboardEvent): void => {
+      if (propertiesOpen) return
       const mod = event.ctrlKey || event.metaKey
       if (mod && event.key.toLowerCase() === 'f') {
         event.preventDefault()
@@ -432,6 +487,9 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
       } else if (mod && event.key === '0') {
         event.preventDefault()
         applyFit('fit-width')
+      } else if (!mod && event.key.toLowerCase() === 'r' && !event.altKey) {
+        event.preventDefault()
+        applyRotation('current', event.shiftKey ? -90 : 90)
       } else if (!mod && event.key === 'ArrowLeft') {
         event.preventDefault()
         goToPage(currentPageRef.current - 1)
@@ -445,7 +503,18 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [active, zoomBy, applyFit, goToPage, searchOpen, closeSearch, requestPrint, printOpen])
+  }, [
+    active,
+    zoomBy,
+    applyFit,
+    goToPage,
+    searchOpen,
+    closeSearch,
+    requestPrint,
+    printOpen,
+    applyRotation,
+    propertiesOpen
+  ])
 
   useEffect(() => {
     if (document.activeElement !== pageInputRef.current) {
@@ -585,6 +654,8 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
   }
 
   const ready = containerSize.width > 0
+  const currentRotation = rotationOf(rotations, currentPage)
+  const hasAnyRotation = Object.keys(rotations).length > 0
 
   return (
     <div className="viewer">
@@ -643,6 +714,14 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
             </button>
           </div>
 
+          <RotateMenu
+            currentPage={currentPage}
+            currentRotation={currentRotation}
+            hasRotation={hasAnyRotation}
+            onRotate={applyRotation}
+            onReset={resetRotation}
+          />
+
           <button
             className={`icon-btn ${searchOpen ? 'active' : ''}`}
             data-action="search"
@@ -688,6 +767,16 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
           </button>
 
           <button
+            className="icon-btn"
+            data-action="properties"
+            onClick={() => setPropertiesOpen(true)}
+            title="文档属性"
+          >
+            <IconInfo size={15} />
+            <span>属性</span>
+          </button>
+
+          <button
             className="icon-btn compact"
             onClick={() => void window.adou.revealPath(doc.path)}
             title="在文件夹中显示"
@@ -718,6 +807,13 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
         onHitsChange={handleSearchHits}
       />
 
+      <PropertiesDialog
+        open={propertiesOpen}
+        backend={backend}
+        doc={doc}
+        onClose={() => setPropertiesOpen(false)}
+      />
+
       <div className="reader-body">
         {navOpen ? (
           <DocumentNav
@@ -730,6 +826,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
             outlineLoading={outlineLoading}
             outlineError={outlineError}
             thumbsEnabled={firstPageReady}
+            rotations={rotations}
             onSelectPage={(page) => goToPage(page)}
             onClose={() => setNavOpen(false)}
           />
@@ -743,6 +840,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
                 const heightMm = meta.heightMm > 0 ? meta.heightMm : 297
                 const width = Math.max(80, Math.round(widthMm * PX_PER_MM * effectiveZoom))
                 const height = Math.max(100, Math.round(heightMm * PX_PER_MM * effectiveZoom))
+                const rotation = rotationOf(rotations, meta.index)
                 return (
                   <PageCanvas
                     key={`${doc.id}-${meta.index}`}
@@ -752,6 +850,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
                     dpi={renderDpi}
                     width={width}
                     height={height}
+                    rotation={rotation}
                     shouldRender={renderedPages.has(meta.index)}
                     ready={ready}
                     highlights={searchHighlights.get(meta.index)}

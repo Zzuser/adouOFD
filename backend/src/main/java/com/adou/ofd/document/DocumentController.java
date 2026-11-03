@@ -35,7 +35,7 @@ public class DocumentController {
         if (request == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "请提供 OFD 文件路径");
         }
-        return documents.open(request.path());
+        return documents.open(request.path(), request.password());
     }
 
     @PostMapping("/demo")
@@ -53,6 +53,11 @@ public class DocumentController {
         return documents.summary(id);
     }
 
+    @GetMapping("/{id}/properties")
+    public DocumentProperties properties(@PathVariable String id) {
+        return documents.properties(id);
+    }
+
     @GetMapping("/{id}/outline")
     public List<OutlineItem> outline(@PathVariable String id) {
         return documents.outline(id);
@@ -62,8 +67,9 @@ public class DocumentController {
     public ResponseEntity<Resource> page(
             @PathVariable String id,
             @PathVariable int page,
-            @RequestParam(defaultValue = "144") int dpi) {
-        Path png = documents.render(id, page, dpi);
+            @RequestParam(defaultValue = "144") int dpi,
+            @RequestParam(defaultValue = "0") int rotate) {
+        Path png = documents.render(id, page, dpi, rotate);
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePrivate())

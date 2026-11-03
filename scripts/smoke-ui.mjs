@@ -57,22 +57,28 @@ const printNupPdf = join(outDir, 'smoke-print-nup.pdf')
 const printEightPdf = join(outDir, 'smoke-print-eight.pdf')
 const printCustomPdf = join(outDir, 'smoke-print-custom.pdf')
 const printPdfOutput = join(outDir, 'smoke-print-pdf.pdf')
+const printRotatedPdf = join(outDir, 'smoke-print-rotated.pdf')
+const encryptedFixture = join(root, 'scripts', 'fixtures', 'encrypted.pdf')
 rmSync(printTestPdf, { force: true })
 rmSync(printNupPdf, { force: true })
 rmSync(printEightPdf, { force: true })
 rmSync(printCustomPdf, { force: true })
 rmSync(printPdfOutput, { force: true })
+rmSync(printRotatedPdf, { force: true })
 // 隔离冒烟实例的 userData，避免与正在运行的安装版争抢单实例锁
 const smokeAppData = join(outDir, 'smoke-appdata')
 rmSync(smokeAppData, { recursive: true, force: true })
-mkdirSync(smokeAppData, { recursive: true })
+mkdirSync(join(smokeAppData, 'adou-ofd'), { recursive: true })
 
 const errors = []
+let allowOpen422 = false
 let child = null
 if (!attachPort) {
   const childEnv = {
     ...process.env,
     APPDATA: smokeAppData,
+    ADOU_USER_DATA: join(smokeAppData, 'adou-ofd'),
+    ADOU_TEST_OPEN_FILE: encryptedFixture,
     ELECTRON_ENABLE_LOGGING: '0',
     ADOU_TEST_SAVE_FILE: convertOutput,
     ADOU_TEST_OPEN_FILES: batchInputsFile,
@@ -99,7 +105,7 @@ const timeout = setTimeout(async () => {
   console.error('冒烟超时')
   child?.kill()
   process.exit(1)
-}, 150_000)
+}, 300_000)
 
 try {
   const target = await waitForTarget()
@@ -114,7 +120,12 @@ try {
   })
   cdp.on('Log.entryAdded', (params) => {
     if (params.entry.level === 'error') {
-      errors.push(`console: ${params.entry.text}${params.entry.url ? ` (${params.entry.url})` : ''}`)
+      const text = params.entry.text ?? ''
+      const url = params.entry.url ?? ''
+      if (text.includes('status of 422') && (allowOpen422 || url.includes('/api/documents/open'))) {
+        return
+      }
+      errors.push(`console: ${text}${url ? ` (${url})` : ''}`)
     }
   })
 
@@ -252,12 +263,34 @@ try {
   if (thumbCount !== pageCount) {
     errors.push(`缩略图数量与页数不一致：${thumbCount} / ${pageCount}`)
   }
+  const recentAfterDemo = await evaluate(
+    cdp,
+    "window.adou.listRecentFiles().then((list) => list.length)"
+  )
+  console.log('最近文件（内置示例后）：', recentAfterDemo)
+  if (recentAfterDemo !== 0) {
+    errors.push('内置示例不应写入最近文件')
+  }
 
   await waitFor(
     cdp,
     "(() => { const img = document.querySelector('.thumb-item[data-page=\"1\"] img'); return Boolean(img && img.complete && img.naturalWidth > 0) })()",
     30_000
   )
+
+  await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) [data-action=\"properties\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.properties-dialog') !== null", 10_000)
+  await waitFor(cdp, "document.querySelector('.properties-signature-note') !== null", 15_000)
+  const propertiesText = await evaluate(
+    cdp,
+    "document.querySelector('.properties-dialog')?.innerText?.replace(/\\n/g, ' | ')"
+  )
+  console.log('文档属性：', JSON.stringify(String(propertiesText).slice(0, 220)))
+  if (!String(propertiesText).includes('基本信息') || !String(propertiesText).includes('不验证')) {
+    errors.push('文档属性面板内容不完整')
+  }
+  await evaluate(cdp, "document.querySelector('[data-action=\"properties-close\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.properties-dialog') === null", 5_000)
 
   const viewerShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-viewer.png`), Buffer.from(viewerShot.data, 'base64'))
@@ -546,6 +579,126 @@ try {
   console.log(`截图：.tools/${shotPrefix}-text.png`)
   await evaluate(cdp, "window.getSelection()?.removeAllRanges(); true")
 
+  // ---- 页面旋转 ----
+  const rotationBefore = await evaluate(
+    cdp,
+    `(() => {
+      const sheet = document.querySelector('.page-slot[data-page="1"] .page-sheet').getBoundingClientRect()
+      const thumb = document.querySelector('.thumb-item[data-page="1"] .thumb-frame').getBoundingClientRect()
+      return { sheetWidth: sheet.width, sheetHeight: sheet.height, thumbWidth: thumb.width, thumbHeight: thumb.height }
+    })()`
+  )
+  await evaluate(cdp, "document.querySelector('[data-action=\"rotate\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.rotate-popover') !== null", 5_000)
+  await evaluate(cdp, "document.querySelector('[data-rotate=\"current-right\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('[data-action=\"rotate\"]')?.dataset.rotation === '90'",
+    10_000
+  )
+  await waitFor(
+    cdp,
+    `(() => { const img = document.querySelector('.page-slot[data-page="1"] img'); return Boolean(img && img.complete && img.naturalWidth > 0) })()`,
+    30_000
+  )
+  await sleep(400)
+  const rotationAfter = await evaluate(
+    cdp,
+    `(() => {
+      const sheet = document.querySelector('.page-slot[data-page="1"] .page-sheet').getBoundingClientRect()
+      const thumb = document.querySelector('.thumb-item[data-page="1"] .thumb-frame').getBoundingClientRect()
+      const rotor = document.querySelector('.page-slot[data-page="1"] .page-rotor')
+      const thumbItem = document.querySelector('.thumb-item[data-page="1"]')
+      return {
+        sheetWidth: sheet.width,
+        sheetHeight: sheet.height,
+        thumbWidth: thumb.width,
+        thumbHeight: thumb.height,
+        rotorTransform: rotor ? getComputedStyle(rotor).transform : 'none',
+        thumbRotation: thumbItem?.dataset.rotation ?? ''
+      }
+    })()`
+  )
+  console.log('页面旋转：', JSON.stringify({ before: rotationBefore, after: rotationAfter }))
+  if (!(rotationAfter.sheetWidth > rotationAfter.sheetHeight)) {
+    errors.push('旋转 90° 后页面未变为横向')
+  }
+  if (!(rotationBefore.sheetHeight > rotationBefore.sheetWidth)) {
+    errors.push('旋转前页面不是纵向')
+  }
+  if (!(rotationAfter.thumbWidth > rotationAfter.thumbHeight)) {
+    errors.push('旋转 90° 后缩略图未变为横向')
+  }
+  if (rotationAfter.thumbRotation !== '90') {
+    errors.push('缩略图未应用旋转')
+  }
+  if (rotationAfter.rotorTransform === 'none') {
+    errors.push('旋转后文字层未同步旋转')
+  }
+
+  const rotatedText = await evaluate(
+    cdp,
+    `(() => {
+      const runs = Array.from(document.querySelectorAll('.page-slot[data-page="1"] .text-run')).slice(0, 120)
+      if (!runs.length) return ''
+      const range = document.createRange()
+      range.setStartBefore(runs[0])
+      range.setEndAfter(runs[runs.length - 1])
+      const selection = window.getSelection()
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+      return selection?.toString() ?? ''
+    })()`
+  )
+  console.log('旋转后文字选择：', rotatedText.length)
+  if (!rotatedText || rotatedText.length < 10) {
+    errors.push('旋转后文字层无法选中')
+  }
+  await evaluate(cdp, "window.getSelection()?.removeAllRanges(); true")
+  const rotationShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-rotation.png`), Buffer.from(rotationShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-rotation.png`)
+
+  await openPrintDialog()
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-paper img[data-page=\"1\"]')?.dataset.rotation === '90'",
+    15_000
+  )
+  console.log('旋转后打印预览：90°')
+  await evaluate(cdp, "document.querySelector('[data-print=\"selection-current\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('.print-sheet-summary')?.textContent?.includes('1 页 · 1 张')",
+    5_000
+  )
+  const rotatedPrintBytes = await submitPrint(printRotatedPdf)
+  console.log('旋转后打印输出：', rotatedPrintBytes, '字节')
+  if (rotatedPrintBytes < 20_000) {
+    errors.push(`旋转后打印输出过小：${rotatedPrintBytes}`)
+  }
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"rotate\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.rotate-popover') !== null", 5_000)
+  await evaluate(cdp, "document.querySelector('[data-rotate=\"reset-all\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('[data-action=\"rotate\"]')?.dataset.rotation === undefined",
+    10_000
+  )
+  await sleep(300)
+  const rotationReset = await evaluate(
+    cdp,
+    `(() => {
+      const sheet = document.querySelector('.page-slot[data-page="1"] .page-sheet').getBoundingClientRect()
+      return { width: sheet.width, height: sheet.height }
+    })()`
+  )
+  console.log('旋转重置：', JSON.stringify(rotationReset))
+  if (!(rotationReset.height > rotationReset.width)) {
+    errors.push('重置旋转后页面未恢复纵向')
+  }
+
   const dragInfo = await evaluate(
     cdp,
     `(() => {
@@ -725,6 +878,30 @@ try {
     console.log('缩略图跳页：3')
   }
 
+  if (pageCount > 3) {
+    await evaluate(cdp, "document.querySelector('.thumb-item[data-page=\"4\"]')?.click()")
+    await waitFor(cdp, "document.querySelector('.page-input')?.value === '4'", 15_000)
+    await waitFor(
+      cdp,
+      `(() => { const img = document.querySelector('.page-slot[data-page="4"] img'); return Boolean(img && img.complete && img.naturalWidth > 0) })()`,
+      30_000
+    )
+    await evaluate(cdp, "document.querySelector('[data-action=\"rotate\"]')?.click()")
+    await waitFor(cdp, "document.querySelector('.rotate-popover') !== null", 5_000)
+    await evaluate(cdp, "document.querySelector('[data-rotate=\"current-right\"]')?.click()")
+    await waitFor(
+      cdp,
+      "document.querySelector('[data-action=\"rotate\"]')?.dataset.rotation === '90'",
+      10_000
+    )
+    await waitFor(
+      cdp,
+      `(() => { const img = document.querySelector('.page-slot[data-page="4"] img'); return Boolean(img && img.complete && img.naturalWidth > 0) })()`,
+      30_000
+    )
+    console.log('搜索前旋转第 4 页：90°')
+  }
+
   // ---- 全文搜索 ----
   await evaluate(cdp, "document.querySelector('[data-action=\"search\"]')?.click()")
   await waitFor(cdp, "document.querySelector('.search-bar') !== null", 5_000)
@@ -764,6 +941,30 @@ try {
   const searchShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-search.png`), Buffer.from(searchShot.data, 'base64'))
   console.log(`截图：.tools/${shotPrefix}-search.png`)
+
+  const rotatedHitVisible = await evaluate(
+    cdp,
+    `(() => {
+      const root = document.querySelector('.pages-viewport')?.getBoundingClientRect()
+      const mark = document.querySelector('.page-slot[data-page="4"] .search-hit.active')?.getBoundingClientRect()
+      if (!root || !mark) return false
+      return mark.height > 0 && mark.top >= root.top - 4 && mark.bottom <= root.bottom + 4
+    })()`
+  )
+  console.log('旋转页搜索定位：', rotatedHitVisible)
+  if (!rotatedHitVisible) {
+    errors.push('旋转页搜索命中未滚动到可视区域')
+  }
+  await evaluate(cdp, "document.querySelector('[data-action=\"rotate\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.rotate-popover') !== null", 5_000)
+  await evaluate(cdp, "document.querySelector('[data-rotate=\"reset-current\"]')?.click()")
+  await waitFor(
+    cdp,
+    "document.querySelector('[data-action=\"rotate\"]')?.dataset.rotation === undefined",
+    10_000
+  )
+  console.log('搜索旋转重置：true')
+  await sleep(300)
 
   await setSearchValue('阿豆OFD')
   await waitFor(
@@ -859,6 +1060,20 @@ try {
   if (pdfThumbs !== pdfPages) {
     errors.push(`PDF 缩略图数量与页数不一致：${pdfThumbs} / ${pdfPages}`)
   }
+
+  await evaluate(cdp, "document.querySelector('.viewer-pane:not([hidden]) [data-action=\"properties\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.properties-dialog') !== null", 10_000)
+  await waitFor(cdp, "document.querySelector('.properties-signature-note') !== null", 15_000)
+  const pdfPropertiesText = await evaluate(
+    cdp,
+    "document.querySelector('.properties-dialog')?.innerText?.replace(/\\n/g, ' | ')"
+  )
+  console.log('PDF 文档属性：', JSON.stringify(String(pdfPropertiesText).slice(0, 200)))
+  if (!String(pdfPropertiesText).includes('PDF 版本') || !String(pdfPropertiesText).includes('阿豆OFD')) {
+    errors.push('PDF 文档属性内容不完整')
+  }
+  await evaluate(cdp, "document.querySelector('[data-action=\"properties-close\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.properties-dialog') === null", 5_000)
 
   const pdfShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
   writeFileSync(join(outDir, `${shotPrefix}-pdf.png`), Buffer.from(pdfShot.data, 'base64'))
@@ -984,7 +1199,11 @@ try {
   await waitFor(cdp, "document.querySelector('.convert-dialog') === null", 5_000)
 
   // ---- 单实例 / 命令行打开（模拟文件关联双击） ----
-  const secondEnv = { ...process.env, APPDATA: smokeAppData }
+  const secondEnv = {
+    ...process.env,
+    APPDATA: smokeAppData,
+    ADOU_USER_DATA: join(smokeAppData, 'adou-ofd')
+  }
   delete secondEnv.ELECTRON_RUN_AS_NODE
   const secondInstance = spawn(electronExe, ['.', convertOutput], {
     cwd: desktop,
@@ -1234,6 +1453,11 @@ try {
 
   await evaluate(cdp, "document.querySelector('[data-action=\"nav-viewer\"]')?.click()")
   await waitFor(cdp, "document.querySelector('.main')?.dataset.view === 'viewer'", 5_000)
+  await waitFor(
+    cdp,
+    "Array.from(document.querySelectorAll('.viewer-pane:not([hidden]) .thumb-item img')).every((img) => img.complete)",
+    30_000
+  )
 
   const tabsLeft = await evaluate(
     cdp,
@@ -1251,6 +1475,173 @@ try {
   if (tabsLeft !== 0) {
     errors.push('标签未全部关闭')
   }
+  await waitFor(cdp, "document.querySelector('.empty') !== null", 15_000)
+
+  // ---- 最近文件 ----
+  await waitFor(cdp, "document.querySelector('.recent-files') !== null", 10_000)
+  const recentRows = await evaluate(
+    cdp,
+    "Array.from(document.querySelectorAll('.recent-item')).map((item) => ({ name: item.querySelector('.recent-name')?.textContent, path: item.dataset.recentPath }))"
+  )
+  console.log('最近文件：', JSON.stringify(recentRows.slice(0, 3)))
+  if (!recentRows.length) {
+    errors.push('最近文件列表为空')
+  }
+  const recentStore = join(smokeAppData, 'adou-ofd', 'recent-files.json')
+  let storedRecent = []
+  try {
+    storedRecent = JSON.parse(readFileSync(recentStore, 'utf8'))
+  } catch {
+    storedRecent = []
+  }
+  console.log('最近文件持久化数量：', Array.isArray(storedRecent) ? storedRecent.length : 'invalid')
+  if (!Array.isArray(storedRecent) || storedRecent.length === 0) {
+    errors.push('最近文件未写入磁盘')
+  }
+  const recentShot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(join(outDir, `${shotPrefix}-recent.png`), Buffer.from(recentShot.data, 'base64'))
+  console.log(`截图：.tools/${shotPrefix}-recent.png`)
+
+  await evaluate(cdp, "document.querySelector('.recent-open')?.click()")
+  await waitFor(
+    cdp,
+    `document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page="1"] img.loaded') !== null`,
+    60_000
+  )
+  console.log('最近文件重新打开：true')
+  await waitFor(
+    cdp,
+    "Array.from(document.querySelectorAll('.viewer-pane:not([hidden]) .thumb-item img')).every((img) => img.complete)",
+    30_000
+  )
+  await evaluate(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) [data-action=\"close\"]')?.click()"
+  )
+  await waitFor(cdp, "document.querySelector('.empty') !== null", 15_000)
+  await waitFor(cdp, "document.querySelector('.recent-files') !== null", 10_000)
+
+  if (recentRows.length > 1) {
+    const beforeRemoveNames = await evaluate(
+      cdp,
+      "Array.from(document.querySelectorAll('.recent-name')).map((item) => item.textContent)"
+    )
+    await evaluate(cdp, "document.querySelector('[data-action=\"recent-remove\"]')?.click()")
+    await sleep(350)
+    const afterRemove = await evaluate(cdp, "document.querySelectorAll('.recent-item').length")
+    const afterRemoveNames = await evaluate(
+      cdp,
+      "Array.from(document.querySelectorAll('.recent-name')).map((item) => item.textContent)"
+    )
+    console.log('最近文件移除：', JSON.stringify({ before: beforeRemoveNames, after: afterRemoveNames }))
+    if (afterRemove !== beforeRemoveNames.length - 1) {
+      errors.push('最近文件移除未生效')
+    }
+  }
+
+  await evaluate(cdp, "document.querySelector('[data-action=\"recent-clear\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.recent-files') === null", 5_000)
+  let storedAfterClear = []
+  try {
+    storedAfterClear = JSON.parse(readFileSync(recentStore, 'utf8'))
+  } catch {
+    storedAfterClear = []
+  }
+  if (!Array.isArray(storedAfterClear) || storedAfterClear.length !== 0) {
+    errors.push('清空最近文件未持久化')
+  }
+  console.log('最近文件清空：true')
+
+  writeFileSync(
+    recentStore,
+    JSON.stringify([
+      {
+        path: join(outDir, 'missing-recent.pdf'),
+        name: 'missing-recent.pdf',
+        kind: 'PDF',
+        pageCount: 1,
+        openedAt: Date.now()
+      }
+    ]),
+    'utf8'
+  )
+  const prunedRecent = await evaluate(
+    cdp,
+    "window.adou.listRecentFiles().then((list) => list.length)"
+  )
+  console.log('最近文件缺失清理：', prunedRecent)
+  if (prunedRecent !== 0) {
+    errors.push('最近文件未清理缺失文件')
+  }
+
+  // ---- 加密 PDF 密码流程 ----
+  allowOpen422 = true
+  await evaluate(cdp, "document.querySelector('[data-action=\"open\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.password-dialog') !== null", 30_000)
+  const passwordText = await evaluate(
+    cdp,
+    "document.querySelector('.password-dialog')?.innerText?.replace(/\\n/g, ' | ')"
+  )
+  console.log('加密 PDF 密码提示：', JSON.stringify(String(passwordText).slice(0, 180)))
+  if (!String(passwordText).includes('已加密') || !String(passwordText).includes('不会保存')) {
+    errors.push('加密 PDF 密码提示不完整')
+  }
+  const setPassword = async (value) => {
+    const ok = await evaluate(
+      cdp,
+      `(() => {
+        const input = document.querySelector('[data-password="input"]')
+        if (!input) return false
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        setter.call(input, ${JSON.stringify(value)})
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        return true
+      })()`
+    )
+    if (!ok) errors.push('密码输入框不可用')
+  }
+
+  await setPassword('wrong-password')
+  await waitFor(
+    cdp,
+    "document.querySelector('[data-password=\"submit\"]')?.disabled === false",
+    5_000
+  )
+  await evaluate(cdp, "document.querySelector('[data-password=\"submit\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.password-message.is-error') !== null", 30_000)
+  const invalidPasswordText = await evaluate(
+    cdp,
+    "document.querySelector('.password-message.is-error')?.textContent?.trim()"
+  )
+  console.log('加密 PDF 错误密码：', JSON.stringify(invalidPasswordText))
+  if (!String(invalidPasswordText).includes('不正确')) {
+    errors.push('加密 PDF 错误密码提示异常')
+  }
+
+  await setPassword('adou-test')
+  await waitFor(
+    cdp,
+    "document.querySelector('[data-password=\"submit\"]')?.disabled === false",
+    5_000
+  )
+  await evaluate(cdp, "document.querySelector('[data-password=\"submit\"]')?.click()")
+  await waitFor(cdp, "document.querySelector('.password-dialog') === null", 30_000)
+  await waitFor(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) .doc-name')?.textContent?.includes('encrypted')",
+    30_000
+  )
+  await waitFor(
+    cdp,
+    `document.querySelector('.viewer-pane:not([hidden]) .page-slot[data-page="1"] img.loaded') !== null`,
+    60_000
+  )
+  allowOpen422 = false
+  console.log('加密 PDF 打开：true')
+  await evaluate(
+    cdp,
+    "document.querySelector('.viewer-pane:not([hidden]) [data-action=\"close\"]')?.click()"
+  )
   await waitFor(cdp, "document.querySelector('.empty') !== null", 15_000)
 
   await evaluate(cdp, "document.querySelector('[data-action=\"sidebar-toggle\"]')?.click()")

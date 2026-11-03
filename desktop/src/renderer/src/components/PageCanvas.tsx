@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BackendInfo, TextRun } from '@shared/types'
+import { isQuarterTurn, type PageRotation } from '@shared/rotation'
 import { fetchPageText, pageImageUrl } from '../api'
 
 export interface SearchHighlight {
@@ -15,6 +16,7 @@ interface PageCanvasProps {
   dpi: number
   width: number
   height: number
+  rotation: PageRotation
   shouldRender: boolean
   ready: boolean
   highlights?: SearchHighlight[]
@@ -64,6 +66,7 @@ export function PageCanvas({
   dpi,
   width,
   height,
+  rotation,
   shouldRender,
   ready,
   highlights,
@@ -82,8 +85,11 @@ export function PageCanvas({
     backend.status === 'ready' &&
     Boolean(backend.port) &&
     Boolean(backend.token)
+  const quarterTurn = isQuarterTurn(rotation)
+  const sheetWidth = quarterTurn ? height : width
+  const sheetHeight = quarterTurn ? width : height
   const src = canLoad
-    ? `${pageImageUrl(backend, docId, page, dpi)}&r=${attempt}`
+    ? `${pageImageUrl(backend, docId, page, dpi, rotation)}&r=${attempt}`
     : null
 
   useEffect(() => {
@@ -140,7 +146,7 @@ export function PageCanvas({
   return (
     <div className="page-slot" data-page={page} ref={registerRef}>
       <div className="page-number">第 {page} 页</div>
-      <div className="page-sheet" style={{ width, height }}>
+      <div className="page-sheet" style={{ width: sheetWidth, height: sheetHeight }}>
         {src ? (
           <img
             key={src}
@@ -158,36 +164,47 @@ export function PageCanvas({
         ) : null}
 
         {loaded && !failed && renderedRuns.length > 0 ? (
-          <div className="text-layer" aria-label={`第 ${page} 页可选择文本`}>
-            {renderedRuns.map(({ run, index, segments }) => (
-              <span
-                key={`${index}-${run.text.slice(0, 12)}`}
-                className="text-run"
-                style={{
-                  left: `${run.x * 100}%`,
-                  top: `${run.y * 100}%`,
-                  width: `${Math.max(0.5, run.width * 100)}%`,
-                  height: `${Math.max(0.5, run.height * 100)}%`,
-                  fontSize: `${Math.max(3, run.fontSize * height)}px`,
-                  lineHeight: 1
-                }}
-              >
-                {segments
-                  ? segments.map((segment, segmentIndex) =>
-                      segment.hit ? (
-                        <mark
-                          key={segmentIndex}
-                          className={`search-hit ${segment.active ? 'active' : ''}`}
-                        >
-                          {segment.text}
-                        </mark>
-                      ) : (
-                        segment.text
+          <div
+            className="page-rotor"
+            style={{
+              width,
+              height,
+              left: (sheetWidth - width) / 2,
+              top: (sheetHeight - height) / 2,
+              transform: rotation ? `rotate(${rotation}deg)` : undefined
+            }}
+          >
+            <div className="text-layer" aria-label={`第 ${page} 页可选择文本`}>
+              {renderedRuns.map(({ run, index, segments }) => (
+                <span
+                  key={`${index}-${run.text.slice(0, 12)}`}
+                  className="text-run"
+                  style={{
+                    left: `${run.x * 100}%`,
+                    top: `${run.y * 100}%`,
+                    width: `${Math.max(0.5, run.width * 100)}%`,
+                    height: `${Math.max(0.5, run.height * 100)}%`,
+                    fontSize: `${Math.max(3, run.fontSize * height)}px`,
+                    lineHeight: 1
+                  }}
+                >
+                  {segments
+                    ? segments.map((segment, segmentIndex) =>
+                        segment.hit ? (
+                          <mark
+                            key={segmentIndex}
+                            className={`search-hit ${segment.active ? 'active' : ''}`}
+                          >
+                            {segment.text}
+                          </mark>
+                        ) : (
+                          segment.text
+                        )
                       )
-                    )
-                  : run.text}
-              </span>
-            ))}
+                    : run.text}
+                </span>
+              ))}
+            </div>
           </div>
         ) : null}
 

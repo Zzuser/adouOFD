@@ -11,6 +11,7 @@ import {
   resolveMarginsMm,
   resolvePrintPages
 } from '../shared/print-layout'
+import { isPageRotation, type RotationMap } from '../shared/rotation'
 import type {
   BackendInfo,
   PageMeta,
@@ -142,6 +143,19 @@ function printDpi(pageCount: number): number {
   return 150
 }
 
+function normalizeRotations(raw: unknown): RotationMap {
+  if (typeof raw !== 'object' || raw === null) return {}
+  const rotations: RotationMap = {}
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    const page = Number.parseInt(key, 10)
+    const rotation = Number(value)
+    if (Number.isInteger(page) && page > 0 && isPageRotation(rotation) && rotation !== 0) {
+      rotations[page] = rotation
+    }
+  }
+  return rotations
+}
+
 export function parsePrintOptions(raw: unknown): PrintDocumentOptions | null {
   if (typeof raw !== 'object' || raw === null) return null
   const value = raw as Record<string, unknown>
@@ -166,6 +180,7 @@ export function parsePrintOptions(raw: unknown): PrintDocumentOptions | null {
     id,
     name: name.slice(0, 260) || '打印文档',
     pages,
+    rotations: normalizeRotations(value.rotations),
     layout: normalizeLayout(value.layout)
   }
 }
@@ -188,8 +203,10 @@ function buildPrintHtml(
       const inner = sheet
         .map((page) => {
           if (page < 1) return '<div class="cell empty"></div>'
-          const url = `${base}/pages/${page}?dpi=${dpi}&token=${token}`
-          return `<div class="cell${layout.printBorder ? ' bordered' : ''}"><img data-page="${page}" src="${escapeHtml(url)}" alt=""></div>`
+          const rotation = options.rotations[page] ?? 0
+          const rotate = rotation ? `&rotate=${rotation}` : ''
+          const url = `${base}/pages/${page}?dpi=${dpi}${rotate}&token=${token}`
+          return `<div class="cell${layout.printBorder ? ' bordered' : ''}"><img data-page="${page}"${rotation ? ` data-rotation="${rotation}"` : ''} src="${escapeHtml(url)}" alt=""></div>`
         })
         .join('')
       return `<div class="sheet"><div class="grid${layout.color ? '' : ' grayscale'}">${inner}</div></div>`

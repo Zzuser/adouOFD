@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { BackendInfo, DocumentSummary, OutlineItem } from '@shared/types'
+import { isQuarterTurn, rotationOf, type RotationMap } from '@shared/rotation'
 import { pageImageUrl } from '../api'
 import { IconClose } from './icons'
 
@@ -15,6 +16,7 @@ interface DocumentNavProps {
   outlineLoading: boolean
   outlineError: string | null
   thumbsEnabled: boolean
+  rotations: RotationMap
   onSelectPage: (page: number) => void
   onClose: () => void
 }
@@ -29,6 +31,7 @@ export function DocumentNav({
   outlineLoading,
   outlineError,
   thumbsEnabled,
+  rotations,
   onSelectPage,
   onClose
 }: DocumentNavProps) {
@@ -89,35 +92,46 @@ export function DocumentNav({
 
       {tab === 'thumbs' ? (
         <div className="thumb-list">
-          {doc.pages.map((page) => (
-            <button
-              key={page.index}
-              ref={(element) => {
-                itemRefs.current[page.index - 1] = element
-              }}
-              className={`thumb-item ${page.index === currentPage ? 'active' : ''}`}
-              data-page={page.index}
-              onClick={() => onSelectPage(page.index)}
-              title={`第 ${page.index} 页`}
-              aria-current={page.index === currentPage ? 'page' : undefined}
-            >
-              <div
-                className="thumb-frame"
-                style={{ aspectRatio: `${page.widthMm || 210} / ${page.heightMm || 297}` }}
+          {doc.pages.map((page) => {
+            const rotation = rotationOf(rotations, page.index)
+            const quarterTurn = isQuarterTurn(rotation)
+            const widthMm = page.widthMm || 210
+            const heightMm = page.heightMm || 297
+            return (
+              <button
+                key={page.index}
+                ref={(element) => {
+                  itemRefs.current[page.index - 1] = element
+                }}
+                className={`thumb-item ${page.index === currentPage ? 'active' : ''}`}
+                data-page={page.index}
+                data-rotation={rotation || undefined}
+                onClick={() => onSelectPage(page.index)}
+                title={`第 ${page.index} 页`}
+                aria-current={page.index === currentPage ? 'page' : undefined}
               >
-                {canLoadThumbs ? (
-                  <img
-                    src={pageImageUrl(backend, doc.id, page.index, 24)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                ) : null}
-              </div>
-              <span className="thumb-label">{page.index}</span>
-            </button>
-          ))}
+                <div
+                  className="thumb-frame"
+                  style={{
+                    aspectRatio: quarterTurn
+                      ? `${heightMm} / ${widthMm}`
+                      : `${widthMm} / ${heightMm}`
+                  }}
+                >
+                  {canLoadThumbs ? (
+                    <img
+                      src={pageImageUrl(backend, doc.id, page.index, 24, rotation)}
+                      alt=""
+                      loading={page.index <= 6 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      draggable={false}
+                    />
+                  ) : null}
+                </div>
+                <span className="thumb-label">{page.index}</span>
+              </button>
+            )
+          })}
         </div>
       ) : (
         <div className="outline-list">

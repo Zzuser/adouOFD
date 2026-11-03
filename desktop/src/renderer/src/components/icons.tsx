@@ -235,6 +235,15 @@ export function IconFitPage(props: IconProps) {
   )
 }
 
+export function IconRotate(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 11a8 8 0 1 0-2.4 6.4" />
+      <path d="M20 4v7h-7" />
+    </Svg>
+  )
+}
+
 export function IconInfo(props: IconProps) {
   return (
     <Svg {...props}>

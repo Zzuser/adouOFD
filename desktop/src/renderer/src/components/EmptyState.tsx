@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import type { RecentFile } from '@shared/types'
 import mascotEmpty from '../assets/mascot-empty.webp'
 import mascotLoading from '../assets/mascot-loading.webp'
-import { IconFile, IconFolder, IconSpark } from './icons'
+import { IconClose, IconFile, IconFolder, IconLocation, IconSpark } from './icons'
 
 interface EmptyStateProps {
   ready: boolean
@@ -11,6 +12,11 @@ interface EmptyStateProps {
   onDemo: () => void
   onPdfDemo: () => void
   onDropFiles: (files: FileList) => void
+  recentFiles: RecentFile[]
+  onOpenRecent: (entry: RecentFile) => void
+  onRevealRecent: (path: string) => void
+  onRemoveRecent: (path: string) => void
+  onClearRecent: () => void
 }
 
 export function EmptyState({
@@ -20,7 +26,12 @@ export function EmptyState({
   onOpen,
   onDemo,
   onPdfDemo,
-  onDropFiles
+  onDropFiles,
+  recentFiles,
+  onOpenRecent,
+  onRevealRecent,
+  onRemoveRecent,
+  onClearRecent
 }: EmptyStateProps) {
   const [dragOver, setDragOver] = useState(false)
 
@@ -79,6 +90,61 @@ export function EmptyState({
           PDF 示例
         </button>
       </div>
+
+      {recentFiles.length > 0 ? (
+        <section className="recent-files" aria-label="最近打开">
+          <div className="recent-head">
+            <span>最近打开</span>
+            <button
+              type="button"
+              className="recent-clear"
+              data-action="recent-clear"
+              onClick={onClearRecent}
+            >
+              清空
+            </button>
+          </div>
+          <ul>
+            {recentFiles.slice(0, 6).map((entry) => (
+              <li key={entry.path} className="recent-item" data-recent-path={entry.path}>
+                <button
+                  type="button"
+                  className="recent-open"
+                  onClick={() => onOpenRecent(entry)}
+                  title={entry.path}
+                >
+                  <span className={`format-badge ${entry.kind.toLowerCase()}`}>{entry.kind}</span>
+                  <span className="recent-name">{entry.name}</span>
+                  <span className="recent-meta">
+                    {entry.pageCount > 0 ? `${entry.pageCount} 页` : ''}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="recent-icon"
+                  data-action="recent-reveal"
+                  title="在文件夹中显示"
+                  aria-label={`在文件夹中显示 ${entry.name}`}
+                  onClick={() => onRevealRecent(entry.path)}
+                >
+                  <IconLocation size={13} />
+                </button>
+                <button
+                  type="button"
+                  className="recent-icon"
+                  data-action="recent-remove"
+                  title="从最近列表移除"
+                  aria-label={`从最近列表移除 ${entry.name}`}
+                  onClick={() => onRemoveRecent(entry.path)}
+                >
+                  <IconClose size={13} />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {recentFiles.length > 6 ? <div className="recent-more">仅显示最近 6 个</div> : null}
+        </section>
+      ) : null}
 
       <div className="empty-hint">
         {engineStarting

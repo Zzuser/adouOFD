@@ -3,8 +3,10 @@ package com.adou.ofd.document;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
@@ -19,7 +21,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +82,10 @@ public final class PdfDocumentHandle implements DocumentHandle {
     }
 
     public static PdfDocumentHandle open(Path path, Path workDir) throws IOException {
+        return open(path, workDir, null);
+    }
+
+    public static PdfDocumentHandle open(Path path, Path workDir, String password) throws IOException {
         Path scratchDir = workDir.resolve("pdf-scratch");
         Files.createDirectories(scratchDir);
         MemoryUsageSetting memory = MemoryUsageSetting.setupMixed(128L * 1024 * 1024)
@@ -85,7 +93,9 @@ public final class PdfDocumentHandle implements DocumentHandle {
         PDDocument document = null;
         try {
             // PDFBox 3 用 StreamCacheCreateFunction 代替 MemoryUsageSetting 参数
-            document = Loader.loadPDF(path.toFile(), memory.streamCache);
+            document = password == null || password.isEmpty()
+                    ? Loader.loadPDF(path.toFile(), memory.streamCache)
+                    : Loader.loadPDF(path.toFile(), password, memory.streamCache);
             return new PdfDocumentHandle(document, workDir);
         } catch (IOException | RuntimeException ex) {
             if (document != null) {
@@ -109,6 +119,65 @@ public final class PdfDocumentHandle implements DocumentHandle {
 
     public boolean signed() {
         return signed;
+    }
+
+    @Override
+    public synchronized DocumentMetadata metadata() {
+        Map<String, String> values = new LinkedHashMap<>();
+        List<SignatureInfo> signatures = new ArrayList<>();
+        String warning = null;
+        try {
+            values.put("pdfVersion", Float.toString(document.getVersion()));
+            PDDocumentInformation info = document.getDocumentInformation();
+            put(values, "title", info.getTitle());
+            put(values, "author", info.getAuthor());
+            put(values, "subject", info.getSubject());
+            put(values, "keywords", info.getKeywords());
+            put(values, "creator", info.getCreator());
+            put(values, "producer", info.getProducer());
+            putDate(values, "creationDate", info.getCreationDate());
+            putDate(values, "modificationDate", info.getModificationDate());
+        } catch (RuntimeException ex) {
+            warning = "部分文档属性读取失败";
+        }
+        try {
+            for (PDSignature signature : document.getSignatureDictionaries()) {
+                signatures.add(new SignatureInfo(
+                        trim(signature.getName()),
+                        trim(signature.getReason()),
+                        trim(signature.getLocation()),
+                        formatDate(signature.getSignDate())));
+            }
+        } catch (RuntimeException ex) {
+            warning = warning == null ? "签名信息读取失败" : warning + "；签名信息读取失败";
+        }
+        return new DocumentMetadata(values, signatures, warning);
+    }
+
+    private static void put(Map<String, String> values, String key, String value) {
+        String trimmed = trim(value);
+        if (trimmed != null) {
+            values.put(key, trimmed);
+        }
+    }
+
+    private static void putDate(Map<String, String> values, String key, Calendar value) {
+        String formatted = formatDate(value);
+        if (formatted != null) {
+            values.put(key, formatted);
+        }
+    }
+
+    private static String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static String formatDate(Calendar value) {
+        return value == null ? null : value.toInstant().toString();
     }
 
     @Override
@@ -280,12 +349,17 @@ public final class PdfDocumentHandle implements DocumentHandle {
     }
 
     @Override
-    public synchronized Path render(int page, int dpi) throws IOException {
+    public synchronized Path render(int page, int dpi, int rotate) throws IOException {
         if (page < 1 || page > pages.size()) {
             throw new IOException("页码超出范围");
         }
+        int rotation = ((rotate % 360) + 360) % 360;
+        if (rotation % 90 != 0) {
+            throw new IOException("旋转角度必须是 90 的倍数");
+        }
         int actualDpi = cappedDpi(page, dpi);
-        Path outputDir = workDir.resolve("render").resolve("pdf-p" + page + "-" + actualDpi);
+        Path outputDir = workDir.resolve("render")
+                .resolve("pdf-p" + page + "-" + actualDpi + (rotation == 0 ? "" : "-r" + rotation));
         Path png = outputDir.resolve("page.png");
         if (Files.isRegularFile(png) && Files.size(png) > 0) {
             return png;
@@ -295,6 +369,7 @@ public final class PdfDocumentHandle implements DocumentHandle {
         if (image == null) {
             throw new IOException("PDF 页面渲染结果为空");
         }
+        image = ImageRotation.rotate(image, rotation);
         if (!ImageIO.write(image, "PNG", png.toFile())) {
             throw new IOException("PDF 页面 PNG 编码失败");
         }
