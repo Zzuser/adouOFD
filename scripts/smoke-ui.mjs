@@ -15,7 +15,8 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const desktop = join(root, 'desktop')
 const outDir = join(root, '.tools')
-const electronExe = join(
+const packagedExe = process.env.ADOU_SMOKE_EXE?.trim()
+const electronExe = packagedExe || join(
   desktop,
   'node_modules',
   'electron',
@@ -98,7 +99,7 @@ if (!attachPort) {
   }
   delete childEnv.ELECTRON_RUN_AS_NODE
   // 无 GPU 的虚拟机/远程桌面下 Chromium GPU 进程会崩溃，可用 ADOU_SMOKE_GPU_OFF=1 降级
-  const launchArgs = ['.', `--remote-debugging-port=${debugPort}`]
+  const launchArgs = [...(packagedExe ? [] : ['.']), `--remote-debugging-port=${debugPort}`]
   if (process.env.ADOU_SMOKE_GPU_OFF === '1') {
     launchArgs.push('--disable-gpu', '--in-process-gpu', '--no-sandbox')
   }

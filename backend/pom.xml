@@ -80,6 +80,20 @@
                     <groupId>org.json</groupId>
                     <artifactId>json</artifactId>
                 </exclusion>
+                <!--
+                  本项目不做数字签名/加密 OFD，源码零引用 org.ofdrw.sign / org.ofdrw.gm；
+                  排除后 BouncyCastle（约 16MB）不再进入 shaded jar。
+                  ofdrw-sign 与 ofdrw-gm 均不依赖 bouncycastle 之外的模块引用关系，
+                  ofdrw-reader / converter / layout 不引用它们。
+                -->
+                <exclusion>
+                    <groupId>org.ofdrw</groupId>
+                    <artifactId>ofdrw-sign</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ofdrw</groupId>
+                    <artifactId>ofdrw-gm</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 

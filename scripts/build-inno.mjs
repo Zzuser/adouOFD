@@ -60,6 +60,16 @@ try {
     throw new Error(`未生成打包目录：${sourceDir}`)
   }
 
+  // dxcompiler.dll（约 25MB）只被 Chromium 的 WebGPU/Dawn 用于把着色器编译成
+  // HLSL；本应用不使用 WebGPU，Dawn 缺该库时只是 WebGPU 不可用，不会影响
+  // 默认的 ANGLE/D3D 渲染路径（d3dcompiler_47.dll 保留）。
+  const dxcompiler = join(sourceDir, 'dxcompiler.dll')
+  if (existsSync(dxcompiler)) {
+    const dxSize = (statSync(dxcompiler).size / 1024 / 1024).toFixed(1)
+    rmSync(dxcompiler)
+    console.log(`已移除 dxcompiler.dll（${dxSize} MB，未使用 WebGPU）`)
+  }
+
   console.log('编译 Inno Setup 安装包…')
   run(
     iscc,

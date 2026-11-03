@@ -8,6 +8,11 @@ files:
   - out/**
   - package.json
 asar: true
+# 只保留中文与英文的 Chromium 语言包，其余 50+ 种 .pak 共约 46MB 全部剔除；
+# 缺失语言回退到 en-US，界面文案本身由应用提供，不受影响
+electronLanguages:
+  - zh-CN
+  - en-US
 extraResources:
   - from: ../backend/target/adou-ofd-backend.jar
     to: backend/adou-ofd-backend.jar
