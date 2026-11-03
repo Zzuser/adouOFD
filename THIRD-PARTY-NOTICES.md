@@ -83,7 +83,7 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 
 应用不内置商业字体文件。示例文档使用本机 Windows 字体生成，仅在运行时读取；用户文档中的字体由原文档自带或由本机字体库提供。
 
-## 六、许可核查声明（代码签名审核相关）
+## 六、许可核查声明
 
 ### 1. 应用与运行时库均为 OSI 批准的开源许可证
 
@@ -115,10 +115,6 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 排除的安全性已逐层核对：`ujmp-core` 中只有孤立的 `org.ujmp.core.util.JsonUtil` 引用 `org.json`，ujmp 内部没有任何类引用 `JsonUtil`；ofdrw-converter 只使用 `org.ujmp.core.Matrix`、`DenseMatrix`、`DenseDoubleMatrix2D` 与 `DefaultDenseDoubleMatrix2DFactory`，运行期不会触达该工具类。排除后 `mvn dependency:tree` 中 `org.json:json` 命中数为 0，后端 54 个测试全部通过。`licenses/JSON-LICENSE.txt` 已随之删除。
 
 **（b）Inno Setup 6 —— 构建工具链，不随应用运行。** 它是安装器编译器，仅在构建期使用；它生成的解包桩（setup loader）按设计内嵌在安装包中，属工具链组成部分，不是本项目的源代码组件。该许可为宽松许可，允许自由再分发与商业使用，无商业双授权，也不要求分发本项目源码。
-
-### 4. 签名范围
-
-本项目仅对**自己从源码构建**的 Windows 安装包使用项目证书签名；第三方预编译二进制（`.jar` / `.dll` / `.exe`）保持上游原貌，**不提交签名**。签名政策见 [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
 
 ## 七、免责声明
 

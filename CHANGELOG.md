@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Removed the SignPath code-signing policy and the signing steps from the release workflow: the SignPath Foundation application was declined on 2026-11-03 (the program requires established community visibility). Releases remain **unsigned**; verify installers with the `SHA256-<version>.txt` asset. The license compliance work is unaffected — the non-OSI JSON-java transitive dependency is still excluded, and the private vulnerability reporting channel stays enabled.
+
 ## 1.1.0 — 2026-11-03
 
 - Replaced Spring Boot with Javalin 6.7.0 (embedded Jetty 11) and removed Spring, Tomcat, Micrometer, Logback and Jackson 3 from the engine; the service layer is now framework-free and the shaded jar dropped from 48.8 MB to 36.2 MB.

@@ -1,11 +1,8 @@
 name: Release
 
-# Builds the Windows installer from the tagged commit and signs it via SignPath.
-# Code signing policy: docs/CODE-SIGNING.md
-#
-# Signing turns on when the repository variable SIGNPATH_ENABLED is "true".
-# While it is unset, this workflow publishes an unsigned installer plus SHA256,
-# exactly as before.
+# Builds the Windows installer from the tagged commit and publishes it
+# unsigned with a SHA256 checksum. Installers are not code-signed; see the
+# README "完整性校验" section for how to verify a download.
 
 on:
   push:
@@ -14,7 +11,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   release:
@@ -64,8 +60,8 @@ jobs:
         working-directory: desktop
         run: npm run package:inno
 
-      # The Inno script emits a non-ASCII name; normalize to ASCII so the
-      # SignPath artifact configuration can match a stable file name.
+      # The Inno script emits a non-ASCII name; normalize to ASCII so download
+      # links and checksums stay encoding-safe.
       - name: Normalize installer filename
         shell: pwsh
         run: |
@@ -73,68 +69,6 @@ jobs:
           if (-not $installer) { throw "Installer not found in desktop/dist-inno" }
           Rename-Item -LiteralPath $installer.FullName -NewName "adou-ofd-$env:APP_VERSION-x64-inno.exe"
           Get-ChildItem desktop/dist-inno/*.exe | Select-Object Name, Length
-
-      # Origin verification: SignPath only accepts an artifact uploaded from
-      # this workflow run, so exactly this CI build is what gets signed.
-      - name: Upload unsigned installer for signing
-        id: upload-unsigned
-        if: vars.SIGNPATH_ENABLED == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: adou-ofd-${{ steps.version.outputs.version }}-unsigned
-          path: desktop/dist-inno/adou-ofd-${{ steps.version.outputs.version }}-x64-inno.exe
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Submit signing request to SignPath
-        if: vars.SIGNPATH_ENABLED == 'true'
-        uses: signpath/github-action-submit-signing-request@v2
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
-          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
-          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-for-completion: true
-          # Signing requests require manual approval, so allow time for it.
-          wait-for-completion-timeout-in-seconds: 2400
-          output-artifact-directory: desktop/dist-inno/signed
-
-      - name: Replace installer with signed build
-        if: vars.SIGNPATH_ENABLED == 'true'
-        shell: pwsh
-        run: |
-          $signed = Get-ChildItem desktop/dist-inno/signed -Recurse -Filter *.exe |
-            Select-Object -First 1
-          if (-not $signed) { throw "No signed installer returned by SignPath" }
-          $target = "desktop/dist-inno/adou-ofd-$env:APP_VERSION-x64-inno.exe"
-          Copy-Item -LiteralPath $signed.FullName -Destination $target -Force
-
-      - name: Verify Authenticode signature
-        if: vars.SIGNPATH_ENABLED == 'true'
-        shell: pwsh
-        run: |
-          $installer = "desktop/dist-inno/adou-ofd-$env:APP_VERSION-x64-inno.exe"
-          $sig = Get-AuthenticodeSignature -LiteralPath $installer
-          if ($sig.Status -ne "Valid") {
-            throw "Signature status is $($sig.Status): $($sig.StatusMessage)"
-          }
-          $subject = $sig.SignerCertificate.Subject
-          "Signed by: $subject"
-          if ($subject -notmatch "SignPath Foundation") {
-            throw "Unexpected signer: $subject"
-          }
-          # signtool is a bonus cross-check; it lives in the Windows SDK and is
-          # not guaranteed to be on PATH.
-          $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Source
-          if (-not $signtool) {
-            $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
-              Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
-          }
-          if ($signtool) { & $signtool verify /pa $installer }
-          else { "signtool not found; Get-AuthenticodeSignature result is authoritative" }
 
       - name: Write SHA256
         shell: pwsh
@@ -145,36 +79,17 @@ jobs:
           "$hash  $($installer.Name)" | Set-Content $file -Encoding utf8
           Get-Content $file
 
-      # SignPath requires the code signing policy to be visible on download and
-      # release pages, so it is appended to every release body.
-      - name: Compose release notes with code signing policy
+      # One file serves as both the release body and the attached asset.
+      - name: Compose release notes
         shell: pwsh
         run: |
           $notes = "docs/RELEASE-NOTES-$env:APP_VERSION.md"
-          # One file serves as both the release body and the attached asset, so
-          # the asset set is unchanged from previous releases.
           $body = "desktop/dist-inno/RELEASE-NOTES-$env:APP_VERSION.md"
           if (Test-Path $notes) {
             Copy-Item -LiteralPath $notes -Destination $body -Force
           } else {
             Set-Content -LiteralPath $body -Value "# 阿豆OFD $env:APP_VERSION" -Encoding utf8
           }
-          $footer = @'
-
-          ---
-
-          ## Code signing policy / 代码签名政策
-
-          Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
-
-          免费代码签名由 [SignPath.io](https://about.signpath.io) 提供，证书由 [SignPath Foundation](https://signpath.org) 签发。
-
-          - Authors / Reviewers / Approvers: [@Zzuser](https://github.com/Zzuser)
-          - 每次发布的签名请求均经人工批准；安装包由 GitHub Actions 从公开源码构建，并由 SignPath 验证构建来源。
-          - 仅对本项目 CI 构建的安装包签名；第三方预编译组件（ofdrw、PDFBox、Electron 等）不提交签名，保持上游原貌。
-          - 完整政策：[docs/CODE-SIGNING.md](https://github.com/Zzuser/adouOFD/blob/main/docs/CODE-SIGNING.md) · 隐私政策：[PRIVACY.md](https://github.com/Zzuser/adouOFD/blob/main/PRIVACY.md)
-          '@
-          Add-Content -LiteralPath $body -Value $footer -Encoding utf8
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -188,5 +103,4 @@ jobs:
             LICENSE
             PRIVACY.md
             THIRD-PARTY-NOTICES.md
-            docs/CODE-SIGNING.md
           fail_on_unmatched_files: true

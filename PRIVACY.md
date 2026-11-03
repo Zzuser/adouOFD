@@ -3,8 +3,7 @@
 **Project:** 阿豆OFD (ADou OFD)  
 **Effective date:** 2026-11-03  
 **Maintainer:** Zzuser  
-**Contact:** https://github.com/Zzuser/adouOFD/issues  
-**Code signing policy:** [docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)
+**Contact:** https://github.com/Zzuser/adouOFD/issues
 
 ## English
 

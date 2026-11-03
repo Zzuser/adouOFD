@@ -35,10 +35,10 @@ All backend tests and the UI smoke test must pass. For UI changes, attach a scre
 
 ## 构建与发布相关文件
 
-以下文件决定发布产物的来源可信度，变更需经维护者审核后再合并（对应[代码签名政策](docs/CODE-SIGNING.md)）：
+以下文件决定发布产物的来源可信度，变更需经维护者审核后再合并：
 
 - `.github/workflows/` —— CI 与发布流水线
-- `scripts/` —— 构建、打包与签名前处理
+- `scripts/` —— 构建、打包与发布前处理
 - `desktop/package.json`、`desktop/package-lock.json`、`backend/pom.xml` —— 依赖来源与版本锁定
 - `scripts/inno/` —— 安装器定义
 

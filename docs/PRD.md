@@ -501,7 +501,7 @@ DocumentHandle {
 
 - 已实测（2026-11-02）：jlink 精简 JRE 54MB；免安装目录约 466MB；Inno Setup 安装包 180.8MB（`阿豆OFD-0.7.1-x64-inno.exe`，SHA256 `4baae9d3…`）；NSIS 备用包 192MB。打包版使用 `resources/jre/bin/java.exe` 启动（1.24 秒），完整 UI 冒烟通过（含单文件/批量转换）。
 - Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF`/`AdouOFD.MD` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
-- 代码签名：SignPath Foundation 免费开源签名申请已提交（2026-11-02），等待审核；获批前发布包保持 NotSigned（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
+- 代码签名：曾申请 SignPath Foundation 免费开源签名，2026-11-03 未获批准（对方要求项目已有较高社区知名度）。已确认当前阶段不做代码签名、不采购证书；发布包保持未签名（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
 - 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
 - 自动更新源与回滚策略（M4 评估）。
 
@@ -564,7 +564,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 大文件/恶意 OFD 导致内存或路径穿越 | 稳定性/安全 | 限制解压大小（ofdrw `setZipFileMaxSize`）、会话隔离、临时目录白名单、超时 |
 | Electron + 本地 HTTP 被本机其他程序调用 | 数据泄露/滥用 | 随机端口 + 每次启动 Token + 仅回环；后续改 IPC/自定义协议 |
 | 安装包体积与启动速度 | 体验 | jlink 裁剪已完成（272MB→Inno 181MB / NSIS 192MB）；后续评估 Electron 语言包裁剪与 7z 字典 |
-| 代码签名 | 信任与安装成功率 | 已准备开源代码签名申请材料（SignPath / Certum 等），当前构建仍未签名；发布提供 SHA256 校验，签名流程见 `docs/CODE-SIGNING.md` |
+| 代码签名 | 信任与安装成功率 | 当前不做代码签名（SignPath 申请未获批）；发布提供 SHA256 校验，SmartScreen 提示“未知发布者” |
 | OFD→PDF 矢量模式嵌入完整中文字体 | 输出体积过大（4 页示例约 78MB，19.6MB/页） | 已知问题；可切换图像导出；后续评估 `PDFExporter`（同类文档约 19.6MB）或字体子集化 |
 | 文本编码/换行识别 | 打开乱码或保存后换行改变 | 自动识别 UTF-8/BOM、UTF-16 LE/BE、GB18030；保存保持编码、BOM 与 CRLF/LF；独立 Markdown 冒烟覆盖 GB18030 与 CRLF |
 | 文本外部修改冲突 | 覆盖其他程序的修改 | 保存前比较 mtime，冲突时要求“覆盖保存 / 重新加载”；同目录临时文件 + rename 原子写入 |
@@ -584,7 +584,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - 版权与许可全文：`THIRD-PARTY-NOTICES.md` + `licenses/`；打包时复制到 `resources/notices/`，并可从“关于”查看。Apache 组件的 NOTICE 汇总在 `licenses/APACHE-NOTICES.txt`。
 - 隐私政策：`PRIVACY.md`，说明离线处理、本地日志/临时文件/注册表位置和清理方式；安装包复制到 `resources/notices/PRIVACY.md`，关于页可直接查看。
 - 安全政策：`SECURITY.md`，支持版本、私密漏洞报告范围与响应时间。
-- 代码签名政策：`docs/CODE-SIGNING.md` 说明签名提供方、团队角色、人工批准流程、签名范围与验证方式；签名步骤集成在 `release.yml`，由 `SIGNPATH_ENABLED` 控制开关。
+- 完整性校验：发布包未签名，Release 附 `SHA256-<version>.txt`，校验方式见 README「完整性校验」。
 - 社区文档：`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`；GitHub CI/Release 工作流位于 `.github/workflows/`。
 
 ---
@@ -719,7 +719,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、应用内打印面板、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠、Markdown/文本编辑与导出 PDF）。
 - 文本编辑：`desktop/src/main/text-files.ts`（编码/换行/原子保存/冲突）、`text-pdf.ts`（打印样式导出 PDF）、`desktop/src/shared/text-paths.ts`、`markdown-outline.ts`、`desktop/src/renderer/src/components/TextViewer.tsx`、`TextEditor.tsx`、`MarkdownPreview.tsx`、`text.css`。
 - Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除，OFD/PDF/MD）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF/MD 文件图标 ICO + PNG）。
-- 合规与社区：`PRIVACY.md`、`SECURITY.md`、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`、`docs/CODE-SIGNING.md`、`.github/workflows/ci.yml`、`.github/workflows/release.yml`。
+- 合规与社区：`PRIVACY.md`、`SECURITY.md`、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SUPPORT.md`、`CHANGELOG.md`、`.github/workflows/ci.yml`、`.github/workflows/release.yml`。
 - 工具链：`scripts/setup-jdk.mjs`、`scripts/build-backend.mjs`、`scripts/build-inno.mjs`、`scripts/inno/adou-ofd.iss`、`scripts/install-electron.mjs`、`scripts/electron-vite.mjs`、`scripts/smoke-ui.mjs`、`scripts/smoke-text.mjs`、`scripts/stress-fixtures.mjs`、`scripts/stress-backend.mjs`、`scripts/stress-ui.mjs`。
 - 界面截图：`docs/screenshots/`（空状态、关于、设置、第三方许可、隐私政策、OFD/PDF 阅读器、目录、折叠、文字选择、全文搜索、打印面板、文件图标、批量转换、合并文档、Markdown 编辑/分栏/导出、800 页压测）。
 - 许可：[LICENSE](../LICENSE)、[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)、`licenses/`（完整许可文本与 Apache NOTICE 汇总）。

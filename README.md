@@ -101,32 +101,15 @@ npm run package:inno
 
 需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
 
-GitHub Actions 发布时会将该文件重命名为 ASCII 的 `adou-ofd-<version>-x64-inno.exe`（便于签名配置稳定匹配），并生成 `SHA256-<version>.txt`；签名范围以该文件名为准。
+GitHub Actions 发布时会将该文件重命名为 ASCII 的 `adou-ofd-<version>-x64-inno.exe`，并生成 `SHA256-<version>.txt` 供校验。
 
-## 代码签名政策 / Code signing policy
+## 完整性校验
 
-> Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
->
-> 免费代码签名由 [SignPath.io](https://about.signpath.io) 提供，证书由 [SignPath Foundation](https://signpath.org) 签发。
-
-签名在获批后生效：此后由 CI 发布的安装包带 Authenticode 签名；此前发布的版本未签名，Windows SmartScreen 可能提示“未知发布者”，请用 SHA256 校验安装包完整性。
-
-| 角色 Role | 成员 Member |
-| --- | --- |
-| Authors（作者） | [@Zzuser](https://github.com/Zzuser) |
-| Reviewers（审核者） | [@Zzuser](https://github.com/Zzuser) |
-| Approvers（批准者） | [@Zzuser](https://github.com/Zzuser) |
-
-- **每次发布在签名前都会经过人工批准。** Every release requires manual approval before signing.
-- 安装包由 GitHub Actions 在 `windows-latest` 上从本仓库公开源码构建，并由 SignPath 执行来源验证（origin verification）：签名只对应当次 CI 构建产物，无法为本地手工构建或他人文件签名。
-- 签名范围仅限本项目构建的 `adou-ofd-<version>-x64-inno.exe`；第三方预编译组件（ofdrw、Apache PDFBox、Bouncy Castle、Electron、jlink 裁剪的 JRE 等）不提交签名，保持上游原貌。
-- 隐私：**This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.** 详见 [PRIVACY.md](PRIVACY.md)。
-- 完整政策（签名范围、角色职责、验证方式、依赖许可）：[docs/CODE-SIGNING.md](docs/CODE-SIGNING.md)。
+安装包**未做代码签名**（曾申请 SignPath Foundation 免费开源签名，未获批准），Windows SmartScreen 可能提示“未知发布者”。安装前请用 Release 附件中的 `SHA256-<version>.txt` 校验完整性：
 
 ```powershell
-# 验证签名
-Get-AuthenticodeSignature .\adou-ofd-<version>-x64-inno.exe | Format-List Status, SignerCertificate
-signtool verify /pa /v adou-ofd-<version>-x64-inno.exe
+Get-FileHash .\adou-ofd-<version>-x64-inno.exe -Algorithm SHA256
+# 与 SHA256-<version>.txt 中的哈希比对
 ```
 
 ## 快速开始
@@ -213,7 +196,7 @@ adouOFD/
 ├─ backend/                 Java 本地引擎（Javalin + ofdrw + PDFBox）
 ├─ desktop/                 Electron + React + TypeScript
 ├─ docs/PRD.md              产品与技术设计
-├─ docs/CODE-SIGNING.md     代码签名政策 / Code signing policy
+├─ docs/PRD.md              产品与技术设计
 ├─ docs/STRESS-TEST.md      大文件压力测试报告
 ├─ docs/screenshots/        界面截图
 ├─ scripts/                 环境、构建、冒烟、压测脚本
@@ -270,7 +253,7 @@ npm run stress:ui
 - Markdown / 文本编辑上限 16 MB；本地图片只展示已打开文档所在目录内的文件，网络图片不加载；Markdown 导出 PDF 使用 A4 与当前预览内容，不包含编辑器工具栏
 - 加密 PDF 的密码输入目前仅用于阅读器；批量转换、合并、拆分与插页遇到加密 PDF 会提示失败
 - 超大文档（1000+ 页 / 100MB+）尚未压测；页面与缩略图 DOM 会随浏览增长
-- 代码签名由 SignPath Foundation 提供；签名获批前发布的安装包未签名，详见[代码签名政策](docs/CODE-SIGNING.md)
+- 安装包未做代码签名，Windows SmartScreen 可能提示“未知发布者”，请用 SHA256 校验完整性
 - OFD 转 PDF 的矢量模式会嵌入完整中文字体，文件体积可能明显大于源文件；对体积敏感时可按图像导出
 - 合并结果不保证保留各文件的目录/书签；混合格式合并需要先转换，PDF→OFD 的文字是否可选中取决于源 PDF 字体
 - 源 OFD 若引用了包内缺失的图片/字体资源，合并前会补充透明/空占位文件以继续合并，相关图片可能无法显示
