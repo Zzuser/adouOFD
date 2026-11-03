@@ -21,7 +21,7 @@
 </p>
 
 > 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**0.8.0**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 打印 + 格式转换 + 合并 + Windows 文件关联）
+> 当前版本：**0.9.0**（M0 + M1.1 预览增强 + PDF + 目录 + 全文搜索 + 文字选择 + 打印 + 格式转换 + 合并 + 拆分与插页 + Windows 文件关联）
 
 ## 品牌与图标
 

@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — 2026-11-03
 
 - Added a “拆分与插页” tab: split OFD/PDF by every page, every N pages, or custom page ranges; insert pages from another document at the start, before a chosen page, or at the end.
 - Mixed-format insertion converts inserted pages to the main document format; split and insert tasks share the heavy-task queue with progress, cancel, page-count verification and atomic output.
 - Added page previews with thumbnails, split-group coloring, selected-page dimming and insertion-position markers. Previews use dedicated sessions and do not evict viewer tabs.
 - Added backend tests for split/insert and preview sessions, plus real Electron coverage for split/insert previews and output files.
+- Updated installer to 0.9.0.
 
 ## 0.8.0 — 2026-11-02
 
