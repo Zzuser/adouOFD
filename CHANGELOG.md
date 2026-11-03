@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — 0.10.0
+
+- Added page rotation for OFD/PDF: rotate the current page or all pages by 90° in either direction, reset per page or for the whole document. Rotation is view-level and never modifies the source file; thumbnails, text selection, search positioning, print preview and printed output follow the rotated layout.
+- Added a recent-file list on the empty state: up to 20 files are stored locally, deduplicated, pruned when missing, and can be reopened, revealed in Explorer, removed individually or cleared.
+- Added a read-only document properties dialog: format, page count, file size, page sizes, PDF/OFD metadata and signature entries. It explicitly does not verify signatures.
+- Encrypted PDFs can now be opened with a password. Passwords are used only for the current open and are never stored on disk or written to logs.
+- Fixed OFD outline loading for single-document packages, kept the first visible thumbnails eager, and prevented a pending zoom anchor from overriding an explicit page jump.
+- Added `ADOU_USER_DATA` for the UI smoke test so automation uses an isolated user-data directory instead of the installed app's profile.
+- Added backend and UI smoke coverage for page rotation, rotated text selection/search, rotated print output, recent-file persistence, document properties and the encrypted-PDF password flow.
+
 ## 0.9.0 — 2026-11-03
 
 - Added a “拆分与插页” tab: split OFD/PDF by every page, every N pages, or custom page ranges; insert pages from another document at the start, before a chosen page, or at the end.

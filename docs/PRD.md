@@ -66,11 +66,11 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 - 缩放：50%–300% 预设、适合宽度、适合页面、Ctrl+滚轮、按钮步进。
 - 页码输入跳转、上一页/下一页、←/→ 快捷键。
 - 页面渲染失败单页隔离，不阻塞其他页面。
-- **PDF 预览**：打开 PDF、页数/尺寸（含旋转）、按 DPI 渲染、缩略图、连续滚动、缩放；加密 PDF 友好提示；内置 PDF 示例。
+- **PDF 预览**：打开 PDF、页数/尺寸（含旋转）、按 DPI 渲染、缩略图、连续滚动、缩放；加密 PDF 输入密码后打开；内置 PDF 示例。
 - **文档目录**：阅读器导航面板“缩略图 / 目录”双页签；PDF Outline、OFD Outlines/Bookmarks 解析为扁平层级目录，点击跳页并高亮当前章节。
 - **应用导航折叠**：左侧应用导航可收起为图标栏，阅读区自适应；折叠状态持久化。
 - **多标签查看**：同时打开最多 8 个文档，标签切换保留阅读位置/缩放/导航状态；批量转换与合并列表提供“查看”入口，直接跳转到对应标签。
-- **Windows 文件关联与单实例**：安装版启动时在 HKCU 注册两个独立 ProgID（`AdouOFD.OFD` / `AdouOFD.PDF`）、`.ofd` / `.pdf` 的 OpenWithProgids，以及 RegisteredApplications/Capabilities；`DefaultIcon` 分别指向随包携带的 `ofd-file.ico` / `pdf-file.ico`（奶油纸 + 金色折角，豆绿/印章红标签，16–256px 多尺寸）。不写 HKLM、不抢已存在的 UserChoice 默认应用。双击文件时通过命令行参数并入当前窗口（第二实例会唤醒并聚焦已有窗口）；“关于”中可注册/修复、调用 Windows“打开方式”选择默认、打开系统默认应用设置或移除注册。安装包卸载脚本会清理这些每用户注册项，并恢复注册前的 `.ofd` 扩展默认值。
+- **Windows 文件关联与单实例**：安装版启动时在 HKCU 注册两个独立 ProgID（`AdouOFD.OFD` / `AdouOFD.PDF`）、`.ofd` / `.pdf` 的 OpenWithProgids，以及 RegisteredApplications/Capabilities；`DefaultIcon` 分别指向随包携带的 `ofd-file.ico` / `pdf-file.ico`（奶油纸对称金色折角 + 简约猫脸，前爪搭在豆绿/印章红标签上，16–256px 多尺寸）。不写 HKLM、不抢已存在的 UserChoice 默认应用。双击文件时通过命令行参数并入当前窗口（第二实例会唤醒并聚焦已有窗口）；“关于”中可注册/修复、调用 Windows“打开方式”选择默认、打开系统默认应用设置或移除注册。安装包卸载脚本会清理这些每用户注册项，并恢复注册前的 `.ofd` 扩展默认值。
 - **全文搜索**：阅读器“查找”或 `Ctrl+F` 打开搜索条；后台逐页扫描 OFD / PDF 文字层并增量返回命中，不阻塞渲染；结果列表显示页码与上下文片段，点击/上下键逐条定位，命中文字在页面内高亮，当前项用印章红强调；支持区分大小写、跨换行短语匹配；长文档显示扫描进度，切换关键词自动取消旧任务；最多保留 300 条命中（仍统计总数），单页文本提取失败不影响其他页面。
 - **文字选择/复制**：逐字文字层，支持框选、跨行复制并保留换行；右键选区弹出原生复制菜单；拖出文字/页面时钳制到最后一个有效字形，避免整页误选。
 - **打印**：阅读器“打印”或 `Ctrl+P` 打开应用内打印面板，左侧设置、右侧实时预览与分张导航；支持打印机（含系统默认）、份数、灰度、全部/当前页/自定义范围、奇偶页、逆序、纸张大小/方向/页边距（默认/无边距/自定义）、每张多页（2/4/6/8/9 页，按行/按列、打印边框）与双面打印。主进程按设置生成打印页并由隐藏窗口直接发送到所选打印机，OFD / PDF 共用同一渲染路径；页面按 300 / 200 / 150 DPI 随页数自适应渲染，失败时在面板内提示。单文件转换结果、批量转换结果行与合并结果均提供“打印”入口，直接打开打印面板；若结果已在标签中则复用会话，否则临时打开并在关闭面板后释放，不新增标签。
@@ -290,8 +290,9 @@ DocumentHandle {
 | POST | `/api/documents/demo` | 生成并打开内置 OFD 示例 |
 | POST | `/api/documents/demo/pdf` | 生成并打开内置 PDF 示例 |
 | GET | `/api/documents/{id}` | 会话元数据 |
+| GET | `/api/documents/{id}/properties` | 文档元数据与签名条目（只读，不验签） |
 | GET | `/api/documents/{id}/outline` | 文档目录：`[{ title, page, level }]`，无目录返回空数组 |
-| GET | `/api/documents/{id}/pages/{page}` | 渲染页面 PNG，`page` 从 1 开始，`dpi` 可选 |
+| GET | `/api/documents/{id}/pages/{page}` | 渲染页面 PNG，`page` 从 1 开始，`dpi` 与 `rotate`（0/90/180/270，默认 0）可选 |
 | GET | `/api/documents/{id}/pages/{page}/text` | 页面可选文字层：`[{ text,x,y,width,height,fontSize }]`（归一化坐标） |
 | POST | `/api/documents/{id}/searches` | `{ "query": "...", "caseSensitive": false }` 创建后台全文搜索（202） |
 | GET | `/api/documents/{id}/searches/{searchId}` | 搜索任务快照；扫描中 `hits` 增量增长，含进度、总数、截断与失败页数 |
@@ -322,7 +323,10 @@ DocumentHandle {
 | `FILE_NOT_FOUND` | 404 | 路径不存在 |
 | `UNSUPPORTED_FORMAT` | 415 | 非 .ofd / .pdf |
 | `DOCUMENT_PARSE_ERROR` | 422 | 文档损坏或不支持的特性 |
-| `PDF_ENCRYPTED` | 422 | PDF 已加密，暂不支持打开 |
+| `PDF_PASSWORD_REQUIRED` | 422 | PDF 已加密，需要打开密码 |
+| `PDF_PASSWORD_INVALID` | 422 | PDF 打开密码不正确 |
+| `PDF_ENCRYPTED` | 422 | 转换/合并/拆分插页遇到加密 PDF（阅读器改用密码流程） |
+| `INVALID_ROTATION` | 400 | 页面旋转角度不是 90 的倍数 |
 | `PAGE_OUT_OF_RANGE` | 400 | 页码越界 |
 | `UNAUTHORIZED` | 401 | Token 缺失/错误 |
 | `INTERNAL_ERROR` | 500 | 未预期异常 |
@@ -351,7 +355,7 @@ DocumentHandle {
 - **OFD 读取**：`OFDReader` → `getNumberOfPages()` / `getPageSize(int)` / `hasSignature()`。
 - **OFD 页面渲染**：`ImageExporter`（ofdrw-converter），PNG。
 - **PDF 读取/渲染**：PDFBox 3.0.8 `Loader.loadPDF` + `PDFRenderer`；CropBox/MediaBox 与页面旋转参与尺寸计算；签名通过 `getSignatureDictionaries()` 检测。
-- **PDF 安全**：加密 PDF 捕获 `InvalidPasswordException` 返回 `PDF_ENCRYPTED`；渲染最长边 12000px 上限。
+- **PDF 安全**：加密 PDF 捕获 `InvalidPasswordException` 返回 `PDF_PASSWORD_REQUIRED`（未提供密码）或 `PDF_PASSWORD_INVALID`（密码错误）；密码只用于本次打开，不保存、不写日志；渲染最长边 12000px 上限。
 - **逐字文字层**：PDF 使用每个 `TextPosition` 的字形框；OFD 使用 `TextObject` 边界、`TextCode` 的 X/Y 与 `DeltaX` 推进逐字位置；按基线变化插入换行。坐标/字号归一化后前端逐字叠加，选区随字形与字号对齐，并处理 PDF 页面旋转。扫描件无文本层。
 - **目录提取**：
   - PDF：`PDDocumentOutline` 递归遍历，`PDOutlineItem.findDestinationPage()` 解析页码，层级扁平化为 level。
@@ -510,7 +514,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
   - OFD→PDF→OFD 往返冒烟；
   - 生成示例 PDF → 打开 → 3 页/A4/渲染/缩略图；
   - 真实 PDF 打开与渲染；
-  - 加密 PDF 返回 `PDF_ENCRYPTED`；
+  - 加密 PDF 返回 `PDF_PASSWORD_REQUIRED`，错误密码返回 `PDF_PASSWORD_INVALID`，正确密码可打开；
   - 转换：OFD↔PDF、分片不丢页、OOM 落 FAILED、排队/运行中取消；
   - 合并：PDF/OFD 顺序保持、同名 OFD 重复加入、混合格式双向、参数校验、取消、OOM、缺失资源占位修复、DrawParam 继承展开与无效 ColorSpace 清理；
   - Token 鉴权、越界页码、损坏文件错误码。
@@ -602,7 +606,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 - [x] 原生对话框与拖拽均支持 .pdf；空状态提供 PDF 示例。
 - [x] 正确读取 PDF 页数、页面尺寸与旋转（含横向页面）。
 - [x] PDF 页面按 DPI 渲染 PNG，缩略图、连续滚动、缩放、翻页、页码跳转全部可用。
-- [x] 加密 PDF 返回友好提示，不影响其他文档打开。
+- [x] 加密 PDF 输入正确密码后可打开；错误密码有明确提示，不影响其他文档打开。
 - [x] 真实 PDF 文件打开与渲染验证通过。
 - [x] UI 冒烟覆盖 PDF 示例：3 页、3 个缩略图、翻页到第 2 页。
 - [x] PDF 文本选择/搜索：逐字文字层可选；全文搜索复用统一搜索服务，PDFBox 文字提取后跨页匹配、片段与页面高亮正常。
@@ -623,7 +627,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-10-30 | 多页渲染全扫描 | JDK 25.0.5 | ✅ | 4 页 × 24/144/180/216/300 DPI 全部渲染成功 |
 | 2026-10-30 | PDF 示例打开/渲染 | JDK 25.0.5 | ✅ | 3 页 A4；96 DPI 渲染 >700px；24 DPI 缩略图正常 |
 | 2026-10-30 | 真实 PDF 打开/渲染 | JDK 25.0.5 | ✅ | 297×210mm 横向页面；96 DPI 输出 1122×793 PNG |
-| 2026-10-30 | 加密 PDF | JDK 25.0.5 | ✅ | 返回 `PDF_ENCRYPTED`，未创建残留会话 |
+| 2026-10-30 | 加密 PDF | JDK 25.0.5 | ✅ | 当时返回 `PDF_ENCRYPTED`，未创建残留会话；0.10.0 起改为密码流程 |
 | 2026-10-30 | UI PDF 预览 | Electron 45.1.0 | ✅ | PDF 徽标、3 页/3 缩略图、翻页到第 2 页、无运行时错误 |
 | 2026-10-30 | 文档目录 | Electron 45.1.0 | ✅ | PDF 示例 6 项目录（含二级）、目录跳页到第 3 页；OFD 无目录空状态 |
 | 2026-10-30 | 应用导航折叠 | Electron 45.1.0 | ✅ | 236px ↔ 72px，阅读区自适应，状态持久化 |
@@ -654,6 +658,9 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 | 2026-11-03 | 拆分与插页 UI | Electron 45.1.0 | ✅ | 7 页 OFD：每 2 页拆分 4 个文件，区间 `1-3,5` 拆分 2 个文件；默认插页输出 9 页，指定第 3 页前插入输出 8 页；预览分组标记、未选页淡化、插入位置虚线均正确；原有 UI 冒烟通过 |
 | 2026-11-03 | 0.9.0 本地安装包 | Inno Setup 6 | ✅ | `阿豆OFD-0.9.0-x64-inno.exe` 180.8MB，SHA256 `ce9d14df…`，FileVersion/ProductVersion 0.9.0，未签名；拆分与插页、页面预览；49/49 后端测试与完整 UI 冒烟通过 |
 | 2026-11-03 | GitHub 发布 0.9.0 | GitHub Actions | ✅ | Release `v0.9.0` 已发布；安装包 `adou-ofd-0.9.0-x64-inno.exe` 189,617,218 B，CI SHA256 `6b3789a2…`（与附件 `SHA256-0.9.0.txt` 一致）；附件含 CODE-SIGNING/LICENSE/PRIVACY/THIRD-PARTY/RELEASE-NOTES；CI 与 Release 工作流均成功；SignPath 未启用，未签名 |
+| 2026-11-03 | 页面旋转 UI | Electron 45.1.0 | ✅ | 当前页/全部页左右旋转与重置；页面 718×1015 → 718×508，缩略图同步横向，文字层 transform 生效；旋转后文字仍可选中 124 字；旋转页搜索命中定位正确；打印产物内嵌位图 2480×3508 → 3508×2480 |
+| 2026-11-03 | 最近文件 UI | Electron 45.1.0 | ✅ | 示例不写入；非示例文件写入磁盘；重启后列表恢复；重新打开、单条移除、清空、缺失文件清理均通过；应用临时目录文件被过滤 |
+| 2026-11-03 | 文档属性与加密 PDF | JDK 25.0.5 / Electron 45.1.0 | ✅ | OFD/PDF 元数据与签名只读展示（明确不验签）；加密 PDF 未提供密码返回 `PDF_PASSWORD_REQUIRED`，错误密码 `PDF_PASSWORD_INVALID`，正确密码打开；密码未落盘、未写入日志；后端 55/55 测试通过 |
 | 2026-11-02 | 单实例/命令行打开 | Electron 45.1.0 | ✅ | 首次启动直接传入真实发票：1 个标签、1 页、文件名正确；运行中启动第二实例传入转换结果路径，文件并入当前窗口并新增标签；关闭后标签数恢复 |
 | 2026-11-02 | 精简 JRE | jlink 25.0.5 | ✅ | 17 个模块 54MB；精简 JRE 直启后端：健康检查 0.6.0、4 页渲染、1997 段文字、PDF→OFD 228ms、OFD→PDF 1181ms |
 | 2026-11-02 | 打印面板（OFD / PDF） | Electron 45.1.0 | ✅ | OFD 示例默认 4 页/4 张 A4；2-up 输出 2 页、每页 2 张页面图，按列预览顺序 `[1,3,2,4]`；范围 2-4 + 逆序 + A5 横向 + 无边距 + 灰度输出 3 页 209.9×148.2mm（首页为第 4 页）；PDF 示例灰度输出 3 页 A4；无效范围 9-12 禁用打印；`Ctrl+P` 打开面板；转换/批量/合并结果打印入口分别加载 3/4/7 页且不新增标签；系统静默发送需用户用实际打印机验证 |
