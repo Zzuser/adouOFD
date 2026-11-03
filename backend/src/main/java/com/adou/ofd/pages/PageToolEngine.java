@@ -8,7 +8,6 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.ofdrw.tool.merge.OFDMerger;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,7 +23,6 @@ import java.util.UUID;
  * <p>OFD 输入会先复制到独立临时文件名再交给 OFDMerger。OFDMerger 按文件名缓存文档上下文，
  * 同名文件会互相覆盖；同时样式/资源修复只应作用于副本，不能改动用户原文件。
  */
-@Component
 public class PageToolEngine {
 
     private static final String STYLE_WARNING = "已展开 OFD 中的样式继承，避免拆分/插入后框线或颜色丢失";

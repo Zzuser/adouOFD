@@ -6,8 +6,7 @@ import com.adou.ofd.web.ApiException;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import com.adou.ofd.web.Http;
 
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -29,7 +28,6 @@ import java.util.concurrent.RejectedExecutionException;
  *
  * <p>输出永远写入临时文件，校验通过后再原子替换到目标路径；源文件只读。
  */
-@Service
 public class ConversionService {
 
     private static final Logger log = LoggerFactory.getLogger(ConversionService.class);
@@ -51,7 +49,7 @@ public class ConversionService {
 
     public ConversionJob submit(ConversionRequest request) {
         if (request == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "请提供转换参数");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_REQUEST", "请提供转换参数");
         }
         ResolvedSource source = resolveSource(request);
         String target = resolveTarget(request.target(), source.kind());
@@ -74,7 +72,7 @@ public class ConversionService {
             synchronized (tasks) {
                 tasks.remove(task.id());
             }
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "CONVERSION_QUEUE_FULL",
+            throw new ApiException(Http.TOO_MANY_REQUESTS, "CONVERSION_QUEUE_FULL",
                     "转换队列已满，请等待当前任务完成后再试");
         }
         return task.snapshot();
@@ -231,26 +229,26 @@ public class ConversionService {
                     summary.kind(), summary.pageCount());
         }
         if (rawPath == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SOURCE_REQUIRED", "请提供待转换的文档");
+            throw new ApiException(Http.BAD_REQUEST, "SOURCE_REQUIRED", "请提供待转换的文档");
         }
         Path path = normalize(rawPath);
         if (!Files.exists(path)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
+            throw new ApiException(Http.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
         }
         if (!Files.isRegularFile(path)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "目标不是文件：" + path);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "目标不是文件：" + path);
         }
         try {
             ConversionEngine.SourceInfo info = engine.probe(path);
             return new ResolvedSource(path, info.kind(), info.pages());
         } catch (InvalidPasswordException ex) {
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "PDF_ENCRYPTED", "PDF 已加密，暂不支持转换");
+            throw new ApiException(Http.UNPROCESSABLE_ENTITY, "PDF_ENCRYPTED", "PDF 已加密，暂不支持转换");
         } catch (IOException | RuntimeException ex) {
             if (ex instanceof ApiException apiException) {
                 throw apiException;
             }
             log.warn("转换源文件解析失败: {}", path, ex);
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
+            throw new ApiException(Http.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
                     "文档解析失败，文件可能损坏或包含暂不支持的特性", ex.getMessage());
         }
     }
@@ -262,10 +260,10 @@ public class ConversionService {
         }
         target = target.toUpperCase(Locale.ROOT);
         if (!"PDF".equals(target) && !"OFD".equals(target)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TARGET", "目标格式仅支持 PDF 或 OFD");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_TARGET", "目标格式仅支持 PDF 或 OFD");
         }
         if (target.equals(sourceKind)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SAME_FORMAT", "源文档已经是 " + target + " 格式");
+            throw new ApiException(Http.BAD_REQUEST, "SAME_FORMAT", "源文档已经是 " + target + " 格式");
         }
         return target;
     }
@@ -273,7 +271,7 @@ public class ConversionService {
     private Path resolveOutput(String rawOutput, String target, Path source, boolean overwrite) {
         String value = trimToNull(rawOutput);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
         }
         Path output = normalize(value);
         String extension = "." + target.toLowerCase(Locale.ROOT);
@@ -282,12 +280,12 @@ public class ConversionService {
             output = output.resolveSibling(name + extension);
         }
         if (output.equals(source)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SOURCE_IS_OUTPUT", "输出文件不能与源文件相同");
+            throw new ApiException(Http.BAD_REQUEST, "SOURCE_IS_OUTPUT", "输出文件不能与源文件相同");
         }
         if (Files.exists(source) && Files.exists(output)) {
             try {
                 if (Files.isSameFile(output, source)) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "SOURCE_IS_OUTPUT", "输出文件不能与源文件相同");
+                    throw new ApiException(Http.BAD_REQUEST, "SOURCE_IS_OUTPUT", "输出文件不能与源文件相同");
                 }
             } catch (IOException ex) {
                 log.debug("比较源文件与输出文件失败", ex);
@@ -295,24 +293,24 @@ public class ConversionService {
         }
         Path parent = output.getParent();
         if (parent == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
         }
         if (!Files.isDirectory(parent)) {
             try {
                 Files.createDirectories(parent);
             } catch (IOException ex) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH",
+                throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH",
                         "无法创建输出目录：" + parent, ex.getMessage());
             }
         }
         if (Files.isDirectory(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
         }
         if (Files.exists(output) && !overwrite) {
-            throw new ApiException(HttpStatus.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
+            throw new ApiException(Http.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
         }
         if (Files.exists(output) && !Files.isWritable(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
         }
         return output;
     }
@@ -329,7 +327,7 @@ public class ConversionService {
         try {
             return Path.of(rawPath).toAbsolutePath().normalize();
         } catch (InvalidPathException ex) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
         }
     }
 
@@ -385,7 +383,7 @@ public class ConversionService {
         synchronized (tasks) {
             ConversionTask task = tasks.get(id);
             if (task == null) {
-                throw new ApiException(HttpStatus.NOT_FOUND, "JOB_NOT_FOUND", "转换任务不存在");
+                throw new ApiException(Http.NOT_FOUND, "JOB_NOT_FOUND", "转换任务不存在");
             }
             return task;
         }

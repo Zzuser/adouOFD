@@ -14,7 +14,7 @@
 | React / React DOM / Scheduler | 渲染进程 UI | `licenses/React-LICENSE.txt` |
 | Node.js（Electron 内置） | JavaScript 运行时 | `licenses/Node-LICENSE.txt` |
 | ofdrw / ofdrw-full 2.5.1 | OFD 读取、渲染、版式、合并 | MIT；https://github.com/ofdrw/ofdrw |
-| SLF4J 2.0.20 / JUL-to-SLF4J | 日志门面 | `licenses/SLF4J-LICENSE.txt` |
+| SLF4J 2.0.20 / SLF4J Simple | 日志门面与日志实现 | `licenses/SLF4J-LICENSE.txt` |
 | Bouncy Castle 1.85 | 密码学与证书支持（ofdrw 传递依赖） | `licenses/Bouncy-Castle-LICENSE.md` |
 
 ### Apache License 2.0
@@ -22,19 +22,16 @@
 | 组件 | 用途 |
 | --- | --- |
 | Apache PDFBox / FontBox / JBIG2 ImageIO | PDF 读取、渲染、导出 |
-| Spring Boot / Spring Framework | 本地引擎框架 |
-| Apache Tomcat Embed | 内嵌 HTTP 服务 |
-| Jackson（Databind / Core / Annotations） | JSON 序列化 |
-| Micrometer | 指标观测 API |
-| SnakeYAML | YAML 配置解析 |
+| Javalin 6.7.0 / Jetty 11.0.25 | 本地 HTTP 引擎（Jetty 为 Apache-2.0 / EPL-2.0 双许可，本项目按 Apache-2.0 使用） |
+| Kotlin stdlib 1.9.25 | Javalin 运行时依赖 |
+| Jackson（Databind / Core / Annotations / JSR-310） | JSON 序列化 |
 | Apache Commons Compress / Codec / IO / Lang3 | 压缩、编码与工具类 |
 | Apache Batik / XML Graphics Commons / xml-apis | SVG 与图形输出（ofdrw 依赖） |
 | Zip4j | OFD 包解压（ofdrw 依赖） |
-| Log4j API / Log4j-to-SLF4J | 日志桥接 |
 
 完整 Apache-2.0 文本见 `licenses/Apache-2.0.txt`。各 Apache 组件随 jar 携带的 NOTICE 文本汇总见 `licenses/APACHE-NOTICES.txt`。
 
-上游项目与许可页面：Apache PDFBox <https://pdfbox.apache.org/> · Spring Boot / Spring Framework <https://github.com/spring-projects/spring-boot> · Apache Batik <https://xmlgraphics.apache.org/batik/> · Zip4j <https://github.com/srikanth-lingala/zip4j> · Jackson <https://github.com/FasterXML/jackson> · SnakeYAML <https://bitbucket.org/snakeyaml/snakeyaml>（均为 Apache-2.0）。
+上游项目与许可页面：Apache PDFBox <https://pdfbox.apache.org/> · Javalin <https://javalin.io/> · Eclipse Jetty <https://jetty.org/> · Apache Batik <https://xmlgraphics.apache.org/batik/> · Zip4j <https://github.com/srikanth-lingala/zip4j> · Jackson <https://github.com/FasterXML/jackson>（均为 Apache-2.0）。
 
 ### BSD-3-Clause / BSD 风格
 
@@ -46,17 +43,14 @@
 
 BSD-3-Clause 文本见 `licenses/BSD-3-Clause.txt`；各组件版权归其作者所有，项目链接见组件发布页。
 
-### EPL / LGPL
+### LGPL
 
 | 组件 | 用途 | 许可 |
 | --- | --- | --- |
-| Logback Classic / Core 1.5.38 | SLF4J 实现 | EPL-2.0 或 LGPL-2.1（双许可） |
-| Jakarta Annotation API 3.0.0 | Jakarta 注解 API | EPL-2.0 或 GPL-2.0 with Classpath Exception |
 | UJMP Core 0.3.0 | 矩阵运算（ofdrw-converter 传递依赖） | LGPL-3.0 |
 
-- LGPL-2.1 全文：`licenses/LGPL-2.1.txt`。
 - LGPL-3.0 全文：`licenses/LGPL-3.0.txt`；UJMP Core 为未修改的依赖；源码与替换方式见 https://github.com/ujmp/ujmp 。
-- EPL-2.0 全文 URI：https://www.eclipse.org/legal/epl-2.0/ ，说明见 `licenses/EPL-2.0-REFERENCE.txt`（EPL-2.0 允许以 URI 提供许可文本）。
+- Jetty 为 Apache-2.0 / EPL-2.0 双许可，本项目选择 Apache-2.0，不启用 EPL-2.0 条款。
 
 ### 其他
 
@@ -96,10 +90,9 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 | 许可证 | OSI 批准 | 组件 |
 | --- | --- | --- |
 | MIT | 是 | Electron、React、Node.js、ofdrw、SLF4J、Bouncy Castle |
-| Apache-2.0 | 是 | PDFBox / FontBox / JBIG2、Spring Boot、Tomcat、Jackson、Batik、Zip4j、Commons、SnakeYAML |
+| Apache-2.0 | 是 | PDFBox / FontBox / JBIG2、Javalin、Jetty、Kotlin、Jackson、Batik、Zip4j、Commons |
 | BSD-3-Clause | 是 | TwelveMonkeys ImageIO、Jaxen、Dom4j |
-| EPL-2.0 | 是 | Logback、Jakarta Annotation API（均为 EPL-2.0 或 LGPL 双许可，二选一即可） |
-| LGPL-2.1 / LGPL-3.0 | 是 | Logback（备选）、UJMP Core（未修改的依赖） |
+| LGPL-3.0 | 是 | UJMP Core（未修改的依赖） |
 
 ### 2. 无商业双授权、无 AGPL、无专有代码
 
@@ -119,7 +112,7 @@ ofdrw 2.5.1 起已彻底移除 iText；本项目使用 ofdrw 2.5.1 + Apache PDFB
 </exclusion>
 ```
 
-排除的安全性已逐层核对：`ujmp-core` 中只有孤立的 `org.ujmp.core.util.JsonUtil` 引用 `org.json`，ujmp 内部没有任何类引用 `JsonUtil`；ofdrw-converter 只使用 `org.ujmp.core.Matrix`、`DenseMatrix`、`DenseDoubleMatrix2D` 与 `DefaultDenseDoubleMatrix2DFactory`，运行期不会触达该工具类。排除后 `mvn dependency:tree` 中 `org.json:json` 命中数为 0，后端 39 个测试全部通过。`licenses/JSON-LICENSE.txt` 已随之删除。
+排除的安全性已逐层核对：`ujmp-core` 中只有孤立的 `org.ujmp.core.util.JsonUtil` 引用 `org.json`，ujmp 内部没有任何类引用 `JsonUtil`；ofdrw-converter 只使用 `org.ujmp.core.Matrix`、`DenseMatrix`、`DenseDoubleMatrix2D` 与 `DefaultDenseDoubleMatrix2DFactory`，运行期不会触达该工具类。排除后 `mvn dependency:tree` 中 `org.json:json` 命中数为 0，后端 54 个测试全部通过。`licenses/JSON-LICENSE.txt` 已随之删除。
 
 **（b）Inno Setup 6 —— 构建工具链，不随应用运行。** 它是安装器编译器，仅在构建期使用；它生成的解包桩（setup loader）按设计内嵌在安装包中，属工具链组成部分，不是本项目的源代码组件。该许可为宽松许可，允许自由再分发与商业使用，无商业双授权，也不要求分发本项目源码。
 

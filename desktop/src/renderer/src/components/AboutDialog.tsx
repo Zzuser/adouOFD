@@ -80,13 +80,13 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
         </button>
         <img className="about-mascot" src={mascotEmpty} alt="阿豆" draggable={false} />
         <h2 id="about-title">阿豆OFD</h2>
-        <div className="about-version">v{versions?.app ?? '0.7.1'} · MIT License</div>
+        <div className="about-version">v{versions?.app ?? '—'} · MIT License</div>
         <p className="about-desc">本地 OFD / PDF / Markdown 阅读与处理工具，文档不上传。</p>
 
         <div className="about-versions">
           <div><span>Java</span><b>{health?.javaVersion ?? '—'}</b></div>
           <div><span>ofdrw</span><b>{health?.ofdrwVersion ?? '—'}</b></div>
-          <div><span>Spring Boot</span><b>{health?.springBootVersion ?? '—'}</b></div>
+          <div><span>运行时</span><b>{health?.runtime ?? '—'}</b></div>
           <div><span>Electron</span><b>{versions?.electron ?? '—'}</b></div>
         </div>
 
@@ -96,7 +96,7 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
             <span className="about-license-badge">MIT</span>
           </div>
           <p>
-            阿豆OFD 基于 Electron、React、ofdrw、Apache PDFBox、Spring Boot 等开源组件构建。
+            阿豆OFD 基于 Electron、React、ofdrw、Apache PDFBox、Javalin 等开源组件构建。
             完整版权声明、许可文本与隐私政策随安装包提供。
           </p>
           <div className="about-license-tags">
@@ -104,8 +104,8 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
             <span>React · MIT</span>
             <span>ofdrw · MIT</span>
             <span>PDFBox · Apache-2.0</span>
-            <span>Spring Boot · Apache-2.0</span>
-            <span>Logback · EPL-2.0 / LGPL-2.1</span>
+            <span>Javalin · Apache-2.0</span>
+            <span>Jetty · Apache-2.0</span>
           </div>
           <div className="about-license-actions">
             <button

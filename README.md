@@ -21,7 +21,7 @@
 </p>
 
 > 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**1.0.0**（OFD / PDF 阅读与处理 + Markdown / 文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF）
+> 当前版本：**1.1.0**（Javalin 6 本地引擎，启动约 0.4–0.8 秒；OFD / PDF / Markdown 阅读与编辑、转换、合并、拆分插页、打印与搜索）
 
 ## 品牌与图标
 
@@ -189,7 +189,7 @@ Electron 主进程
   └─ 启动 Java sidecar：127.0.0.1 + 随机端口 + 随机 Token
           │ HTTP (JSON / PNG)
           ▼
-React 渲染进程 ────────────────► Java 引擎（Spring Boot 4）
+React 渲染进程 ────────────────► Java 引擎（Javalin 6）
   • 连续滚动、缩略图、目录        • OFD：ofdrw Reader / ImageMaker
   • 缩放、页码、逐字文字层        • PDF：PDFBox PDDocument / PDFRenderer
   • 选区钳制、右键复制            • 转换：单工作线程 + 有界队列 + 进度
@@ -203,14 +203,14 @@ React 渲染进程 ────────────────► Java 引�
 | 桌面 | Electron 45.1.0、electron-vite 6.0.0、electron-builder 26.18.0 |
 | 前端 | React 19.3.1、TypeScript 7.0.2、Vite 8.3.5 |
 | 运行时 | Temurin JDK 25.0.5 LTS（项目内 `.tools/jdk-25`） |
-| 引擎 | Spring Boot 4.0.9、ofdrw-full 2.5.1、PDFBox 3.0.8 |
+| 引擎 | Javalin 6.7.0（内嵌 Jetty 11）、ofdrw-full 2.5.1、PDFBox 3.0.8 |
 | 构建 | Maven 3.9.16、Node.js 24 LTS、Inno Setup 6 |
 
 ## 目录
 
 ```text
 adouOFD/
-├─ backend/                 Java 本地引擎（Spring Boot + ofdrw + PDFBox）
+├─ backend/                 Java 本地引擎（Javalin + ofdrw + PDFBox）
 ├─ desktop/                 Electron + React + TypeScript
 ├─ docs/PRD.md              产品与技术设计
 ├─ docs/CODE-SIGNING.md     代码签名政策 / Code signing policy
@@ -255,6 +255,7 @@ npm run stress:ui
 - **M1.2**：全文搜索（已实现）/ Windows 文件关联（已实现）/ 页面旋转（已实现）/ 最近文件（已实现）
 - **M2**：PDF ↔ OFD 转换（单文件 + 批量标签页已实现）
 - **M3**：合并（已实现，支持 OFD / PDF 混合与顺序调整）/ 拆分与插页（已实现）
+- **1.1.0**：本地引擎由 Spring Boot 迁移到 Javalin 6（运行时无 Spring 依赖），热启动约 0.4 秒、首次约 0.8 秒，jar 约 36MB；HTTP API 与功能保持不变，54 个后端测试与完整 UI 冒烟通过
 - **1.0.0**：首个稳定版；页面旋转、最近文件、文档属性、加密 PDF 密码打开、Markdown / 文本编辑与导出 PDF；PDF 注解显示、打印第二档（页码 / 页眉页脚 / 水印 / 多文档）后续小版本推进
 - **M4**：安装包进一步瘦身（目标 <150MB）、自动更新
 

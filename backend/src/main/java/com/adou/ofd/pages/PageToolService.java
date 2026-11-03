@@ -8,8 +8,7 @@ import com.adou.ofd.web.ApiException;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import com.adou.ofd.web.Http;
 
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -35,7 +34,6 @@ import java.util.concurrent.RejectedExecutionException;
  * <p>拆分结果先写入临时目录，全部校验通过后再移动到输出目录；插页结果先写同目录临时文件，
  * 校验页数后原子替换。用户源文件只读。
  */
-@Service
 public class PageToolService {
 
     private static final Logger log = LoggerFactory.getLogger(PageToolService.class);
@@ -62,7 +60,7 @@ public class PageToolService {
 
     public PageToolJob submitSplit(SplitRequest request) {
         if (request == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "请提供拆分参数");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_REQUEST", "请提供拆分参数");
         }
         Path source = resolveInput(request.sourcePath(), "请提供要拆分的文档");
         ConversionEngine.SourceInfo info = probeInput(source);
@@ -73,10 +71,10 @@ public class PageToolService {
             default -> resolveRangeGroups(request.ranges(), info.pages());
         };
         if (groups.isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "NO_PAGES", "没有可拆分的内容");
+            throw new ApiException(Http.BAD_REQUEST, "NO_PAGES", "没有可拆分的内容");
         }
         if (groups.size() > MAX_OUTPUTS) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "TOO_MANY_OUTPUTS",
+            throw new ApiException(Http.BAD_REQUEST, "TOO_MANY_OUTPUTS",
                     "一次最多生成 " + MAX_OUTPUTS + " 个文件，请改用每 N 页或按区间拆分");
         }
         Path outputDir = resolveOutputDir(request.outputDir());
@@ -99,23 +97,23 @@ public class PageToolService {
 
     public PageToolJob submitInsert(InsertRequest request) {
         if (request == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "请提供插页参数");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_REQUEST", "请提供插页参数");
         }
         Path base = resolveInput(request.basePath(), "请提供要插入页面的主文档");
         Path insert = resolveInput(request.insertPath(), "请提供插入文档");
         ConversionEngine.SourceInfo baseInfo = probeInput(base);
         ConversionEngine.SourceInfo insertInfo = probeInput(insert);
         if (baseInfo.pages() <= 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "NO_PAGES", "主文档不包含任何页面");
+            throw new ApiException(Http.BAD_REQUEST, "NO_PAGES", "主文档不包含任何页面");
         }
         if (insertInfo.pages() <= 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "NO_PAGES", "插入文档不包含任何页面");
+            throw new ApiException(Http.BAD_REQUEST, "NO_PAGES", "插入文档不包含任何页面");
         }
         List<Integer> pages = trimToNull(request.insertRanges()) == null
                 ? allPages(insertInfo.pages())
                 : PageRanges.pages(request.insertRanges(), insertInfo.pages());
         if (pages.isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "NO_PAGES", "请选择要插入的页面");
+            throw new ApiException(Http.BAD_REQUEST, "NO_PAGES", "请选择要插入的页面");
         }
         int position = resolvePosition(request.positionMode(), request.position(), baseInfo.pages());
         Path output = resolveOutput(request.outputPath(), baseInfo.kind(),
@@ -181,7 +179,7 @@ public class PageToolService {
             synchronized (tasks) {
                 tasks.remove(task.id());
             }
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "PAGE_TOOL_QUEUE_FULL",
+            throw new ApiException(Http.TOO_MANY_REQUESTS, "PAGE_TOOL_QUEUE_FULL",
                     "拆分/插页队列已满，请等待当前任务完成后再试");
         }
     }
@@ -310,7 +308,7 @@ public class PageToolService {
                         + " 页，实际 " + info.pages() + " 页");
             }
             if (!task.overwrite() && Files.exists(task.output())) {
-                throw new ApiException(HttpStatus.CONFLICT, "OUTPUT_EXISTS",
+                throw new ApiException(Http.CONFLICT, "OUTPUT_EXISTS",
                         "输出文件已存在：" + task.output());
             }
             long outputBytes = Files.size(temp);
@@ -331,14 +329,14 @@ public class PageToolService {
         try {
             return conversions.probe(path);
         } catch (InvalidPasswordException ex) {
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "PDF_ENCRYPTED",
+            throw new ApiException(Http.UNPROCESSABLE_ENTITY, "PDF_ENCRYPTED",
                     "PDF 已加密，暂不支持拆分/插页");
         } catch (IOException | RuntimeException ex) {
             if (ex instanceof ApiException apiException) {
                 throw apiException;
             }
             log.warn("拆分/插页源文件解析失败: {}", path, ex);
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
+            throw new ApiException(Http.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
                     "文档解析失败，文件可能损坏或包含暂不支持的特性", ex.getMessage());
         }
     }
@@ -346,18 +344,18 @@ public class PageToolService {
     private Path resolveInput(String raw, String emptyMessage) {
         String value = trimToNull(raw);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", emptyMessage);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", emptyMessage);
         }
         Path path = normalize(value);
         if (!Files.exists(path)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
+            throw new ApiException(Http.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
         }
         if (!Files.isRegularFile(path)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "不是文件：" + path);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "不是文件：" + path);
         }
         String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (!name.endsWith(".ofd") && !name.endsWith(".pdf")) {
-            throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
+            throw new ApiException(Http.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
                     "仅支持 .ofd 与 .pdf 文件");
         }
         return path;
@@ -366,20 +364,20 @@ public class PageToolService {
     private Path resolveOutputDir(String raw) {
         String value = trimToNull(raw);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_DIR_REQUIRED", "请选择输出目录");
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_DIR_REQUIRED", "请选择输出目录");
         }
         Path dir = normalize(value);
         if (Files.exists(dir) && !Files.isDirectory(dir)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_DIR", "输出路径不是目录：" + dir);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_DIR", "输出路径不是目录：" + dir);
         }
         try {
             Files.createDirectories(dir);
         } catch (IOException ex) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_DIR",
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_DIR",
                     "无法创建输出目录：" + dir, ex.getMessage());
         }
         if (!Files.isWritable(dir)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出目录不可写：" + dir);
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出目录不可写：" + dir);
         }
         return dir;
     }
@@ -387,7 +385,7 @@ public class PageToolService {
     private Path resolveOutput(String rawOutput, String kind, List<Path> inputs, boolean overwrite) {
         String value = trimToNull(rawOutput);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
         }
         Path output = normalize(value);
         String extension = "." + kind.toLowerCase(Locale.ROOT);
@@ -402,30 +400,30 @@ public class PageToolService {
         }
         for (Path input : inputs) {
             if (isSamePath(output, input)) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "SOURCE_IS_OUTPUT",
+                throw new ApiException(Http.BAD_REQUEST, "SOURCE_IS_OUTPUT",
                         "输出文件不能与源文件相同");
             }
         }
         Path parent = output.getParent();
         if (parent == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
         }
         if (!Files.isDirectory(parent)) {
             try {
                 Files.createDirectories(parent);
             } catch (IOException ex) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH",
+                throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH",
                         "无法创建输出目录：" + parent, ex.getMessage());
             }
         }
         if (Files.isDirectory(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
         }
         if (Files.exists(output) && !overwrite) {
-            throw new ApiException(HttpStatus.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
+            throw new ApiException(Http.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
         }
         if (Files.exists(output) && !Files.isWritable(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
         }
         return output;
     }
@@ -437,7 +435,7 @@ public class PageToolService {
         }
         String mode = value.toUpperCase(Locale.ROOT);
         if (!"PAGE".equals(mode) && !"CHUNK".equals(mode) && !"RANGES".equals(mode)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SPLIT_MODE",
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_SPLIT_MODE",
                     "拆分方式仅支持按页、每 N 页或按区间");
         }
         return mode;
@@ -445,7 +443,7 @@ public class PageToolService {
 
     private int resolvePagesPerFile(Integer value) {
         if (value == null || value < 1 || value > MAX_PAGES_PER_FILE) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_CHUNK_SIZE",
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_CHUNK_SIZE",
                     "每组页数应在 1-" + MAX_PAGES_PER_FILE + " 之间");
         }
         return value;
@@ -453,7 +451,7 @@ public class PageToolService {
 
     private List<List<Integer>> resolveRangeGroups(String raw, int pageCount) {
         if (trimToNull(raw) == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "RANGES_REQUIRED", "请填写页码范围");
+            throw new ApiException(Http.BAD_REQUEST, "RANGES_REQUIRED", "请填写页码范围");
         }
         return PageRanges.groups(raw, pageCount);
     }
@@ -490,12 +488,12 @@ public class PageToolService {
             case "END" -> basePages;
             case "BEFORE" -> {
                 if (rawPosition == null || rawPosition < 1 || rawPosition > basePages) {
-                    throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_POSITION",
+                    throw new ApiException(Http.BAD_REQUEST, "INVALID_POSITION",
                             "插入位置应在 1-" + basePages + " 页之间");
                 }
                 yield rawPosition - 1;
             }
-            default -> throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_POSITION",
+            default -> throw new ApiException(Http.BAD_REQUEST, "INVALID_POSITION",
                     "插入位置仅支持文档开头、指定页前或文档末尾");
         };
     }
@@ -574,7 +572,7 @@ public class PageToolService {
         try {
             return Path.of(rawPath).toAbsolutePath().normalize();
         } catch (InvalidPathException ex) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
         }
     }
 
@@ -622,7 +620,7 @@ public class PageToolService {
         synchronized (tasks) {
             PageToolTask task = tasks.get(id);
             if (task == null) {
-                throw new ApiException(HttpStatus.NOT_FOUND, "JOB_NOT_FOUND", "拆分/插页任务不存在");
+                throw new ApiException(Http.NOT_FOUND, "JOB_NOT_FOUND", "拆分/插页任务不存在");
             }
             return task;
         }

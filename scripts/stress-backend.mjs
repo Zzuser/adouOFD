@@ -46,9 +46,7 @@ const child = spawn(java, [
   '-jar',
   jar,
   `--server.port=${port}`,
-  `--adou.token=${token}`,
-  '--spring.main.banner-mode=off',
-  '--logging.level.root=WARN'
+  `--adou.token=${token}`
 ], { cwd: backendDir, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
 
 let logTail = ''

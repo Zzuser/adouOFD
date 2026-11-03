@@ -11,20 +11,17 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Component
 public class PdfDemoFactory {
 
     private final String appVersion;
 
-    public PdfDemoFactory(@Value("${adou.version:0.7.1}") String appVersion) {
+    public PdfDemoFactory(String appVersion) {
         this.appVersion = appVersion;
     }
 

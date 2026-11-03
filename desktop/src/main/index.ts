@@ -64,21 +64,22 @@ if (!hasLock) {
     }
   })
 
+  backend = new BackendManager()
+  backend.onChange((info: BackendInfo) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backend:status', info)
+    }
+  })
+  // 引擎与 Electron/窗口初始化并行启动，减少用户看到“启动中”的时间
+  void backend.start()
+
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null)
     session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
     installTextAssetProtocol()
 
-    backend = new BackendManager()
-    backend.onChange((info: BackendInfo) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('backend:status', info)
-      }
-    })
-
     registerIpc()
     createWindow()
-    void backend.start()
     void ensureRegisteredOnStartup()
 
     app.on('activate', () => {

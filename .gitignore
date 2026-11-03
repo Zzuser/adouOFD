@@ -6,6 +6,7 @@ desktop/dist/
 desktop/dist-build/
 desktop/dist-*/
 backend/target/
+backend-javalin/target/
 *.log
 .idea/
 .vscode/

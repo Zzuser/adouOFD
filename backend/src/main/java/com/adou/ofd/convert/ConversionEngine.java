@@ -32,8 +32,7 @@ import org.ofdrw.reader.PageInfo;
 import org.ofdrw.tool.merge.OFDMerger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import com.adou.ofd.web.Http;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -63,7 +62,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link PdfboxMaker#makePage} 以便上报进度并支持中途取消；
  * PDF → OFD 使用 {@link PDFConverter}，按批次转换以获得页级进度。
  */
-@Component
 public class ConversionEngine {
 
     private static final Logger log = LoggerFactory.getLogger(ConversionEngine.class);
@@ -123,7 +121,7 @@ public class ConversionEngine {
                 return new SourceInfo("OFD", reader.getNumberOfPages());
             }
         }
-        throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
+        throw new ApiException(Http.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
                 "仅支持转换 .ofd 与 .pdf 文件");
     }
 

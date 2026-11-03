@@ -4,11 +4,9 @@ import com.adou.ofd.document.DocumentService;
 import com.adou.ofd.document.DocumentSummary;
 import com.adou.ofd.document.TextRun;
 import com.adou.ofd.web.ApiException;
-import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import com.adou.ofd.web.Http;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -25,7 +23,6 @@ import java.util.concurrent.RejectedExecutionException;
  *
  * <p>单个任务只读已打开的文档会话；文档被关闭或会话被淘汰时任务以 DOCUMENT_CLOSED 结束。
  */
-@Service
 public class SearchService {
 
     private static final Logger log = LoggerFactory.getLogger(SearchService.class);
@@ -48,11 +45,11 @@ public class SearchService {
 
     public SearchJob submit(String documentId, SearchRequest request) {
         if (request == null || request.query() == null || request.query().isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SEARCH_QUERY_REQUIRED", "请输入搜索关键词");
+            throw new ApiException(Http.BAD_REQUEST, "SEARCH_QUERY_REQUIRED", "请输入搜索关键词");
         }
         String query = request.query().trim();
         if (query.length() > MAX_QUERY_LENGTH) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SEARCH_QUERY_TOO_LONG",
+            throw new ApiException(Http.BAD_REQUEST, "SEARCH_QUERY_TOO_LONG",
                     "搜索关键词不能超过 " + MAX_QUERY_LENGTH + " 个字符");
         }
         DocumentSummary summary = documents.summary(documentId);
@@ -74,7 +71,7 @@ public class SearchService {
             synchronized (tasks) {
                 tasks.remove(task.id());
             }
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "SEARCH_QUEUE_FULL",
+            throw new ApiException(Http.TOO_MANY_REQUESTS, "SEARCH_QUEUE_FULL",
                     "搜索任务过多，请稍后重试");
         }
         return task.snapshot();
@@ -90,7 +87,6 @@ public class SearchService {
         return task.snapshot();
     }
 
-    @PreDestroy
     public void shutdown() {
         executor.shutdownNow();
     }
@@ -335,7 +331,7 @@ public class SearchService {
         synchronized (tasks) {
             SearchTask task = tasks.get(searchId);
             if (task == null || !task.documentId().equals(documentId)) {
-                throw new ApiException(HttpStatus.NOT_FOUND, "SEARCH_NOT_FOUND", "搜索任务不存在");
+                throw new ApiException(Http.NOT_FOUND, "SEARCH_NOT_FOUND", "搜索任务不存在");
             }
             return task;
         }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 — 2026-11-03
+
+- Replaced Spring Boot with Javalin 6.7.0 (embedded Jetty 11) and removed Spring, Tomcat, Micrometer, Logback and Jackson 3 from the engine; the service layer is now framework-free and the shaded jar dropped from 48.8 MB to 36.2 MB.
+- Engine startup is now about 0.33–0.38s warm and 0.71–0.77s on first run in the development build; the packaged build is about 0.42s warm and 0.97s first run (AppCDS), down from 1.25s / 1.65s.
+- The About dialog reports the engine runtime (Javalin 6.7.0) instead of Spring Boot; the health payload field `springBootVersion` was replaced by `runtime`.
+- The jlink runtime now ships a base CDS archive and the backend build performs a clean package so stale classes cannot leak into the jar.
+- Backend tests are 54/54 green (the Spring context and servlet filter tests were replaced by framework-free token tests); the full Electron UI smoke and a packaged build (open PDF + OFD, About runtime) pass.
+- Updated README, PRD, third-party notices and the Apache NOTICE bundle for the Javalin/Jetty/Kotlin/Jackson 2 stack.
+
 ## 1.0.0 — 2026-11-03
 
 First stable release: consolidates the 0.10.0 work (page rotation, recent files, document properties, encrypted PDF) with Markdown/text editing, PDF export and the 1.0 home-page refresh.

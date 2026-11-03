@@ -17,7 +17,7 @@ export interface EngineHealth {
   version: string
   javaVersion: string
   ofdrwVersion: string
-  springBootVersion: string
+  runtime: string
   os: string
   startedAt: string
 }

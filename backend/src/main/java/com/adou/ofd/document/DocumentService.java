@@ -1,12 +1,10 @@
 package com.adou.ofd.document;
 
 import com.adou.ofd.web.ApiException;
-import jakarta.annotation.PreDestroy;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import com.adou.ofd.web.Http;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-@Service
 public class DocumentService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
@@ -54,23 +51,23 @@ public class DocumentService {
 
     private DocumentSummary openSession(String rawPath, boolean preview, String password) {
         if (rawPath == null || rawPath.isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "请提供 OFD 或 PDF 文件路径");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "请提供 OFD 或 PDF 文件路径");
         }
         Path path;
         try {
             path = Path.of(rawPath).toAbsolutePath().normalize();
         } catch (InvalidPathException ex) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
         }
         if (!Files.exists(path)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
+            throw new ApiException(Http.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
         }
         if (!Files.isRegularFile(path)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "目标不是文件：" + path);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "目标不是文件：" + path);
         }
         String fileName = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (!fileName.endsWith(".ofd") && !fileName.endsWith(".pdf")) {
-            throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
+            throw new ApiException(Http.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
                     "当前支持打开 .ofd 和 .pdf 文件");
         }
 
@@ -145,14 +142,14 @@ public class DocumentService {
     public synchronized List<TextRun> pageText(String id, int page) {
         DocumentSession session = require(id);
         if (page < 1 || page > session.pageCount()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
+            throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
                     "页码超出范围（1-" + session.pageCount() + "）");
         }
         try {
             return session.handle().pageText(page);
         } catch (IOException | RuntimeException ex) {
             log.warn("文本提取失败: document={}, page={}", id, page, ex);
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "TEXT_EXTRACT_FAILED",
+            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "TEXT_EXTRACT_FAILED",
                     "页面文本提取失败", ex.getMessage());
         }
     }
@@ -171,11 +168,11 @@ public class DocumentService {
 
     private Path renderSession(DocumentSession session, int page, int dpi, int rotate) {
         if (page < 1 || page > session.pageCount()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
+            throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
                     "页码超出范围（1-" + session.pageCount() + "）");
         }
         if (rotate % 90 != 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ROTATION",
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_ROTATION",
                     "旋转角度必须是 90 的倍数");
         }
         int safeDpi = Math.min(300, Math.max(24, dpi));
@@ -190,12 +187,12 @@ public class DocumentService {
         } catch (IOException | RuntimeException ex) {
             log.warn("页面渲染失败: document={}, page={}, dpi={}, rotate={}",
                     session.id(), page, safeDpi, safeRotate, ex);
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
+            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
                     "页面渲染失败，请查看引擎日志", ex.getMessage());
         } catch (StackOverflowError error) {
             log.error("页面渲染栈溢出: document={}, page={}, dpi={}, rotate={}",
                     session.id(), page, safeDpi, safeRotate);
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
+            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
                     "页面包含异常的资源引用，暂时无法渲染", "文档渲染递归溢出");
         }
     }
@@ -214,7 +211,6 @@ public class DocumentService {
         }
     }
 
-    @PreDestroy
     public synchronized void closeAll() {
         sessions.values().forEach(this::closeSession);
         sessions.clear();
@@ -271,7 +267,7 @@ public class DocumentService {
             closeHandleQuietly(handle);
             boolean missingPassword = password == null || password.isEmpty();
             throw new ApiException(
-                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    Http.UNPROCESSABLE_ENTITY,
                     missingPassword ? "PDF_PASSWORD_REQUIRED" : "PDF_PASSWORD_INVALID",
                     missingPassword ? "PDF 已加密，请输入打开密码" : "PDF 密码不正确，请重试");
         } catch (IOException | RuntimeException ex) {
@@ -334,7 +330,7 @@ public class DocumentService {
     private DocumentSession require(String id) {
         DocumentSession session = sessions.get(id);
         if (session == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "文档会话不存在或已关闭");
+            throw new ApiException(Http.NOT_FOUND, "SESSION_NOT_FOUND", "文档会话不存在或已关闭");
         }
         return session;
     }
@@ -342,7 +338,7 @@ public class DocumentService {
     private DocumentSession requirePreview(String id) {
         DocumentSession session = previews.get(id);
         if (session == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "PREVIEW_NOT_FOUND", "页面预览会话不存在或已关闭");
+            throw new ApiException(Http.NOT_FOUND, "PREVIEW_NOT_FOUND", "页面预览会话不存在或已关闭");
         }
         return session;
     }
@@ -351,7 +347,7 @@ public class DocumentService {
         try {
             return Files.createTempDirectory("adou-doc-");
         } catch (IOException ex) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "TEMP_DIR_FAILED", "无法创建临时目录", ex.getMessage());
+            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "TEMP_DIR_FAILED", "无法创建临时目录", ex.getMessage());
         }
     }
 
@@ -360,7 +356,7 @@ public class DocumentService {
             return apiException;
         }
         log.warn("文档解析失败", ex);
-        return new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
+        return new ApiException(Http.UNPROCESSABLE_ENTITY, "DOCUMENT_PARSE_ERROR",
                 "文档解析失败，文件可能损坏、加密或包含暂不支持的特性", ex.getMessage());
     }
 

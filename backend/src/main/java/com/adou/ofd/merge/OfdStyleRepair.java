@@ -2,7 +2,6 @@ package com.adou.ofd.merge;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -47,7 +46,6 @@ import java.util.zip.ZipOutputStream;
  * <p>这里在合并前把每个 OFD 内的 DrawParam 继承链展开成自包含样式，并移除
  * 指向不存在 ColorSpace 的颜色空间引用，避免合并后样式串扰。
  */
-@Component
 public class OfdStyleRepair {
 
     private static final Logger log = LoggerFactory.getLogger(OfdStyleRepair.class);

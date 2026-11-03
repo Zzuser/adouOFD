@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { spawn, type ChildProcess } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs'
+import { createHash, randomBytes } from 'node:crypto'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -10,6 +10,7 @@ import type { BackendInfo } from '../shared/types'
 const START_TIMEOUT_MS = 40_000
 const MIN_HEAP_MB = 1024
 const MAX_HEAP_MB = 2048
+const READY_MARKER = 'ADOU_ENGINE_READY'
 
 /**
  * PDF 转 OFD 已改为分片 + 合并，峰值内存大幅下降，堆不必再给到 4G。
@@ -24,6 +25,10 @@ export class BackendManager {
   private child: ChildProcess | null = null
   private current: BackendInfo = { status: 'starting', port: null, token: null }
   private stopping = false
+  private readyAnnounced = false
+  private resolveReady: (() => void) | null = null
+  private readySignal: Promise<void> = Promise.resolve()
+  private stdoutTail = ''
   private readonly listeners = new Set<(info: BackendInfo) => void>()
   private readonly recentLog: string[] = []
   private readonly logPath = join(app.getPath('userData'), 'logs', 'backend.log')
@@ -42,7 +47,13 @@ export class BackendManager {
       await this.stop()
     }
     this.stopping = false
+    this.readyAnnounced = false
+    this.stdoutTail = ''
+    this.readySignal = new Promise((resolveReady) => {
+      this.resolveReady = resolveReady
+    })
     this.emit({ status: 'starting', port: null, token: null, message: '正在启动本地引擎' })
+    const startedAt = Date.now()
 
     try {
       const port = await findFreePort()
@@ -50,9 +61,10 @@ export class BackendManager {
       const java = this.resolveJava()
       const jar = this.resolveJar()
       const heapMb = resolveHeapMb()
+      const cdsArgs = this.cdsArgs(jar)
       mkdirSync(dirname(this.logPath), { recursive: true })
       this.appendLog(
-        `\n=== ${new Date().toISOString()} 启动引擎 ===\njava: ${java}\njar: ${jar}\nport: ${port}\nheap: ${heapMb}m\n`
+        `\n=== ${new Date().toISOString()} 启动引擎 ===\njava: ${java}\njar: ${jar}\nport: ${port}\nheap: ${heapMb}m\nengine: javalin\n`
       )
 
       const args = [
@@ -61,13 +73,11 @@ export class BackendManager {
         '-Xms64m',
         `-Xmx${heapMb}m`,
         '-Xss2m',
+        ...cdsArgs,
         '-jar',
         jar,
         `--server.port=${port}`,
-        `--adou.token=${token}`,
-        '--spring.main.banner-mode=off',
-        '--spring.application.name=adou-ofd-backend',
-        '--logging.level.root=WARN'
+        `--adou.token=${token}`
       ]
       const child = spawn(java, args, {
         cwd: app.getPath('userData'),
@@ -76,7 +86,7 @@ export class BackendManager {
       })
       this.child = child
 
-      child.stdout?.on('data', (data: Buffer) => this.appendLog(data.toString()))
+      child.stdout?.on('data', (data: Buffer) => this.handleStdout(data))
       child.stderr?.on('data', (data: Buffer) => this.appendLog(data.toString()))
       child.on('error', (error) => {
         this.appendLog(`spawn error: ${error.message}\n`)
@@ -103,6 +113,7 @@ export class BackendManager {
       })
 
       await this.waitForHealth(port, token)
+      this.appendLog(`引擎就绪，用时 ${Date.now() - startedAt} ms\n`)
       this.emit({ status: 'ready', port, token })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -175,10 +186,66 @@ export class BackendManager {
       } catch {
         // 引擎尚未就绪，继续轮询
       }
-      await delay(300)
+      if (this.readyAnnounced) {
+        await delay(25)
+      } else {
+        await Promise.race([this.readySignal, delay(300)])
+      }
     }
     const tail = this.recentLog.slice(-6).join('\n')
     throw new Error(`本地引擎启动超时。${tail ? '最近日志：' + tail : '请查看日志：' + this.logPath}`)
+  }
+
+  /**
+   * 引擎启动完成会输出就绪标记，命中后立即做一次健康检查，
+   * 不必等固定间隔的轮询。stdout 分块可能截断标记，保留尾部拼接。
+   */
+  private handleStdout(data: Buffer): void {
+    const text = data.toString()
+    if (!this.readyAnnounced) {
+      this.stdoutTail = (this.stdoutTail + text).slice(-4096)
+      if (this.stdoutTail.includes(READY_MARKER)) {
+        this.readyAnnounced = true
+        this.resolveReady?.()
+      }
+    }
+    this.appendLog(text)
+  }
+
+  /**
+   * 类数据共享（AppCDS）：首次启动退出时由 JVM 生成归档，
+   * 之后启动直接映射，省去约 300~400ms 的类加载与校验。
+   * 归档与 jar 路径、大小、修改时间绑定；升级后使用新归档，旧归档保留 14 天后清理。
+   */
+  private cdsArgs(jar: string): string[] {
+    const dir = join(app.getPath('userData'), 'engine-cache')
+    try {
+      const stats = statSync(jar)
+      const key = createHash('sha256')
+        .update(`${jar}\0${stats.size}\0${Math.round(stats.mtimeMs)}`)
+        .digest('hex')
+        .slice(0, 16)
+      const archive = join(dir, `backend-${key}.jsa`)
+      mkdirSync(dir, { recursive: true })
+      const staleBefore = Date.now() - 14 * 24 * 60 * 60 * 1000
+      for (const name of readdirSync(dir)) {
+        if (!name.startsWith('backend-') || !name.endsWith('.jsa') || name === `backend-${key}.jsa`) {
+          continue
+        }
+        // 开发版与安装版共用 userData 但 jar 路径不同，只清理长期未用的归档
+        const path = join(dir, name)
+        try {
+          if (statSync(path).mtimeMs < staleBefore) rmSync(path, { force: true })
+        } catch {
+          // 归档可能刚被其他实例删除
+        }
+      }
+      this.appendLog(`cds: ${archive}（${existsSync(archive) ? '已缓存' : '首次运行退出时生成'}）\n`)
+      return ['-XX:+AutoCreateSharedArchive', `-XX:SharedArchiveFile=${archive}`, '-Xshare:auto']
+    } catch (error) {
+      this.appendLog(`cds 不可用：${error instanceof Error ? error.message : String(error)}\n`)
+      return []
+    }
   }
 
   private resolveJava(): string {

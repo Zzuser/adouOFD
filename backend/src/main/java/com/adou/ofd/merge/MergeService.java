@@ -9,8 +9,7 @@ import com.adou.ofd.web.ApiException;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
+import com.adou.ofd.web.Http;
 
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -33,7 +32,6 @@ import java.util.concurrent.RejectedExecutionException;
  *
  * <p>输出先写入同目录临时文件，校验页数后原子替换；源文件只读。
  */
-@Service
 public class MergeService {
 
     private static final Logger log = LoggerFactory.getLogger(MergeService.class);
@@ -54,17 +52,17 @@ public class MergeService {
 
     public MergeJob submit(MergeRequest request) {
         if (request == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "请提供合并参数");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_REQUEST", "请提供合并参数");
         }
         List<String> rawFiles = request.files();
         if (rawFiles == null || rawFiles.isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "FILES_REQUIRED", "请提供待合并的文件");
+            throw new ApiException(Http.BAD_REQUEST, "FILES_REQUIRED", "请提供待合并的文件");
         }
         if (rawFiles.size() < 2) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "NEED_TWO_FILES", "至少需要 2 个文件才能合并");
+            throw new ApiException(Http.BAD_REQUEST, "NEED_TWO_FILES", "至少需要 2 个文件才能合并");
         }
         if (rawFiles.size() > MAX_FILES) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "TOO_MANY_FILES",
+            throw new ApiException(Http.BAD_REQUEST, "TOO_MANY_FILES",
                     "一次最多合并 " + MAX_FILES + " 个文件");
         }
         String target = resolveTarget(request.target());
@@ -86,7 +84,7 @@ public class MergeService {
             synchronized (tasks) {
                 tasks.remove(task.id());
             }
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "MERGE_QUEUE_FULL",
+            throw new ApiException(Http.TOO_MANY_REQUESTS, "MERGE_QUEUE_FULL",
                     "合并队列已满，请等待当前任务完成后再试");
         }
         return task.snapshot();
@@ -200,11 +198,11 @@ public class MergeService {
     private String resolveTarget(String rawTarget) {
         String target = trimToNull(rawTarget);
         if (target == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TARGET", "请选择输出格式（PDF 或 OFD）");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_TARGET", "请选择输出格式（PDF 或 OFD）");
         }
         target = target.toUpperCase(Locale.ROOT);
         if (!"PDF".equals(target) && !"OFD".equals(target)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_TARGET", "输出格式仅支持 PDF 或 OFD");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_TARGET", "输出格式仅支持 PDF 或 OFD");
         }
         return target;
     }
@@ -212,18 +210,18 @@ public class MergeService {
     private Path resolveInput(String raw) {
         String value = trimToNull(raw);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "文件路径为空");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "文件路径为空");
         }
         Path path = normalize(value);
         if (!Files.exists(path)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
+            throw new ApiException(Http.NOT_FOUND, "FILE_NOT_FOUND", "文件不存在：" + path);
         }
         if (!Files.isRegularFile(path)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "不是文件：" + path);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "不是文件：" + path);
         }
         String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (!name.endsWith(".ofd") && !name.endsWith(".pdf")) {
-            throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
+            throw new ApiException(Http.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_FORMAT",
                     "仅支持合并 .ofd 与 .pdf 文件");
         }
         return path;
@@ -232,7 +230,7 @@ public class MergeService {
     private Path resolveOutput(String rawOutput, String target, List<Path> inputs, boolean overwrite) {
         String value = trimToNull(rawOutput);
         if (value == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_REQUIRED", "请提供输出文件路径");
         }
         Path output = normalize(value);
         String extension = "." + target.toLowerCase(Locale.ROOT);
@@ -247,30 +245,30 @@ public class MergeService {
         }
         for (Path input : inputs) {
             if (isSamePath(output, input)) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "SOURCE_IS_OUTPUT",
+                throw new ApiException(Http.BAD_REQUEST, "SOURCE_IS_OUTPUT",
                         "输出文件不能与任一待合并文件相同");
             }
         }
         Path parent = output.getParent();
         if (parent == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径无效");
         }
         if (!Files.isDirectory(parent)) {
             try {
                 Files.createDirectories(parent);
             } catch (IOException ex) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH",
+                throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH",
                         "无法创建输出目录：" + parent, ex.getMessage());
             }
         }
         if (Files.isDirectory(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_OUTPUT_PATH", "输出路径是目录：" + output);
         }
         if (Files.exists(output) && !overwrite) {
-            throw new ApiException(HttpStatus.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
+            throw new ApiException(Http.CONFLICT, "OUTPUT_EXISTS", "输出文件已存在：" + output);
         }
         if (Files.exists(output) && !Files.isWritable(output)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
+            throw new ApiException(Http.BAD_REQUEST, "OUTPUT_NOT_WRITABLE", "输出文件不可写：" + output);
         }
         return output;
     }
@@ -290,7 +288,7 @@ public class MergeService {
         try {
             return Path.of(rawPath).toAbsolutePath().normalize();
         } catch (InvalidPathException ex) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_PATH", "文件路径无效", ex.getMessage());
         }
     }
 
@@ -357,7 +355,7 @@ public class MergeService {
         synchronized (tasks) {
             MergeTask task = tasks.get(id);
             if (task == null) {
-                throw new ApiException(HttpStatus.NOT_FOUND, "JOB_NOT_FOUND", "合并任务不存在");
+                throw new ApiException(Http.NOT_FOUND, "JOB_NOT_FOUND", "合并任务不存在");
             }
             return task;
         }

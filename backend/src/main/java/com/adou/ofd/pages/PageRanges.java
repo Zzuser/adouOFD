@@ -1,7 +1,7 @@
 package com.adou.ofd.pages;
 
 import com.adou.ofd.web.ApiException;
-import org.springframework.http.HttpStatus;
+import com.adou.ofd.web.Http;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,7 +109,7 @@ final class PageRanges {
             throw outOfRange(token, pageCount);
         }
         if (start > end) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RANGES",
+            throw new ApiException(Http.BAD_REQUEST, "INVALID_RANGES",
                     "起始页不能大于结束页：" + token);
         }
         if (end > pageCount) {
@@ -121,12 +121,12 @@ final class PageRanges {
     }
 
     private static ApiException invalid(String text) {
-        return new ApiException(HttpStatus.BAD_REQUEST, "INVALID_RANGES",
+        return new ApiException(Http.BAD_REQUEST, "INVALID_RANGES",
                 "页码范围格式不正确：" + text + "（示例：1-3,5,7-9）");
     }
 
     private static ApiException outOfRange(String text, int pageCount) {
-        return new ApiException(HttpStatus.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
+        return new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
                 "页码超出范围（1-" + pageCount + "）：" + text);
     }
 

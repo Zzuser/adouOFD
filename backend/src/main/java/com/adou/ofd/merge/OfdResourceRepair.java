@@ -2,7 +2,6 @@ package com.adou.ofd.merge;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -34,7 +33,6 @@ import java.util.zip.ZipOutputStream;
  * <p>这里在合并前扫描 OFD 包内的资源引用，为缺失资源补充透明/空占位文件，
  * 让合并可以继续；源文档本来就无法显示该资源，占位不会引入新的可见内容。
  */
-@Component
 public class OfdResourceRepair {
 
     private static final Logger log = LoggerFactory.getLogger(OfdResourceRepair.class);

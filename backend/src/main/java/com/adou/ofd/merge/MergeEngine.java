@@ -5,7 +5,6 @@ import com.adou.ofd.convert.ConversionEngine;
 import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.ofdrw.tool.merge.OFDMerger;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +19,6 @@ import java.util.List;
  * <p>OFD 输入即使已经是目标格式也会复制成唯一临时文件名再交给 OFDMerger，
  * 因为 OFDMerger 内部按文件名缓存文档上下文，同名文件会互相覆盖。
  */
-@Component
 public class MergeEngine {
 
     private final ConversionEngine conversions;

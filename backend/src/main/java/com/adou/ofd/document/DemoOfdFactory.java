@@ -6,12 +6,10 @@ import org.ofdrw.layout.OFDDoc;
 import org.ofdrw.layout.PageLayout;
 import org.ofdrw.layout.element.Paragraph;
 import org.ofdrw.layout.element.TextAlign;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-@Component
 public class DemoOfdFactory {
 
     public Path generate(Path dir) throws IOException {

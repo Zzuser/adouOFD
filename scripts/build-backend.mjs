@@ -17,7 +17,7 @@ if (!javaHome) {
 
 const isWindows = process.platform === 'win32'
 const maven = isWindows ? 'mvn.cmd' : 'mvn'
-const result = spawnSync(maven, ['-B', '-DskipTests', 'package'], {
+const result = spawnSync(maven, ['-B', '-DskipTests', 'clean', 'package'], {
   cwd: join(root, 'backend'),
   stdio: 'inherit',
   shell: isWindows,

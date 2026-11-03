@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 | --- | --- |
 | 产品名称 | 阿豆OFD（ADou OFD） |
-| 文档版本 | v1.0.0（OFD/PDF 阅读与处理 + Markdown/文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF） |
+| 文档版本 | v1.1.0（Javalin 6 本地引擎；OFD/PDF 阅读与处理 + Markdown/文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF） |
 | 日期 | 2026-11-03 |
-| 阶段 | 1.0.0：预览、搜索、打印、转换、合并、拆分与插页、多标签、Windows 文件关联、Markdown/文本编辑、Inno 安装包、统一页头与功能化文案 |
+| 阶段 | 1.1.0：本地引擎由 Spring Boot 迁移到 Javalin 6（启动与体积优化）；功能覆盖预览、搜索、打印、转换、合并、拆分与插页、多标签、Windows 文件关联、Markdown/文本编辑、Inno 安装包 |
 | 形态 | Windows 桌面软件（Electron 壳 + Java 本地引擎），后续扩展 macOS |
 | 许可 | 应用免费；第三方依赖许可见 §11 |
 
@@ -46,14 +46,14 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 ### 2.1 M0（已完成）
 
 - 产品与技术 PRD（本文档）。
-- 双端脚手架：Electron + React + TypeScript / Java 25 + Spring Boot + ofdrw。
+- 双端脚手架：Electron + React + TypeScript / Java 25 + Javalin + ofdrw。
 - 本地 Java 引擎的启动、健康检查、优雅退出。
 - **Hello World 纵向切片**：
   - 打开本地 OFD 文件；
   - 读取页数、页面尺寸、签名标记；
   - 渲染并展示页面（支持翻页）；
   - 内置示例文档，无样例文件也可体验；
-  - UI 中展示 Java / ofdrw / Spring Boot 版本，证明引擎真实可用。
+  - UI 中展示 Java / ofdrw / 引擎运行时版本，证明引擎真实可用。
 - 可重复的构建/启动脚本与冒烟测试。
 
 > M0 不追求功能完整，目标是**打通“界面 → 本地引擎 → ofdrw → 页面回显”全链路**，并验证最新稳定工具链的兼容性。
@@ -160,9 +160,9 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 | 构建 | Vite | 8.3.5 | 渲染进程开发服务器与产物构建 |
 | 打包 | Inno Setup 6 + electron-builder | 6.x / 26.18.0 | Inno Setup 安装包 / NSIS 备用 |
 | 运行时 | Eclipse Temurin JDK | **25.0.5+8 LTS** | 项目内 `.tools/jdk-25`，发布时 jlink 裁剪 |
-| 框架 | Spring Boot | 4.0.9 | 仅作为本地 HTTP 引擎，绑定 127.0.0.1 |
+| 框架 | Javalin | 6.7.0 | 内嵌 Jetty 11 的本地 HTTP 引擎，绑定 127.0.0.1 |
 | OFD 核心 | ofdrw-full | **2.5.1** | 2026-11-01 发布，移除 iText、协议改 MIT、PDF→OFD 新增文字对象化 |
-| PDF 渲染 | Apache PDFBox | **2.0.27** | 与 ofdrw-converter 内置版本对齐；Apache-2.0 |
+| PDF 渲染 | Apache PDFBox | **3.0.8** | 与 ofdrw-converter 版本对齐；Apache-2.0 |
 | 构建 | Maven | 3.9.16 | 最新稳定 3.9 线；Maven 4 仍为 RC |
 | 开发 Node | Node.js | 24.13.0 LTS | 仅构建期使用，不随应用分发 |
 
@@ -171,7 +171,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 - **ofdrw 2.5.1**：`ofdrw-full` 聚合 reader / converter / layout / tool 等模块，覆盖查看、转 PDF、PDF 转 OFD、合并；2.5.1 起彻底移除 iText（无 AGPL 依赖），协议为 MIT。
 - **PDFBox 3.0.8**：与 ofdrw-converter 2.5.1 对齐；加载入口为 `Loader.loadPDF`，颜色 API 使用 0–1 浮点，流缓存通过 `MemoryUsageSetting.streamCache` 传入。
 - **JDK 25 LTS**：当前最新 LTS。ofdrw 以 Java 8 目标编译，需在 JDK 25 上实际验证 AWT 渲染、PDFBox、字体加载链路；M0 已完成示例生成、页面渲染、OFD→PDF、PDF→OFD 往返测试，真实发票渲染与 JDK 21 输出字节级一致（见 §13）。
-- **Spring Boot 4.0.9**：当前最新稳定版，运行于 JDK 25；仅使用 Web/JSON 能力，不引入数据库与安全框架。
+- **Javalin 6.7.0**：内嵌 Jetty 11 的轻量 HTTP 框架，运行于 JDK 25；只负责路由、JSON 与依赖装配，不引入数据库或安全框架。服务层不依赖 Web 框架，便于测试与替换。
 - **Electron 45.1.0**：当前稳定版；使用 `contextIsolation + sandbox + 禁用 nodeIntegration` 的安全基线。
 
 ### 3.2 兼容性策略
@@ -179,7 +179,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
 若某一“最新稳定版”与 ofdrw 不兼容：
 
 1. 先降 JDK 到上一 LTS（21.0.x 最新补丁），保持 ofdrw 2.3.7；
-2. 再考虑降 Spring Boot 到 3.5.x 最新补丁；
+2. 再考虑回退 Javalin 到 6.x 最新补丁（当前 6.7.0）；
 3. 任何降级必须在本文件 §13 记录原因、验证用例与结论，不允许静默降级。
 
 ---
@@ -196,7 +196,7 @@ OFD（GB/T 33190）是电子发票、公文、电子档案的国产版式文档�
                 │ IPC (contextBridge 白名单)    │ HTTP 127.0.0.1
 ┌───────────────▼─────────────┐   ┌───────────▼───────────────┐
 │ 渲染进程 (React + TS)        │   │ Java 本地引擎              │
-│  · 文档导航 / 预览 / 工具栏   │   │ Spring Boot 4 + ofdrw 2.5.1│
+│  · 文档导航 / 预览 / 工具栏   │   │ Javalin 6 + ofdrw 2.5.1    │
 │  · 仅通过 preload API 触达系统│   │ · 解析 / 渲染 / 转换 / 合并 │
 └──────────────────────────────┘   │ · 会话与临时文件管理        │
                                    └───────────────────────────┘
@@ -437,7 +437,7 @@ DocumentHandle {
 - 字体：系统字体栈（Windows 优先“微软雅黑 UI”/“Segoe UI”），保持离线与体积。
 - 布局：左侧 236px 应用导航（可折叠为 72px 图标栏）；所有 tab 使用统一的 50px 单行页头——查看器为文档标签栏，批量/合并/设置/空状态为“标题 + 内联说明”；查看器文档信息与操作合并为单行紧凑工具栏；阅读区左侧“缩略图 / 目录”导航面板、中间连续页面画布；底部悬浮缩放/页码工具条；空状态与加载态均有明确反馈。
 - 精简：侧栏导航为“文档查看 / 批量转换 / 合并文档 / 设置 / 关于”，Windows 文件关联放在独立“设置”页；引擎详细信息仍在“关于”弹层。
-- “关于”：展示版本、MIT 许可、Java/ofdrw/Spring Boot/Electron 版本、本地运行状态、开源组件摘要、第三方声明与完整许可文本入口。
+- “关于”：展示版本、MIT 许可、Java/ofdrw/引擎运行时/Electron 版本、本地运行状态、开源组件摘要、第三方声明与完整许可文本入口。
 - 文档栏显示 OFD / PDF / MD / TXT 格式徽标；空状态提供“打开文档 / 新建 Markdown / 新建文本”三个入口。
 - Markdown 编辑页：左侧源码、右侧实时预览；中间分隔线可拖动；顶部工具栏提供分栏/编辑/预览、目录、同步滚动、保存、重新加载、导出 PDF 与关闭。
 - 目录条目按层级缩进、显示目标页码；当前章节高亮，点击跳页。
@@ -470,7 +470,7 @@ DocumentHandle {
 
 - 运行时组件、版权声明与许可名汇总在 `THIRD-PARTY-NOTICES.md`；完整许可文本与 Apache NOTICE 汇总随包放在 `resources/notices/licenses/`。
 - “关于”提供“第三方声明 / MIT 许可 / 打开许可目录”入口；Electron 的 `LICENSE.electron.txt` 与 `LICENSES.chromium.html` 保留在安装目录。
-- 组件清单覆盖 Electron、React、Node.js、ofdrw、PDFBox、Spring Boot、Tomcat、Jackson、Batik、BouncyCastle、Logback、UJMP、TwelveMonkeys、Jaxen、Dom4j、Inno Setup 等。
+- 组件清单覆盖 Electron、React、Node.js、ofdrw、PDFBox、Javalin、Jetty、Kotlin、Jackson、Batik、BouncyCastle、SLF4J、UJMP、TwelveMonkeys、Jaxen、Dom4j、Inno Setup 等。
 
 ---
 
@@ -577,8 +577,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 
 - 应用自身代码以 **MIT License** 发布（`LICENSE`）。
 - Electron / React / Node.js / ofdrw / SLF4J / BouncyCastle：MIT（BouncyCastle 为 MIT 风格）。
-- PDFBox / FontBox / Batik / Spring Boot / Tomcat / Jackson / Apache Commons 等：Apache-2.0。
-- Logback：EPL-2.0 或 LGPL-2.1；Jakarta Annotation API：EPL-2.0 或 GPL-2.0 with Classpath Exception。
+- PDFBox / FontBox / Batik / Javalin / Jetty / Kotlin / Jackson / Apache Commons 等：Apache-2.0。
 - UJMP Core：LGPL-3.0（未修改的传递依赖）；TwelveMonkeys/Jaxen：BSD-3-Clause；Dom4j：BSD 风格（Plexus）。
 - **JSON-java 已排除**：UJMP 传递引入的 `org.json:json`（JSON License，非 OSI 批准）已在 `backend/pom.xml` 中排除，发行包不含该组件。
 - **iText 已移除**：ofdrw 2.5.1 起不再依赖 iText，依赖树无 AGPL 组件；公开分发不再受 AGPL 约束。
@@ -700,7 +699,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 
 1. **ADR-001 采用 Java sidecar 而非 JNI**：调试成本低、可独立测试、崩溃隔离；代价是多一个进程与本地 HTTP 攻击面，用回环 + Token 收敛。
 2. **ADR-002 使用 ofdrw-full 2.5.1**：最新稳定、模块完整，已移除 iText；升级必须跑 §9 回归。
-3. **ADR-003 使用 JDK 25 LTS + Spring Boot 4**：满足“最新稳定优先”；项目内自带 JDK，发布用 jlink，不依赖用户环境。
+3. **ADR-003 使用 JDK 25 LTS + Javalin 6**：Javalin 只承担路由/JSON/静态装配，启动约 0.35s（AppCDS 热启动）；项目内自带 JDK，发布用 jlink，不依赖用户环境。
 4. **ADR-004 React + TypeScript + electron-vite**：UI 复杂度会随阅读器/任务队列增长，需要组件化与类型约束；不引入 UI 框架，控制体积。
 5. **ADR-005 转换默认新文件输出**：绝不原地修改用户文档，降低数据损失风险。
 6. **ADR-006 连续滚动 + 缩略图 + 按缩放选择渲染 DPI**：页面按需加载，缩略图固定 24 DPI，主页面 96–300 DPI；兼顾清晰度、内存与首次渲染速度；代价是缩放时部分页面会重新请求。
@@ -716,7 +715,7 @@ M0 实测：Java 引擎启动约 1.2–1.4s；真实发票 1 页在 144 DPI 下�
 
 - 设计：[docs/PRD.md](PRD.md)。
 - 压测：[docs/STRESS-TEST.md](STRESS-TEST.md)。
-- 引擎：`backend/`（Spring Boot 4.0.9 + ofdrw 2.5.1 + PDFBox 3.0.8，49 个测试全绿；OFD/PDF 统一句柄、目录、文字层、全文搜索、格式转换、合并、拆分、插页、页面预览、缺失资源与样式修复）。
+- 引擎：`backend/`（Javalin 6.7.0 + ofdrw 2.5.1 + PDFBox 3.0.8，54 个测试全绿；OFD/PDF 统一句柄、目录、文字层、全文搜索、格式转换、合并、拆分、插页、页面预览、缺失资源与样式修复）。
 - 桌面端：`desktop/`（Electron 45.1.0 + React 19 + TS 7；连续滚动、缩略图、目录、缩放、页码、全文搜索、应用内打印面板、多标签查看、Windows 文件关联、批量转换、合并文档、应用导航折叠、Markdown/文本编辑与导出 PDF）。
 - 文本编辑：`desktop/src/main/text-files.ts`（编码/换行/原子保存/冲突）、`text-pdf.ts`（打印样式导出 PDF）、`desktop/src/shared/text-paths.ts`、`markdown-outline.ts`、`desktop/src/renderer/src/components/TextViewer.tsx`、`TextEditor.tsx`、`MarkdownPreview.tsx`、`text.css`。
 - Windows 集成：`desktop/src/main/windows-integration.ts`（HKCU 注册/状态/移除，OFD/PDF/MD）、`document-args.ts`（文件关联启动参数）、`desktop/build/installer.nsh`（卸载清理）、`desktop/build/fileicons/`（OFD/PDF/MD 文件图标 ICO + PNG）。

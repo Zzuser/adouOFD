@@ -60,6 +60,7 @@ const result = spawnSync(
     '--strip-debug',
     '--no-header-files',
     '--no-man-pages',
+    '--generate-cds-archive',
     '--output',
     output
   ],
@@ -71,6 +72,13 @@ if (result.error || result.status !== 0) {
 }
 
 const imageJava = join(output, 'bin', `java${exe}`)
+const baseArchive = join(output, 'bin', 'server', 'classes.jsa')
+if (!existsSync(baseArchive)) {
+  console.error(`jlink 未生成基础 CDS 归档：${baseArchive}`)
+  process.exit(1)
+}
+// 堆上限 2G 始终使用压缩指针，非压缩指针版本（约 15MB）用不到
+rmSync(join(output, 'bin', 'server', 'classes_nocoops.jsa'), { force: true })
 const version = spawnSync(imageJava, ['-version'], { encoding: 'utf8' })
 if (version.status !== 0) {
   console.error(`裁剪后的 JRE 无法运行：${version.stderr || version.stdout}`)
