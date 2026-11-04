@@ -104,3 +104,12 @@ jobs:
             PRIVACY.md
             THIRD-PARTY-NOTICES.md
           fail_on_unmatched_files: true
+
+      # 镜像到 CNB Release；需要仓库 Secret CNB_TOKEN（CNB 访问令牌，权限 repo-release:rw）。
+      # CNB 托管节点为 Linux，不参与 Windows 安装包构建，只接收这里已构建好的产物。
+      - name: Publish CNB Release
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          CNB_REPO: Zzuser/adouOFD
+          APP_VERSION: ${{ env.APP_VERSION }}
+        run: node scripts/publish-cnb-release.mjs
