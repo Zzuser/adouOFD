@@ -18,10 +18,12 @@
   <a href="https://github.com/Zzuser/adouOFD/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Zzuser/adouOFD/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/Zzuser/adouOFD/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Zzuser/adouOFD"></a>
   <a href="PRIVACY.md"><img alt="Privacy" src="https://img.shields.io/badge/privacy-offline%20%2F%20no%20telemetry-2F7A4F"></a>
+  <a href="https://adou.grout.cn/"><img alt="Website" src="https://img.shields.io/badge/website-adou.grout.cn-2F7A4F"></a>
 </p>
 
-> 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**1.1.4**（Javalin 6 本地引擎，启动约 0.4–0.8 秒；OFD / PDF / Markdown 阅读与编辑、转换、合并、拆分插页、打印与搜索；支持关于页检查更新与应用内升级）
+> 官网：<https://adou.grout.cn/> · 下载：<https://adou.grout.cn/#download>  
+> 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD> · <https://cnb.cool/Zzuser/adouOFD>）  
+> 当前版本：**1.1.4**（Javalin 6 本地引擎，启动约 0.4–0.8 秒；OFD / PDF / Markdown 阅读与编辑、转换、合并、拆分插页、打印与搜索；支持设置/关于检查更新，从 CNB Release 下载并校验 SHA256）
 
 ## 品牌与图标
 
@@ -88,7 +90,7 @@
 
 ## 下载与安装
 
-仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，或从 GitHub Releases 获取：<https://github.com/Zzuser/adouOFD/releases>。国内镜像：<https://cnb.cool/Zzuser/adouOFD/-/releases>。
+仓库只包含源码。预编译安装包体积较大（约 166MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，或从官网/CNB Release 下载（国内推荐）：<https://adou.grout.cn/#download>。GitHub Releases 为镜像：<https://github.com/Zzuser/adouOFD/releases>。
 
 ```powershell
 cd desktop
@@ -101,7 +103,7 @@ npm run package:inno
 
 需要 Inno Setup 6；脚本自动查找 `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`，也可用环境变量 `INNO_SETUP_ISCC` 指定。旧的 NSIS 构建仍可用 `npm run package:win`。
 
-GitHub Actions 发布时会将该文件重命名为 ASCII 的 `adou-ofd-<version>-x64-inno.exe`，并生成 `SHA256-<version>.txt` 供校验。
+GitHub Actions 发布时会将该文件重命名为 ASCII 的 `adou-ofd-<version>-x64-inno.exe`，生成 `SHA256-<version>.txt`，并同步上传 GitHub Release 与 CNB Release。
 
 ## 完整性校验
 
@@ -153,6 +155,7 @@ npm run dev:all
 | Markdown 编辑 | 分栏 / 编辑 / 预览三种模式；拖动中间分隔线调整宽度；`Ctrl+S` 保存；工具栏“目录”跳转标题 |
 | 导出 PDF | Markdown 工具栏“导出 PDF”，按 A4 排版导出当前预览 |
 | 文件关联 | 左侧“设置” → 文件关联：查看 .ofd / .pdf / .md 状态，注册/修复、设为默认、系统设置、移除 |
+| 设置 | 文件关联、本地与隐私、版本与更新、最近文件清理；操作有行内确认和状态反馈 |
 | 开源许可 | “关于” → 开源许可：查看第三方声明、MIT 许可、打开许可目录 |
 | 检查更新 | “设置 → 版本与更新”或“关于” → 版本更新：从 CNB Release 读取清单，应用内下载并校验 SHA256 |
 | 翻页 | 顶部页码输入、‹ ›、`←` / `→` |
@@ -234,12 +237,21 @@ npm run stress:ui
 - 不收集遥测；默认不访问网络，仅用户点击“检查更新”或“开源仓库”时主动联网
 - 用户原文件只读，转换/合并/拆分默认写入新文件
 
+## 产品主页
+
+官网源码在 `site/`，零依赖静态站，部署在 EdgeOne Pages：<https://adou.grout.cn/>。
+
+- 本地预览：`python -m http.server 8080 --directory site`
+- EdgeOne：根目录 `./`、构建命令留空、输出目录 `site`；项目名 `adouofd`
+- 发版时同步更新 `site/` 的版本号、更新日志、下载 tag 与截图
+- 维护与部署细节见 [docs/SITE.md](docs/SITE.md)
+
 ## 路线图
 
 - **M1.2**：全文搜索（已实现）/ Windows 文件关联（已实现）/ 页面旋转（已实现）/ 最近文件（已实现）
 - **M2**：PDF ↔ OFD 转换（单文件 + 批量标签页已实现）
 - **M3**：合并（已实现，支持 OFD / PDF 混合与顺序调整）/ 拆分与插页（已实现）
-- **1.1.4**：设置页重新设计（文件关联状态分组、行内确认、版本与更新入口、最近文件清理）；更新源切换到 CNB Release，版本清单与安装包均从 CNB 下载
+- **1.1.4**：设置页重新设计（文件关联状态分组、行内确认、版本与更新入口、最近文件清理）；更新源切换到 CNB Release，版本清单与安装包均从 CNB 下载；官网上线 <https://adou.grout.cn/>
 - **1.1.3**：更新下载链路兼容 CNB Release 镜像，为后续国内下载加速做准备；GitHub 构建产物同步发布到 CNB Release
 - **1.1.2**：安装器“文件关联”和“桌面快捷方式”在新安装与升级时默认勾选；更新包校验后可点击“运行安装包”启动升级
 - **1.1.1**：修复只读 OFD 合并、非 ISO 附件日期导致 PDF 转换失败、组合对象签章偏移；合并 PDF 新增自动/矢量/图像三档；新增关于页检查更新与应用内下载 + SHA256 校验

@@ -7,6 +7,7 @@
 | 日期 | 2026-11-04 |
 | 阶段 | 1.1.4：设置页视觉与交互重构；更新源切换到 CNB Release（版本清单与安装包均从 CNB 下载） |
 | 形态 | Windows 桌面软件（Electron 壳 + Java 本地引擎），后续扩展 macOS |
+| 官网 | <https://adou.grout.cn/>（EdgeOne Pages，源码在 `site/`） |
 | 许可 | 应用免费；第三方依赖许可见 §11 |
 
 ---
@@ -503,7 +504,14 @@ DocumentHandle {
 - Inno 安装任务实测：勾选关联后写入 `AdouOFD.OFD`/`AdouOFD.PDF`/`AdouOFD.MD` 与对应 ICO；取消关联升级后注册项清理；应用启动不自动回写；静默卸载后无残留；原有 WPS `.ofd` 默认未被覆盖。
 - 代码签名：曾申请 SignPath Foundation 免费开源签名，2026-11-03 未获批准（对方要求项目已有较高社区知名度）。已确认当前阶段不做代码签名、不采购证书；发布包保持未签名（SmartScreen 会提示“未知发布者”），通过 SHA256 校验完整性。
 - 安装包进一步瘦身（目标 <150MB，可评估 7z 字典/UPX/裁剪 Electron 语言包）。
-- 自动更新源与回滚策略（M4 评估）。
+- 自动安装与回滚策略（M4 评估）；更新源已切到 CNB Release。
+
+### 7.4 产品主页与更新源
+
+- 官网源码在 `site/`，零依赖静态站，部署于 EdgeOne Pages：<https://adou.grout.cn/>；EdgeOne 构建根目录 `./`、输出目录 `site`。
+- 更新检查读取 CNB Release 固定 `update` tag 的 `stable.json`；安装包从对应版本 Release 下载，并在本地校验 SHA256。MinIO 仅保留可选的 1.1.3 过渡清单，不再承载安装包。
+- GitHub Actions 构建后同时发布 GitHub Release 与 CNB Release；`scripts/publish-cnb-release.mjs` 维护版本附件和 `stable.json`。
+- 主页下载按钮指向当前版本 CNB Release；版本号、更新日志和截图随发版手动同步，避免重复构建。
 
 ---
 

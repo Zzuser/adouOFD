@@ -17,6 +17,16 @@ npm run backend:build
 npm run dev
 ```
 
+## Website
+
+The product homepage is a zero-dependency static site in `site/`. Preview it locally:
+
+```powershell
+python -m http.server 8080 --directory site
+```
+
+Deployment settings and the release checklist are in [docs/SITE.md](docs/SITE.md).
+
 ## Checks before a pull request
 
 ```powershell

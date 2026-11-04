@@ -7,6 +7,7 @@
 - Added a recent-files summary with a clear action.
 - Update checks now use a CNB Release-hosted manifest (`https://cnb.cool/Zzuser/adouOFD/-/releases/download/update/stable.json`), and installers are downloaded from the same CNB Release. MinIO is no longer used for update hosting.
 - The release pipeline now publishes the fixed `update` manifest alongside each version release.
+- Published the project homepage at https://adou.grout.cn/ (EdgeOne Pages); downloads and in-app updates use CNB Release.
 
 ## 1.1.3 — 2026-11-04
 

@@ -1,5 +1,11 @@
 # Support
 
+## Website
+
+- Product homepage: https://adou.grout.cn/
+- Downloads: https://adou.grout.cn/#download
+- Source: https://github.com/Zzuser/adouOFD (mirrors: https://gitcode.com/Zzuser/adouOFD and https://cnb.cool/Zzuser/adouOFD)
+
 ## Documentation
 
 - README: overview, build and usage

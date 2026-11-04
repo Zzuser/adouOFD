@@ -1,15 +1,16 @@
 # Privacy Policy / 隐私政策
 
 **Project:** 阿豆OFD (ADou OFD)  
-**Effective date:** 2026-11-04
+**Effective date:** 2026-11-04  
 **Maintainer:** Zzuser  
-**Contact:** https://github.com/Zzuser/adouOFD/issues
+**Contact:** https://github.com/Zzuser/adouOFD/issues  
+**Website:** https://adou.grout.cn/ (static homepage; the site itself uses no analytics or cookies)
 
 ## English
 
 ### 1. Summary
 
-阿豆OFD is a free, offline Windows desktop application for reading, searching, converting and merging OFD and PDF documents. The application does not require an account and does not collect telemetry, analytics, advertising identifiers, or document content.
+阿豆OFD is a free, offline Windows desktop application for reading, searching, converting and merging OFD and PDF documents. The application does not require an account and does not collect telemetry, analytics, advertising identifiers, or document content. The project homepage is a static site and does not use analytics or cookies.
 
 ### 2. Document processing
 
@@ -60,7 +61,7 @@ Questions or privacy concerns: open an issue at https://github.com/Zzuser/adouOF
 
 ### 1. 概述
 
-阿豆OFD 是一款免费的离线 Windows 桌面应用，用于读取、搜索、转换和合并 OFD / PDF 文档。应用不要求注册账号，不收集遥测、分析数据、广告标识或文档内容。
+阿豆OFD 是一款免费的离线 Windows 桌面应用，用于读取、搜索、转换和合并 OFD / PDF 文档。应用不要求注册账号，不收集遥测、分析数据、广告标识或文档内容。项目主页为静态站，不使用分析工具或 Cookie。
 
 ### 2. 文档处理
 
