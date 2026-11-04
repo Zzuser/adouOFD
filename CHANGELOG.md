@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 — 2026-11-04
+
+- File association and desktop shortcut tasks now default to checked for both fresh installs and upgrades; previous task selections are no longer reused (`UsePreviousTasks=no`).
+- After an update package downloads and passes SHA256 verification, About now offers “运行安装包” to start the upgrade; the installer can close the running app and install in place. Automation still requires an explicit user click.
+
 ## 1.1.1 — 2026-11-04
 
 - Fixed OFD rendering and PDF export for composite objects that omit CTM: content is now translated to its Boundary origin, so 12306 train-ticket invoice seals are horizontally centered instead of being drawn at the page's top-left corner.

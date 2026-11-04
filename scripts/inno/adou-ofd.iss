@@ -25,7 +25,7 @@ DefaultDirName={localappdata}\Programs\阿豆OFD
 DefaultGroupName=阿豆OFD
 DisableProgramGroupPage=yes
 UsePreviousAppDir=yes
-UsePreviousTasks=yes
+UsePreviousTasks=no
 UsePreviousLanguage=yes
 PrivilegesRequired=lowest
 OutputDir={#OutputDir}
@@ -54,8 +54,9 @@ VersionInfoProductVersion={#AppVersion}
 Name: "chinesesimplified"; MessagesFile: "{#RepoRoot}\scripts\inno\ChineseSimplified.isl"
 
 [Tasks]
-Name: "associate"; Description: "关联 .ofd / .pdf / .md 文件类型（加入“打开方式”，不覆盖现有默认应用）"; GroupDescription: "文件关联："; Flags: checkedonce
-Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："; Flags: checkedonce
+; 默认勾选：新安装与升级都生效（UsePreviousTasks=no）
+Name: "associate"; Description: "关联 .ofd / .pdf / .md 文件类型（加入“打开方式”，不覆盖现有默认应用）"; GroupDescription: "文件关联："
+Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

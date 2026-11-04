@@ -13,7 +13,7 @@ import {
   writeTextFile
 } from './text-files'
 import { exportTextPdf } from './text-pdf'
-import { cancelUpdateDownload, checkForUpdate, downloadUpdate } from './update'
+import { cancelUpdateDownload, checkForUpdate, downloadUpdate, installDownloadedUpdate } from './update'
 import {
   addRecentFile,
   clearRecentFiles,
@@ -412,6 +412,7 @@ function registerIpc(): void {
   ipcMain.handle('update:check', () => checkForUpdate())
   ipcMain.handle('update:download', (event, payload: unknown) => downloadUpdate(payload, event.sender))
   ipcMain.handle('update:cancel', () => cancelUpdateDownload())
+  ipcMain.handle('update:install', (_event, rawPath: unknown) => installDownloadedUpdate(rawPath))
 
   ipcMain.handle('app:open-external', async (_event, rawUrl: unknown) => {
     if (typeof rawUrl !== 'string') return

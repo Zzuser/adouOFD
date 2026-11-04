@@ -459,6 +459,7 @@ export interface AdouApi {
   checkUpdate(): Promise<UpdateCheckResult>
   downloadUpdate(download: UpdateDownload): Promise<UpdateDownloadResult>
   cancelUpdateDownload(): Promise<void>
+  installUpdate(path: string): Promise<UpdateDownloadResult>
   onUpdateProgress(callback: (progress: UpdateProgress) => void): () => void
   takePendingFiles(): Promise<string[]>
   onOpenFiles(callback: () => void): () => void

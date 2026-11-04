@@ -30,6 +30,7 @@ const api: AdouApi = {
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: (download) => ipcRenderer.invoke('update:download', download),
   cancelUpdateDownload: () => ipcRenderer.invoke('update:cancel'),
+  installUpdate: (path) => ipcRenderer.invoke('update:install', path),
   onUpdateProgress: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, progress: UpdateProgress): void =>
       callback(progress)

@@ -1,4 +1,4 @@
-import { app, net, type WebContents } from 'electron'
+import { app, net, shell, type WebContents } from 'electron'
 import { createHash } from 'node:crypto'
 import { createWriteStream, existsSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
@@ -24,6 +24,7 @@ const MAX_DOWNLOAD_BYTES = 1024 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 15_000
 
 let activeDownload: AbortController | null = null
+let lastDownloadedPath: string | null = null
 
 export async function checkForUpdate(): Promise<UpdateCheckResult> {
   const currentVersion = app.getVersion()
@@ -82,6 +83,7 @@ export async function downloadUpdate(
   }
   const controller = new AbortController()
   activeDownload = controller
+  lastDownloadedPath = null
   let tempPath: string | null = null
   try {
     const directory = app.getPath('downloads')
@@ -145,6 +147,7 @@ export async function downloadUpdate(
     }
     await fs.rename(tempPath, target)
     tempPath = null
+    lastDownloadedPath = target
     reportProgress(sender, { received, total: download.size })
     return { ok: true, path: target }
   } catch (error) {
@@ -162,6 +165,24 @@ export async function downloadUpdate(
 
 export function cancelUpdateDownload(): void {
   activeDownload?.abort()
+}
+
+/**
+ * 运行已下载并通过 SHA256 校验的安装包。
+ * 只允许本次会话实际下载成功的路径，避免渲染进程执行任意文件。
+ */
+export async function installDownloadedUpdate(rawPath: unknown): Promise<UpdateDownloadResult> {
+  if (typeof rawPath !== 'string' || !lastDownloadedPath || rawPath !== lastDownloadedPath) {
+    return { ok: false, error: '安装包路径无效，请重新下载' }
+  }
+  if (!existsSync(rawPath)) {
+    return { ok: false, error: '安装包不存在，请重新下载' }
+  }
+  const error = await shell.openPath(rawPath)
+  if (error) {
+    return { ok: false, error: `无法启动安装包：${error}` }
+  }
+  return { ok: true, path: rawPath }
 }
 
 function validateDownload(raw: unknown): UpdateDownload | null {

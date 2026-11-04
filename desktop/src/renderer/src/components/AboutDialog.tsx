@@ -41,6 +41,8 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [updateProgress, setUpdateProgress] = useState<UpdateProgress | null>(null)
   const [downloadedPath, setDownloadedPath] = useState<string | null>(null)
+  const [installError, setInstallError] = useState<string | null>(null)
+  const [installStarted, setInstallStarted] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -84,6 +86,8 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
     setUpdateError(null)
     setUpdateProgress(null)
     setDownloadedPath(null)
+    setInstallError(null)
+    setInstallStarted(false)
     try {
       const result = await window.adou.checkUpdate()
       setUpdateResult(result)
@@ -106,6 +110,8 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
     if (!download) return
     setUpdateState('downloading')
     setUpdateError(null)
+    setInstallError(null)
+    setInstallStarted(false)
     setUpdateProgress({ received: 0, total: download.size })
     try {
       const result = await window.adou.downloadUpdate(download)
@@ -119,6 +125,21 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
     } catch (reason) {
       setUpdateError(messageOf(reason))
       setUpdateState('error')
+    }
+  }
+
+  const runUpdateInstaller = async (): Promise<void> => {
+    if (!downloadedPath) return
+    setInstallError(null)
+    try {
+      const result = await window.adou.installUpdate(downloadedPath)
+      if (result.ok) {
+        setInstallStarted(true)
+      } else {
+        setInstallError(result.error ?? '无法启动安装包')
+      }
+    } catch (reason) {
+      setInstallError(messageOf(reason))
     }
   }
 
@@ -246,6 +267,13 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
               <p className="about-update-path" title={downloadedPath}>{downloadedPath}</p>
               <div className="about-update-actions">
                 <button
+                  className="btn primary small"
+                  data-action="install-update"
+                  onClick={() => void runUpdateInstaller()}
+                >
+                  运行安装包
+                </button>
+                <button
                   className="btn ghost small"
                   data-action="reveal-update"
                   onClick={() => void window.adou.revealPath(downloadedPath)}
@@ -253,6 +281,12 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
                   打开所在文件夹
                 </button>
               </div>
+              {installStarted ? (
+                <p className="about-update-ok">
+                  安装程序已启动，请按向导完成升级；安装过程可能会关闭当前应用。
+                </p>
+              ) : null}
+              {installError ? <p className="about-update-error">{installError}</p> : null}
             </div>
           ) : null}
 

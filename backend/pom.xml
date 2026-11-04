@@ -6,7 +6,7 @@
 
     <groupId>com.adou</groupId>
     <artifactId>adou-ofd-backend</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <name>adou-ofd-backend</name>
     <description>阿豆OFD 本地 Java 引擎（Javalin + ofdrw + PDFBox）</description>
     <url>https://gitcode.com/Zzuser/adouOFD</url>
