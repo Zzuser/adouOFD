@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   AppVersions,
   BackendInfo,
@@ -23,6 +23,7 @@ function formatBytes(value: number): string {
 
 interface AboutDialogProps {
   open: boolean
+  autoCheck?: boolean
   onClose: () => void
   backend: BackendInfo
   health: EngineHealth | null
@@ -32,7 +33,8 @@ interface AboutDialogProps {
 type NoticeView = 'thirdParty' | 'license' | 'privacy'
 type UpdateState = 'idle' | 'checking' | 'latest' | 'available' | 'downloading' | 'done' | 'error'
 
-export function AboutDialog({ open, onClose, backend, health, versions }: AboutDialogProps) {
+export function AboutDialog({ open, autoCheck = false, onClose, backend, health, versions }: AboutDialogProps) {
+  const autoChecked = useRef(false)
   const [notices, setNotices] = useState<LegalNotices | null>(null)
   const [noticeView, setNoticeView] = useState<NoticeView | null>(null)
   const [noticesError, setNoticesError] = useState<string | null>(null)
@@ -104,6 +106,16 @@ export function AboutDialog({ open, onClose, backend, health, versions }: AboutD
       setUpdateState('error')
     }
   }
+
+  useEffect(() => {
+    if (!open) {
+      autoChecked.current = false
+      return
+    }
+    if (!autoCheck || autoChecked.current) return
+    autoChecked.current = true
+    void runUpdateCheck()
+  }, [open, autoCheck])
 
   const startUpdateDownload = async (): Promise<void> => {
     const download = updateResult?.download

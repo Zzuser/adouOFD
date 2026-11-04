@@ -16,9 +16,9 @@ import type {
   UpdateProgress
 } from '../shared/types'
 
-const DEFAULT_MANIFEST_URL = 'https://minio.grout.cn/adou-ofd/updates/stable.json'
+const DEFAULT_MANIFEST_URL = 'https://cnb.cool/Zzuser/adouOFD/-/releases/download/update/stable.json'
 const MANIFEST_URL = process.env.ADOU_UPDATE_URL?.trim() || DEFAULT_MANIFEST_URL
-// CNB Release 下载地址会 302 到 asset.cnb.cool，最终域名也要放行
+// CNB Release 下载地址会 302 到 asset.cnb.cool；MinIO 域名保留用于旧清单过渡。
 const ALLOWED_HOSTS = new Set([
   'minio.grout.cn',
   'testminio.grout.cn',

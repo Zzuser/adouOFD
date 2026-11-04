@@ -25,7 +25,7 @@
 - Reading, searching, converting and merging do not require network access.
 - Encrypted PDF passwords are used only to open the document in memory; they are not stored on disk, written to logs, or sent anywhere except the local engine.
 - The application does not implement accounts, cloud sync, remote logging, telemetry, advertising, or background/automatic update checks.
-- When the user activates “Check for updates” in About, the app requests a version manifest over HTTPS from `minio.grout.cn` (test builds may use `testminio.grout.cn`). The request contains no document content, file paths, account identifiers, or telemetry. If the user chooses to download, the installer is saved to the Downloads folder and verified against the SHA256 value in the manifest before it is reported as complete.
+- When the user activates “Check for updates” in About, the app requests a version manifest over HTTPS from `cnb.cool` (release assets may redirect to `asset.cnb.cool`). The request contains no document content, file paths, account identifiers, or telemetry. If the user chooses to download, the installer is fetched from the same CNB Release and saved to the Downloads folder and verified against the SHA256 value in the manifest before it is reported as complete.
 - External links (for example, the GitHub repository or the Windows default-apps settings page) open only when the user activates them.
 
 ### 4. Local data
@@ -75,7 +75,7 @@ Questions or privacy concerns: open an issue at https://github.com/Zzuser/adouOF
 
 - 阅读、搜索、转换和合并不需要联网。
 - 应用不包含账号、云同步、远程日志、遥测、广告或后台/自动更新检查。
-- 用户主动点击“关于 → 检查更新”时，应用通过 HTTPS 从 `minio.grout.cn`（测试构建可能为 `testminio.grout.cn`）读取版本清单；请求不包含文档内容、文件路径、账号标识或遥测数据。用户选择下载后，安装包保存到“下载”目录，并按清单中的 SHA256 校验通过后才会提示下载完成。
+- 用户主动点击“关于 → 检查更新”时，应用通过 HTTPS 从 `cnb.cool`（Release 附件可能重定向到 `asset.cnb.cool`）读取版本清单；请求不包含文档内容、文件路径、账号标识或遥测数据。用户选择下载后，安装包保存到“下载”目录，并按清单中的 SHA256 校验通过后才会提示下载完成。
 - 只有用户主动点击外部链接（如 GitHub 仓库、Windows 默认应用设置）时才会打开对应页面。
 
 ### 4. 本地数据

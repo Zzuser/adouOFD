@@ -3,9 +3,9 @@
 | 项目 | 内容 |
 | --- | --- |
 | 产品名称 | 阿豆OFD（ADou OFD） |
-| 文档版本 | v1.1.3（Javalin 6 本地引擎；OFD/PDF 阅读与处理 + Markdown/文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF + 检查更新与应用内升级） |
+| 文档版本 | v1.1.4（Javalin 6 本地引擎；OFD/PDF 阅读与处理 + Markdown/文本编辑 + 页面旋转 + 最近文件 + 文档属性 + 加密 PDF + 检查更新与应用内升级） |
 | 日期 | 2026-11-04 |
-| 阶段 | 1.1.3：更新下载链路兼容 CNB Release 镜像；GitHub 构建产物同步发布到 GitHub 与 CNB Release |
+| 阶段 | 1.1.4：设置页视觉与交互重构；更新源切换到 CNB Release（版本清单与安装包均从 CNB 下载） |
 | 形态 | Windows 桌面软件（Electron 壳 + Java 本地引擎），后续扩展 macOS |
 | 许可 | 应用免费；第三方依赖许可见 §11 |
 

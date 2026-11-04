@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.4 — 2026-11-04
+
+- Redesigned the Settings page: Windows file associations now show per-extension status chips, actions are split into primary / secondary / destructive, and removing associations or clearing recent files uses inline confirmation instead of a native dialog. Added loading skeletons, busy states, and success / error feedback.
+- Added a “Version & updates” card to Settings with the current version, update source, and a one-click update check; the About dialog opens and starts checking automatically.
+- Added a recent-files summary with a clear action.
+- Update checks now use a CNB Release-hosted manifest (`https://cnb.cool/Zzuser/adouOFD/-/releases/download/update/stable.json`), and installers are downloaded from the same CNB Release. MinIO is no longer used for update hosting.
+- The release pipeline now publishes the fixed `update` manifest alongside each version release.
+
 ## 1.1.3 — 2026-11-04
 
 - Update downloads now accept CNB Release as a source (`cnb.cool` and the `asset.cnb.cool` redirect host), preparing a domestic mirror for a later switch; the production manifest still uses MinIO in this release. No UI or feature changes.

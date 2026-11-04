@@ -73,6 +73,7 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [aboutAutoCheck, setAboutAutoCheck] = useState(false)
   const [convertOpen, setConvertOpen] = useState(false)
   const [view, setView] = useState<AppView>('viewer')
   const [printTarget, setPrintTarget] = useState<PrintTarget | null>(null)
@@ -408,12 +409,14 @@ export default function App() {
     if (list) setRecentFiles(list)
   }, [])
 
-  const clearRecent = useCallback(async () => {
+  const clearRecent = useCallback(async (): Promise<boolean> => {
     try {
       await window.adou.clearRecentFiles()
       setRecentFiles([])
+      return true
     } catch {
       // 最近文件清空失败不阻塞主流程
+      return false
     }
   }, [])
 
@@ -634,7 +637,7 @@ export default function App() {
                       : view === 'pages'
                         ? '按页或区间拆分文档，也可把另一个文档的页面插入到指定位置；文件只在本机处理。'
                         : view === 'settings'
-                          ? 'Windows 文件关联、默认应用与本地数据说明。'
+                          ? '文件关联、本地数据与版本更新。'
                           : '阅读与编辑本地 OFD / PDF / Markdown / 文本文档。'}
                 </span>
               </div>
@@ -696,7 +699,14 @@ export default function App() {
           </div>
 
           <div className="pane" hidden={view !== 'settings'}>
-            <SettingsPage />
+            <SettingsPage
+              recentCount={recentFiles.length}
+              onClearRecent={clearRecent}
+              onCheckUpdate={() => {
+                setAboutAutoCheck(true)
+                setAboutOpen(true)
+              }}
+            />
           </div>
 
           <div className="pane viewer-stack" hidden={view !== 'viewer'}>
@@ -751,7 +761,11 @@ export default function App() {
 
       <AboutDialog
         open={aboutOpen}
-        onClose={() => setAboutOpen(false)}
+        autoCheck={aboutAutoCheck}
+        onClose={() => {
+          setAboutOpen(false)
+          setAboutAutoCheck(false)
+        }}
         backend={backend}
         health={health}
         versions={versions}
