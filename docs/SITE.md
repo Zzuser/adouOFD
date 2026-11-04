@@ -22,6 +22,8 @@ site/
 ├─ 404.html            自定义 404
 ├─ styles.css
 ├─ script.js           仅移动端菜单收起
+├─ robots.txt          Allow + Sitemap
+├─ sitemap.xml         首页 / 更新日志 / 隐私
 └─ assets/
    ├─ brand-mark.png
    ├─ mascot-empty.webp
@@ -48,6 +50,16 @@ site/
 - 中国大陆加速要求 `grout.cn` 已备案；DNS 记录线路类型用“默认”
 - 自定义 404 已指向 `404.html`
 
+## SEO
+
+- `robots.txt` 允许全站抓取并声明 sitemap；`sitemap.xml` 更新 `lastmod` 后重新提交。
+- 首页包含 `SoftwareApplication`、`WebSite`、`FAQPage` JSON-LD；FAQ 文案必须与页面可见内容一致。
+- 截图用 WebP（`assets/screenshots/*.webp`），`og.png` 保留 PNG 供社交分享。
+- 免费提交入口：百度搜索资源平台、Google Search Console、Bing Webmaster Tools、360 站长平台、搜狗站长平台、神马搜索。验证文件放 `site/` 根目录后部署。
+- 内容页是最大的免费 SEO 杠杆：优先补“OFD 文件怎么打开”“OFD 转 PDF”“电子发票合并打印”“Markdown 转 PDF”等长尾页，每页独立 title/description、H1、FAQ 和内部链接。
+- 外链：GitHub/GitCode/CNB 项目页、软件站投稿、V2EX/知乎/B 站真实分享；不做买排名、采集互链和关键词堆砌。
+- 可选 IndexNow：放 key 文件到根目录，发布后 ping `api.indexnow.org`（Bing/Yandex/Naver，百度不支持）。
+
 ## 发版检查清单
 
 1. 更新 `site/index.html` 的版本号、安装包大小、CNB Release tag、SHA256 链接
@@ -55,8 +67,9 @@ site/
 3. 用当前版本重截关键 UI 截图，替换 `site/assets/screenshots/`
 4. 更新 `site/assets/og.png`（可从最新 `viewer.png` 裁 1200×630）
 5. 本地预览并检查手机宽度，确认无控制台错误和坏链接
-6. 推送 `main`，EdgeOne 自动部署；确认 `https://adou.grout.cn/` 与默认域名一致
-7. 确认下载按钮指向当前 CNB Release，SHA256 文件可访问
+6. 更新 `site/sitemap.xml` 的 `lastmod`，推送 `main`，EdgeOne 自动部署
+7. 确认 `https://adou.grout.cn/`、`/robots.txt`、`/sitemap.xml` 均返回 200
+8. 确认下载按钮指向当前 CNB Release，SHA256 文件可访问；在搜索后台重新提交 sitemap
 
 ## 注意
 

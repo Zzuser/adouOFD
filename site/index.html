@@ -8,9 +8,15 @@
   <meta name="theme-color" content="#f6f2e7">
   <!-- 更改部署域名时，同步更新 canonical、og:url、og:image 和 JSON-LD。 -->
   <link rel="canonical" href="https://adou.grout.cn/">
+  <link rel="alternate" hreflang="zh-CN" href="https://adou.grout.cn/">
+  <link rel="alternate" hreflang="x-default" href="https://adou.grout.cn/">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="author" content="Zzuser">
+  <meta property="og:locale" content="zh_CN">
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="preload" as="image" href="assets/screenshots/viewer.webp" type="image/webp">
   <link rel="stylesheet" href="styles.css">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="阿豆OFD">
@@ -24,18 +30,81 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "阿豆OFD",
-    "alternateName": "ADou OFD",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "Windows 10, Windows 11",
-    "softwareVersion": "1.1.4",
-    "inLanguage": "zh-CN",
-    "isAccessibleForFree": true,
-    "license": "https://github.com/Zzuser/adouOFD/blob/main/LICENSE",
-    "downloadUrl": "https://cnb.cool/Zzuser/adouOFD/-/releases/tag/v1.1.4",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
-    "description": "免费、离线的 OFD / PDF / Markdown 阅读与处理工具。"
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://adou.grout.cn/#app",
+        "name": "阿豆OFD",
+        "alternateName": "ADou OFD",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Windows 10, Windows 11",
+        "softwareVersion": "1.1.4",
+        "inLanguage": "zh-CN",
+        "isAccessibleForFree": true,
+        "license": "https://github.com/Zzuser/adouOFD/blob/main/LICENSE",
+        "downloadUrl": "https://cnb.cool/Zzuser/adouOFD/-/releases/tag/v1.1.4",
+        "releaseNotes": "https://adou.grout.cn/changelog.html",
+        "screenshot": "https://adou.grout.cn/assets/screenshots/viewer.webp",
+        "softwareRequirements": "Windows 10 / 11 x64",
+        "featureList": [
+          "OFD / PDF 阅读与文字选择",
+          "OFD 与 PDF 转换",
+          "文档合并",
+          "拆分与插页",
+          "打印与排版",
+          "Markdown 编辑与导出 PDF",
+          "全文搜索"
+        ],
+        "author": { "@type": "Person", "name": "Zzuser" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+        "description": "免费、离线的 OFD / PDF / Markdown 阅读与处理工具。"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://adou.grout.cn/#website",
+        "url": "https://adou.grout.cn/",
+        "name": "阿豆OFD",
+        "description": "免费、离线的 OFD / PDF / Markdown 阅读与处理工具。",
+        "inLanguage": "zh-CN",
+        "publisher": { "@type": "Person", "name": "Zzuser" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://adou.grout.cn/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "免费吗？",
+            "acceptedAnswer": { "@type": "Answer", "text": "免费使用，源码以 MIT 许可开源。没有账号、订阅或使用次数限制。" }
+          },
+          {
+            "@type": "Question",
+            "name": "会上传我的文档吗？",
+            "acceptedAnswer": { "@type": "Answer", "text": "不会。阅读、转换、合并、拆分、打印和搜索都在本机完成；只有你主动点击“检查更新”时才会请求版本清单，请求不包含文档内容、文件路径或账号信息。" }
+          },
+          {
+            "@type": "Question",
+            "name": "支持哪些 Windows 版本？",
+            "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 / 11 x64。安装包内含精简 JRE 25，不需要另外安装 Java。" }
+          },
+          {
+            "@type": "Question",
+            "name": "为什么 SmartScreen 提示“未知发布者”？",
+            "acceptedAnswer": { "@type": "Answer", "text": "安装包未做代码签名。请从 CNB 或 GitHub 发布页下载，并核对发布页提供的 SHA256；应用内下载也会自动校验。" }
+          },
+          {
+            "@type": "Question",
+            "name": "如何更新？",
+            "acceptedAnswer": { "@type": "Answer", "text": "打开“设置 → 版本与更新”或“关于 → 版本更新”，点击检查更新；下载完成并通过 SHA256 校验后，点击“运行安装包”即可覆盖升级。" }
+          },
+          {
+            "@type": "Question",
+            "name": "源码和问题反馈在哪里？",
+            "acceptedAnswer": { "@type": "Answer", "text": "主仓库在 GitHub（https://github.com/Zzuser/adouOFD），国内镜像在 GitCode（https://gitcode.com/Zzuser/adouOFD），发布与更新在 CNB（https://cnb.cool/Zzuser/adouOFD）。请勿在公开 Issue 中上传真实发票、合同或其他敏感文档。" }
+          }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -91,7 +160,7 @@
         <div class="hero-glow"></div>
         <img class="hero-mascot" src="assets/mascot-empty.webp" alt="" width="640" height="723">
         <figure class="hero-shot">
-          <img src="assets/screenshots/viewer.png" alt="" width="1264" height="781">
+          <img src="assets/screenshots/viewer.webp" alt="" width="1264" height="781" fetchpriority="high">
         </figure>
       </div>
     </div>
@@ -166,38 +235,38 @@
       </header>
       <div class="shots">
         <figure class="shot span-2">
-          <a href="assets/screenshots/viewer.png" target="_blank" rel="noreferrer" aria-label="查看大图：OFD 阅读与文字选择">
-            <img src="assets/screenshots/viewer.png" alt="阿豆OFD 阅读 OFD 文档，支持文字选择和缩略图" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/viewer.webp" target="_blank" rel="noreferrer" aria-label="查看大图：OFD 阅读与文字选择">
+            <img src="assets/screenshots/viewer.webp" alt="阿豆OFD 阅读 OFD 文档，支持文字选择和缩略图" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>OFD / PDF 阅读与文字选择</figcaption>
         </figure>
         <figure class="shot">
-          <a href="assets/screenshots/markdown-split.png" target="_blank" rel="noreferrer" aria-label="查看大图：Markdown 分栏编辑">
-            <img src="assets/screenshots/markdown-split.png" alt="Markdown 分栏编辑与预览" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/markdown-split.webp" target="_blank" rel="noreferrer" aria-label="查看大图：Markdown 分栏编辑">
+            <img src="assets/screenshots/markdown-split.webp" alt="Markdown 分栏编辑与预览" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>Markdown 分栏编辑与 PDF 导出</figcaption>
         </figure>
         <figure class="shot">
-          <a href="assets/screenshots/batch.png" target="_blank" rel="noreferrer" aria-label="查看大图：批量转换">
-            <img src="assets/screenshots/batch.png" alt="批量转换多个 OFD / PDF 文件" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/batch.webp" target="_blank" rel="noreferrer" aria-label="查看大图：批量转换">
+            <img src="assets/screenshots/batch.webp" alt="批量转换多个 OFD / PDF 文件" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>批量转换与进度</figcaption>
         </figure>
         <figure class="shot">
-          <a href="assets/screenshots/merge.png" target="_blank" rel="noreferrer" aria-label="查看大图：合并文档">
-            <img src="assets/screenshots/merge.png" alt="按列表顺序合并多个 OFD / PDF 文档" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/merge.webp" target="_blank" rel="noreferrer" aria-label="查看大图：合并文档">
+            <img src="assets/screenshots/merge.webp" alt="按列表顺序合并多个 OFD / PDF 文档" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>合并文档与结果</figcaption>
         </figure>
         <figure class="shot">
-          <a href="assets/screenshots/print-dialog.png" target="_blank" rel="noreferrer" aria-label="查看大图：打印面板">
-            <img src="assets/screenshots/print-dialog.png" alt="打印面板：纸张、范围、N-up 与预览" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/print-dialog.webp" target="_blank" rel="noreferrer" aria-label="查看大图：打印面板">
+            <img src="assets/screenshots/print-dialog.webp" alt="打印面板：纸张、范围、N-up 与预览" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>打印面板与实时预览</figcaption>
         </figure>
         <figure class="shot span-2">
-          <a href="assets/screenshots/settings.png" target="_blank" rel="noreferrer" aria-label="查看大图：设置页">
-            <img src="assets/screenshots/settings.png" alt="设置页：文件关联、本地隐私与版本更新" width="1264" height="781" loading="lazy">
+          <a href="assets/screenshots/settings.webp" target="_blank" rel="noreferrer" aria-label="查看大图：设置页">
+            <img src="assets/screenshots/settings.webp" alt="设置页：文件关联、本地隐私与版本更新" width="1264" height="781" loading="lazy">
           </a>
           <figcaption>设置：文件关联、本地隐私与版本更新</figcaption>
         </figure>
