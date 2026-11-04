@@ -1,5 +1,6 @@
 package com.adou.ofd.convert;
 
+import com.adou.ofd.render.OfdCompositePlacement;
 import com.adou.ofd.web.ApiException;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
@@ -70,6 +71,9 @@ public class ConversionEngine {
     private static final int MAX_REPORTED_FONTS = 5;
     private static final double MM_TO_PT = 72.0 / 25.4;
     private static final int IMAGE_FALLBACK_DPI = 150;
+    private static final int SIZE_FALLBACK_DPI = 200;
+    private static final long MAX_VECTOR_PDF_BYTES = 32L * 1024 * 1024;
+    private static final long MAX_VECTOR_PDF_BYTES_PER_PAGE = 24L * 1024 * 1024;
     private static final int MAX_SAMPLE_CHARS = 20_000;
     /**
      * 分片策略（依据 2026-11-02 实测，2GB 堆）：
@@ -146,6 +150,44 @@ public class ConversionEngine {
     }
 
     /**
+     * 合并任务专用：矢量结果体积异常时回退为图像 PDF。
+     *
+     * <p>12306 客票每页会完整嵌入多套中文字体，矢量 PDF 可达 50MB/页；
+     * 合并多张票时体积会线性膨胀。这里只在“合并为 PDF”时启用回退，
+     * 单文件转换仍保持文字可选中，避免无预期的质量降级。
+     */
+    public ExportMode ofdToPdfForMerge(Path source, Path output, Progress progress) throws IOException {
+        ExportMode mode = ofdToPdf(source, output, progress);
+        if (mode != ExportMode.VECTOR) {
+            return mode;
+        }
+        int pages = Math.max(1, probe(source).pages());
+        long bytes = Files.size(output);
+        if (!isOversizedVectorPdf(bytes, pages)) {
+            return mode;
+        }
+        log.info("OFD→PDF 矢量结果过大（{} MB / {} 页），合并时改用 {} DPI 图像导出: {}",
+                bytes / (1024 * 1024), pages, SIZE_FALLBACK_DPI, source.getFileName());
+        progress.update(PROGRESS_START + PROGRESS_SPAN, "矢量 PDF 体积过大，正在按图像重新导出");
+        Files.deleteIfExists(output);
+        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI);
+        return ExportMode.IMAGE;
+    }
+
+    static boolean isOversizedVectorPdf(long bytes, int pages) {
+        return bytes > MAX_VECTOR_PDF_BYTES
+                && bytes / Math.max(1, pages) > MAX_VECTOR_PDF_BYTES_PER_PAGE;
+    }
+
+    /**
+     * 合并任务显式选择“小体积”时使用：直接按图像写入 PDF。
+     */
+    public ExportMode ofdToPdfImageForMerge(Path source, Path output, Progress progress) throws IOException {
+        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI);
+        return ExportMode.IMAGE;
+    }
+
+    /**
      * ofdrw 在 TTC 字体集合里只认 PS 名（如 MicrosoftYaHei），中文族名（微软雅黑）查不到字形，
      * 会导致 PDFBox 导出静默退回 Helvetica、中文全部丢失。这里把系统字体族名映射到 PS 名。
      */
@@ -191,6 +233,7 @@ public class ConversionEngine {
     private void exportOfdToPdfVector(Path source, Path output, Progress progress) throws IOException {
         try (OFDReader reader = new OFDReader(source);
              PDDocument document = new PDDocument()) {
+            OfdCompositePlacement.normalize(reader);
             PdfboxMaker maker = new PdfboxMaker(reader, document);
             // ofdrw 的页码接口是 1 起的，这里统一用页面列表避免索引换算
             List<PageInfo> pages = reader.getPageList();
@@ -204,23 +247,34 @@ public class ConversionEngine {
                 report(progress, index + 1, total, "正在转换第 ");
             }
             progress.update(PROGRESS_START + PROGRESS_SPAN, "正在写入 PDF 文件");
-            maker.addAttachments(reader);
+            try {
+                maker.addAttachments(reader);
+            } catch (IOException | RuntimeException ex) {
+                // 部分票据附件日期不是 ISO 格式（如 2026-5-11 11:50:30），
+                // ofdrw 解析失败会中止整份 PDF；附件不是正文，跳过以保证转换成功。
+                log.warn("PDF 附件写入失败，已跳过附件: {}（{}）", source.getFileName(), ex.getMessage());
+            }
             document.save(output.toFile());
         }
+    }
+
+    private void exportOfdToPdfImage(Path source, Path output, Progress progress) throws IOException {
+        exportOfdToPdfImage(source, output, progress, IMAGE_FALLBACK_DPI);
     }
 
     /**
      * 用本机渲染结果生成 PDF：版面 100% 一致，但文字不可选中。
      */
-    private void exportOfdToPdfImage(Path source, Path output, Progress progress) throws IOException {
+    private void exportOfdToPdfImage(Path source, Path output, Progress progress, int dpi) throws IOException {
         try (OFDReader reader = new OFDReader(source);
              PDDocument document = new PDDocument()) {
+            OfdCompositePlacement.normalize(reader);
             List<PageInfo> pages = reader.getPageList();
             int total = pages.size();
             if (total <= 0) {
                 throw new IOException("源文档不包含任何页面");
             }
-            ImageMaker maker = new ImageMaker(reader, IMAGE_FALLBACK_DPI / 25.4);
+            ImageMaker maker = new ImageMaker(reader, dpi / 25.4);
             for (int index = 0; index < total; index++) {
                 checkCanceled(progress);
                 ST_Box box = pages.get(index).getSize();
@@ -691,7 +745,7 @@ public class ConversionEngine {
                 outputPages = document.getNumberOfPages();
                 List<String> fonts = nonEmbeddedFonts(document);
                 if (mode == ExportMode.IMAGE) {
-                    warnings.add("源文件字体无法嵌入 PDF，已按图像保真导出：版面一致，文字不可选中");
+                    warnings.add("已按图像保真导出 PDF：版面一致，文字不可选中");
                 } else if (!fonts.isEmpty()) {
                     warnings.add("部分字体未嵌入，其他阅读器打开时字形可能不同：" + String.join("、", fonts));
                 }

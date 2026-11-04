@@ -242,11 +242,14 @@ export interface MergeJob {
   finishedAt: string | null
 }
 
+export type MergePdfMode = 'AUTO' | 'VECTOR' | 'IMAGE'
+
 export interface MergeStart {
   files: string[]
   target: string
   outputPath: string
   overwrite?: boolean
+  pdfMode?: MergePdfMode
 }
 
 export interface MergeTargetOptions {
@@ -318,6 +321,41 @@ export interface AppVersions {
   electron: string
   chrome: string
   node: string
+}
+
+export interface UpdateDownload {
+  url: string
+  size: number
+  sha256: string
+}
+
+export interface UpdateManifest {
+  version: string
+  channel?: string
+  publishedAt?: string
+  minVersion?: string
+  notesUrl?: string
+  notes: string[]
+  downloads: Record<string, UpdateDownload>
+}
+
+export interface UpdateCheckResult {
+  currentVersion: string
+  updateAvailable: boolean
+  manifest: UpdateManifest | null
+  download: UpdateDownload | null
+  error: string | null
+}
+
+export interface UpdateDownloadResult {
+  ok: boolean
+  path?: string
+  error?: string
+}
+
+export interface UpdateProgress {
+  received: number
+  total: number
 }
 
 export interface WindowsIntegrationStatus {
@@ -418,6 +456,10 @@ export interface AdouApi {
   revealPath(path: string): Promise<void>
   openExternal(url: string): Promise<void>
   getVersions(): Promise<AppVersions>
+  checkUpdate(): Promise<UpdateCheckResult>
+  downloadUpdate(download: UpdateDownload): Promise<UpdateDownloadResult>
+  cancelUpdateDownload(): Promise<void>
+  onUpdateProgress(callback: (progress: UpdateProgress) => void): () => void
   takePendingFiles(): Promise<string[]>
   onOpenFiles(callback: () => void): () => void
   getWindowsIntegration(): Promise<WindowsIntegrationStatus>

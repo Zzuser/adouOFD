@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { BackendInfo, MergeJob } from '@shared/types'
+import type { BackendInfo, MergeJob, MergePdfMode } from '@shared/types'
 import { cancelMerge, fetchMerge, messageOf, probeFiles, startMerge } from '../api'
 import {
   IconAlert,
@@ -75,6 +75,7 @@ function sleep(ms: number): Promise<void> {
 export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageProps) {
   const [items, setItems] = useState<MergeItem[]>([])
   const [target, setTarget] = useState<MergeTarget>('OFD')
+  const [pdfMode, setPdfMode] = useState<MergePdfMode>('AUTO')
   const [outputPath, setOutputPath] = useState('')
   const [running, setRunning] = useState(false)
   const [stopping, setStopping] = useState(false)
@@ -264,7 +265,8 @@ export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageP
         files: currentItems.map((item) => item.path),
         target,
         outputPath,
-        overwrite: true
+        overwrite: true,
+        pdfMode: target === 'PDF' ? pdfMode : undefined
       })
       setJob(current)
       let cancelSent = false
@@ -322,12 +324,13 @@ export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageP
       setRunning(false)
       setStopping(false)
     }
-  }, [backend, outputPath, target])
+  }, [backend, outputPath, target, pdfMode])
 
   const readyItems = items.filter((item) => item.status === 'ready')
   const invalidCount = items.filter((item) => item.status === 'invalid').length
   const probing = items.some((item) => item.status === 'probing')
   const totalPages = readyItems.reduce((sum, item) => sum + item.pages, 0)
+  const hasOfdInput = readyItems.some((item) => item.kind === 'OFD')
   const canStart =
     !running && readyItems.length >= 2 && readyItems.length === items.length && Boolean(outputPath)
   const elapsed =
@@ -394,6 +397,55 @@ export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageP
             PDF
           </button>
         </div>
+        {target === 'PDF' ? (
+          <div
+            className="merge-format"
+            role="group"
+            aria-label="PDF 模式"
+            title={hasOfdInput ? undefined : 'PDF 输入按原样合并；PDF 模式仅影响 OFD 输入'}
+          >
+            <span className="merge-format-label">PDF 模式</span>
+            <button
+              type="button"
+              className={`merge-format-btn ${pdfMode === 'AUTO' ? 'active' : ''}`}
+              data-action="merge-pdf-mode-auto"
+              title="优先矢量；单页异常大时自动转图像"
+              onClick={() => {
+                setPdfMode('AUTO')
+                setJob(null)
+              }}
+              disabled={running || !hasOfdInput}
+            >
+              自动
+            </button>
+            <button
+              type="button"
+              className={`merge-format-btn ${pdfMode === 'VECTOR' ? 'active' : ''}`}
+              data-action="merge-pdf-mode-vector"
+              title="始终矢量，文字可选中，文件可能较大"
+              onClick={() => {
+                setPdfMode('VECTOR')
+                setJob(null)
+              }}
+              disabled={running || !hasOfdInput}
+            >
+              清晰
+            </button>
+            <button
+              type="button"
+              className={`merge-format-btn ${pdfMode === 'IMAGE' ? 'active' : ''}`}
+              data-action="merge-pdf-mode-image"
+              title="按图像导出，文件小，文字不可选中"
+              onClick={() => {
+                setPdfMode('IMAGE')
+                setJob(null)
+              }}
+              disabled={running || !hasOfdInput}
+            >
+              小体积
+            </button>
+          </div>
+        ) : null}
         <button
           className="btn ghost"
           data-action="merge-output"

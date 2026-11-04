@@ -8,10 +8,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Enumeration;
@@ -114,6 +112,7 @@ public class OfdResourceRepair {
     }
 
     private void rewrite(Path ofd, Set<String> additions) throws IOException {
+        OfdFileAccess.makeWritable(ofd);
         Path temp = Files.createTempFile(ofd.getParent(), ".ofd-repair-", ".ofd");
         try {
             try (ZipInputStream in = new ZipInputStream(Files.newInputStream(ofd), StandardCharsets.UTF_8);
@@ -145,12 +144,7 @@ public class OfdResourceRepair {
                     out.closeEntry();
                 }
             }
-            try {
-                Files.move(temp, ofd, StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException ex) {
-                Files.move(temp, ofd, StandardCopyOption.REPLACE_EXISTING);
-            }
+            OfdFileAccess.replace(temp, ofd);
         } finally {
             Files.deleteIfExists(temp);
         }

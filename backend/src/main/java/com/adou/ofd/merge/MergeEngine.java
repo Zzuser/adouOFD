@@ -35,7 +35,7 @@ public class MergeEngine {
     public record MergeResult(int sourcePages, ConversionEngine.ExportMode mode, List<String> warnings) {
     }
 
-    public MergeResult merge(List<Path> sources, String target, Path output, Path workDir,
+    public MergeResult merge(List<Path> sources, String target, String pdfMode, Path output, Path workDir,
                              ConversionEngine.Progress progress) throws IOException {
         if (sources.size() < 2) {
             throw new IOException("至少需要 2 个文件才能合并");
@@ -65,8 +65,8 @@ public class MergeEngine {
                     parts.add(source);
                 } else {
                     Path part = workDir.resolve(String.format("part-%04d.pdf", index + 1));
-                    ConversionEngine.ExportMode mode = conversions.ofdToPdf(
-                            source, part, mapProgress(progress, start, end));
+                    ConversionEngine.ExportMode mode = convertOfdToPdf(
+                            source, part, pdfMode, mapProgress(progress, start, end));
                     if (mode == ConversionEngine.ExportMode.IMAGE) {
                         imageMode = true;
                     }
@@ -77,6 +77,7 @@ public class MergeEngine {
                 Path part = workDir.resolve(String.format("part-%04d.ofd", index + 1));
                 if ("OFD".equals(info.kind())) {
                     Files.copy(source, part, StandardCopyOption.REPLACE_EXISTING);
+                    OfdFileAccess.makeWritable(part);
                 } else {
                     if (conversions.pdfToOfd(source, part, mapProgress(progress, start, end))) {
                         sharded = true;
@@ -97,6 +98,7 @@ public class MergeEngine {
             int repaired = 0;
             int styles = 0;
             for (Path part : parts) {
+                OfdFileAccess.makeWritable(part);
                 styles += styleRepair.repair(part).changes();
                 repaired += resourceRepair.repair(part).count();
             }
@@ -125,9 +127,6 @@ public class MergeEngine {
         if (converted > 0) {
             warnings.add("其中 " + converted + " 个文件已转换为 " + target + " 后合并");
         }
-        if (imageMode) {
-            warnings.add("部分 OFD 已按图像写入 PDF，相关页面文字不可选中");
-        }
         if (sharded) {
             warnings.add("大 PDF 分片转换后合并，书签可能未保留");
         }
@@ -137,6 +136,17 @@ public class MergeEngine {
         warnings.add("合并结果可能不保留各文件的目录/书签");
         return new MergeResult(sourcePages, imageMode ? ConversionEngine.ExportMode.IMAGE
                 : ConversionEngine.ExportMode.VECTOR, List.copyOf(warnings));
+    }
+
+    private ConversionEngine.ExportMode convertOfdToPdf(Path source, Path output, String pdfMode,
+                                                        ConversionEngine.Progress progress) throws IOException {
+        if ("VECTOR".equals(pdfMode)) {
+            return conversions.ofdToPdf(source, output, progress);
+        }
+        if ("IMAGE".equals(pdfMode)) {
+            return conversions.ofdToPdfImageForMerge(source, output, progress);
+        }
+        return conversions.ofdToPdfForMerge(source, output, progress);
     }
 
     private void mergeOfd(List<Path> parts, Path output) throws IOException {

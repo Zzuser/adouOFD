@@ -58,6 +58,20 @@ class OfdStyleRepairTest {
         assertEquals(0, repair.repair(ofd).changes(), "重复修复应无变化");
     }
 
+    @Test
+    void repairsReadOnlyOfdCopy() throws Exception {
+        Path ofd = writeOfd();
+        assertTrue(ofd.toFile().setReadOnly());
+        assertFalse(Files.isWritable(ofd), "测试前置：副本应为只读");
+        try {
+            OfdStyleRepair.StyleRepairResult result = new OfdStyleRepair().repair(ofd);
+            assertEquals(2, result.changes());
+            assertTrue(Files.isWritable(ofd), "修复后工作副本应恢复可写");
+        } finally {
+            ofd.toFile().setWritable(true);
+        }
+    }
+
     private Path writeOfd() throws IOException {
         Path file = workDir.resolve("style.ofd");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(file))) {

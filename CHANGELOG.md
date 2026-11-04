@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.1.1 — 2026-11-04
 
+- Fixed OFD rendering and PDF export for composite objects that omit CTM: content is now translated to its Boundary origin, so 12306 train-ticket invoice seals are horizontally centered instead of being drawn at the page's top-left corner.
+- Fixed OFD merges and split/insert operations failing on read-only source files (for example WeChat/WPS cached invoices) by making temporary work copies writable before style/resource repair; write failures now report a readable "read-only or in use" message.
+- OFD→PDF conversion no longer aborts when an attachment has a non-ISO date (such as `2026-5-11 11:50:30`); the attachment is skipped with a warning while the document still converts.
+- Added a PDF mode selector to merge (Auto / Vector / Image) and an optional `pdfMode` API field. Auto keeps vector output and falls back to 200 DPI images only for pathological files; Vector always keeps selectable text; Image always produces image PDFs. Ordinary invoice merges can use Image to reduce a roughly 92 MB PDF to about 1 MB, and 27 train tickets now merge to a 1.18 MB PDF instead of a multi-hundred-MB file.
+- Added a manual update check in About backed by the project MinIO mirror: fetch an HTTPS version manifest, compare versions, download the installer in-app with progress and SHA256 verification, then reveal the verified file. No document data or telemetry is sent, and installation remains user-initiated.
+- Added regression coverage for composite placement, read-only merges, non-ISO attachment dates, PDF size fallback and all three PDF modes; backend tests are 68/68 green, and the desktop typecheck/build passes.
 - Removed the SignPath code-signing policy and the signing steps from the release workflow: the SignPath Foundation application was declined on 2026-11-03 (the program requires established community visibility). Releases remain **unsigned**; verify installers with the `SHA256-<version>.txt` asset. The license compliance work is unaffected — the non-OSI JSON-java transitive dependency is still excluded, and the private vulnerability reporting channel stays enabled.
 
 ## 1.1.0 — 2026-11-03

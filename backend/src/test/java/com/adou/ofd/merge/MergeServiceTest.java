@@ -126,6 +126,60 @@ class MergeServiceTest {
     }
 
     @Test
+    void mergesReadOnlyOfdWithMissingResource() throws Exception {
+        MergeService service = newService(new ConversionEngine());
+        DocumentSummary demo = documents.openDemo();
+        Path imageOfd = createImageOfdWithMissingResource("只读图片");
+        assertTrue(imageOfd.toFile().setReadOnly(), "测试前置：源文件应设为只读");
+        Path output = workDir.resolve("readonly.ofd");
+
+        try {
+            MergeJob job = service.submit(new MergeRequest(
+                    List.of(imageOfd.toString(), demo.path()), "OFD", output.toString(), false));
+            MergeJob done = waitForTerminal(service, job.id());
+
+            assertEquals("SUCCEEDED", done.status(), done.errorMessage());
+            assertEquals(5, done.report().outputPages());
+            assertTrue(done.report().warnings().stream().anyMatch((w) -> w.contains("占位文件")),
+                    done.report().warnings().toString());
+        } finally {
+            imageOfd.toFile().setWritable(true);
+        }
+    }
+
+    @Test
+    void mergesToPdfWithExplicitImageMode() throws Exception {
+        MergeService service = newService(new ConversionEngine());
+        DocumentSummary demo = documents.openDemo();
+        Path output = workDir.resolve("image-mode.pdf");
+
+        MergeJob job = service.submit(new MergeRequest(
+                List.of(demo.path(), demo.path()), "PDF", output.toString(), false, "IMAGE"));
+        MergeJob done = waitForTerminal(service, job.id());
+
+        assertEquals("SUCCEEDED", done.status(), done.errorMessage());
+        assertEquals(8, done.report().outputPages());
+        assertTrue(done.report().warnings().stream().anyMatch((w) -> w.contains("图像保真")),
+                done.report().warnings().toString());
+    }
+
+    @Test
+    void mergesToPdfWithExplicitVectorMode() throws Exception {
+        MergeService service = newService(new ConversionEngine());
+        DocumentSummary demo = documents.openDemo();
+        Path output = workDir.resolve("vector-mode.pdf");
+
+        MergeJob job = service.submit(new MergeRequest(
+                List.of(demo.path(), demo.path()), "PDF", output.toString(), false, "VECTOR"));
+        MergeJob done = waitForTerminal(service, job.id());
+
+        assertEquals("SUCCEEDED", done.status(), done.errorMessage());
+        assertEquals(8, done.report().outputPages());
+        assertFalse(done.report().warnings().stream().anyMatch((w) -> w.contains("图像保真")),
+                done.report().warnings().toString());
+    }
+
+    @Test
     void mergesMixedInputsToOfd() throws Exception {
         MergeService service = newService(new ConversionEngine());
         DocumentSummary ofd = documents.openDemo();
@@ -182,6 +236,9 @@ class MergeServiceTest {
         assertCode("INVALID_TARGET", () -> service.submit(new MergeRequest(
                 List.of(first.toString(), second.toString()), "DOCX",
                 workDir.resolve("b.docx").toString(), false)));
+        assertCode("INVALID_PDF_MODE", () -> service.submit(new MergeRequest(
+                List.of(first.toString(), second.toString()), "PDF",
+                workDir.resolve("b-mode.pdf").toString(), false, "TINY")));
         assertCode("UNSUPPORTED_FORMAT", () -> service.submit(new MergeRequest(
                 List.of(first.toString(), txt.toString()), "PDF",
                 workDir.resolve("c.pdf").toString(), false)));

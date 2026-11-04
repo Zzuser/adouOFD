@@ -2,6 +2,7 @@ package com.adou.ofd.pages;
 
 import com.adou.ofd.convert.ConversionCanceledException;
 import com.adou.ofd.convert.ConversionEngine;
+import com.adou.ofd.merge.OfdFileAccess;
 import com.adou.ofd.merge.OfdResourceRepair;
 import com.adou.ofd.merge.OfdStyleRepair;
 import org.apache.pdfbox.Loader;
@@ -225,6 +226,7 @@ public class PageToolEngine {
 
     private void copyAndRepairOfd(Path source, Path target, List<String> warnings) throws IOException {
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+        OfdFileAccess.makeWritable(target);
         repairOfd(target, warnings);
     }
 

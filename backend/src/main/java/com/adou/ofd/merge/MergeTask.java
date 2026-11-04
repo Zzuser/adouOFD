@@ -15,6 +15,7 @@ final class MergeTask {
     private final String id;
     private final List<Path> files;
     private final String target;
+    private final String pdfMode;
     private final Path output;
     private final Instant createdAt = Instant.now();
 
@@ -29,10 +30,11 @@ final class MergeTask {
     private volatile boolean cancelRequested;
     private volatile Future<?> future;
 
-    MergeTask(String id, List<Path> files, String target, Path output) {
+    MergeTask(String id, List<Path> files, String target, String pdfMode, Path output) {
         this.id = id;
         this.files = List.copyOf(files);
         this.target = target;
+        this.pdfMode = pdfMode;
         this.output = output;
     }
 
@@ -46,6 +48,10 @@ final class MergeTask {
 
     String target() {
         return target;
+    }
+
+    String pdfMode() {
+        return pdfMode;
     }
 
     Path output() {

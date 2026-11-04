@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { AdouApi, BackendInfo } from '../shared/types'
+import type { AdouApi, BackendInfo, UpdateProgress } from '../shared/types'
 
 const api: AdouApi = {
   getBackendInfo: () => ipcRenderer.invoke('backend:info'),
@@ -27,6 +27,17 @@ const api: AdouApi = {
   revealPath: (path) => ipcRenderer.invoke('file:reveal', path),
   openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
   getVersions: () => ipcRenderer.invoke('app:versions'),
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: (download) => ipcRenderer.invoke('update:download', download),
+  cancelUpdateDownload: () => ipcRenderer.invoke('update:cancel'),
+  onUpdateProgress: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: UpdateProgress): void =>
+      callback(progress)
+    ipcRenderer.on('update:progress', listener)
+    return () => {
+      ipcRenderer.removeListener('update:progress', listener)
+    }
+  },
   takePendingFiles: () => ipcRenderer.invoke('app:take-pending-files'),
   onOpenFiles: (callback) => {
     const listener = (): void => callback()

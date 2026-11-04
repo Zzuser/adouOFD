@@ -66,6 +66,7 @@ public class MergeService {
                     "一次最多合并 " + MAX_FILES + " 个文件");
         }
         String target = resolveTarget(request.target());
+        String pdfMode = "PDF".equals(target) ? resolvePdfMode(request.pdfMode()) : "AUTO";
         List<Path> files = new ArrayList<>(rawFiles.size());
         for (String raw : rawFiles) {
             files.add(resolveInput(raw));
@@ -73,7 +74,7 @@ public class MergeService {
         Path output = resolveOutput(request.outputPath(), target, files,
                 Boolean.TRUE.equals(request.overwrite()));
 
-        MergeTask task = new MergeTask(UUID.randomUUID().toString(), files, target, output);
+        MergeTask task = new MergeTask(UUID.randomUUID().toString(), files, target, pdfMode, output);
         synchronized (tasks) {
             trimHistory();
             tasks.put(task.id(), task);
@@ -147,7 +148,7 @@ public class MergeService {
                 }
             };
             MergeEngine.MergeResult result = mergeEngine.merge(
-                    task.files(), task.target(), temp, workDir, progress);
+                    task.files(), task.target(), task.pdfMode(), temp, workDir, progress);
 
             task.updateProgress(94, "正在校验合并结果");
             long durationMs = (System.nanoTime() - startedAt) / 1_000_000;
@@ -205,6 +206,19 @@ public class MergeService {
             throw new ApiException(Http.BAD_REQUEST, "INVALID_TARGET", "输出格式仅支持 PDF 或 OFD");
         }
         return target;
+    }
+
+    private String resolvePdfMode(String raw) {
+        String mode = trimToNull(raw);
+        if (mode == null) {
+            return "AUTO";
+        }
+        mode = mode.toUpperCase(Locale.ROOT);
+        return switch (mode) {
+            case "AUTO", "VECTOR", "IMAGE" -> mode;
+            default -> throw new ApiException(Http.BAD_REQUEST, "INVALID_PDF_MODE",
+                    "PDF 模式仅支持 AUTO、VECTOR 或 IMAGE");
+        };
     }
 
     private Path resolveInput(String raw) {

@@ -1,5 +1,6 @@
 package com.adou.ofd.document;
 
+import com.adou.ofd.render.OfdCompositePlacement;
 import org.ofdrw.converter.ImageMaker;
 import org.ofdrw.core.action.CT_Action;
 import org.ofdrw.core.action.Actions;
@@ -55,6 +56,7 @@ public final class OfdDocumentHandle implements DocumentHandle {
     private final Map<Integer, List<TextRun>> textCache = new HashMap<>();
     private ContentExtractor textExtractor;
     private List<OutlineItem> outlineCache;
+    private boolean compositePlacementNormalized;
 
     private OfdDocumentHandle(OFDReader reader, Path workDir) throws IOException {
         this.reader = reader;
@@ -337,6 +339,10 @@ public final class OfdDocumentHandle implements DocumentHandle {
             throw new IOException("旋转角度必须是 90 的倍数");
         }
         int actualDpi = cappedDpi(page, dpi);
+        if (!compositePlacementNormalized) {
+            OfdCompositePlacement.normalize(reader);
+            compositePlacementNormalized = true;
+        }
         Path outputDir = workDir.resolve("render")
                 .resolve("ofd-p" + page + "-" + actualDpi + (rotation == 0 ? "" : "-r" + rotation));
         Path png = outputDir.resolve("page.png");

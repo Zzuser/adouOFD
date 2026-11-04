@@ -1,7 +1,7 @@
 # Privacy Policy / 隐私政策
 
 **Project:** 阿豆OFD (ADou OFD)  
-**Effective date:** 2026-11-03  
+**Effective date:** 2026-11-04
 **Maintainer:** Zzuser  
 **Contact:** https://github.com/Zzuser/adouOFD/issues
 
@@ -24,7 +24,8 @@
 
 - Reading, searching, converting and merging do not require network access.
 - Encrypted PDF passwords are used only to open the document in memory; they are not stored on disk, written to logs, or sent anywhere except the local engine.
-- The application does not implement accounts, cloud sync, remote logging, telemetry, advertising, or automatic update checks.
+- The application does not implement accounts, cloud sync, remote logging, telemetry, advertising, or background/automatic update checks.
+- When the user activates “Check for updates” in About, the app requests a version manifest over HTTPS from `minio.grout.cn` (test builds may use `testminio.grout.cn`). The request contains no document content, file paths, account identifiers, or telemetry. If the user chooses to download, the installer is saved to the Downloads folder and verified against the SHA256 value in the manifest before it is reported as complete.
 - External links (for example, the GitHub repository or the Windows default-apps settings page) open only when the user activates them.
 
 ### 4. Local data
@@ -34,6 +35,7 @@ The application may create the following data on the user's computer:
 - Settings, the recent-file list (file paths and display names only), and logs under `%APPDATA%\adou-ofd`, including local engine logs that may contain file paths and error messages.
 - Temporary render caches and conversion intermediates under the operating system temporary directory.
 - User-selected output files.
+- Installers downloaded through “Check for updates”, saved to the user's Downloads folder.
 - Per-user Windows registry entries under `HKCU\Software\Classes`, `HKCU\Software\RegisteredApplications` and `HKCU\Software\AdouOFD` when file associations are enabled.
 
 This data stays on the device. The recent-file list can be cleared from the empty state; logs and settings can be deleted manually. Uninstalling the application removes its program files and file-association entries; residual logs under `%APPDATA%\adou-ofd` can be deleted manually.
@@ -72,7 +74,8 @@ Questions or privacy concerns: open an issue at https://github.com/Zzuser/adouOF
 **本程序不会向其他联网系统传输任何信息，除非用户或安装/操作该程序的人明确要求。**
 
 - 阅读、搜索、转换和合并不需要联网。
-- 应用不包含账号、云同步、远程日志、遥测、广告或自动更新检查。
+- 应用不包含账号、云同步、远程日志、遥测、广告或后台/自动更新检查。
+- 用户主动点击“关于 → 检查更新”时，应用通过 HTTPS 从 `minio.grout.cn`（测试构建可能为 `testminio.grout.cn`）读取版本清单；请求不包含文档内容、文件路径、账号标识或遥测数据。用户选择下载后，安装包保存到“下载”目录，并按清单中的 SHA256 校验通过后才会提示下载完成。
 - 只有用户主动点击外部链接（如 GitHub 仓库、Windows 默认应用设置）时才会打开对应页面。
 
 ### 4. 本地数据
@@ -82,6 +85,7 @@ Questions or privacy concerns: open an issue at https://github.com/Zzuser/adouOF
 - `%APPDATA%\adou-ofd` 下的设置、最近文件列表（仅文件路径与显示名称）与本地引擎日志（可能包含文件路径和错误信息）。
 - 系统临时目录中的渲染缓存和转换临时文件。
 - 用户选择的输出文件。
+- 通过“检查更新”下载的安装包，保存在用户的“下载”目录。
 - 启用文件关联时，`HKCU\Software\Classes`、`HKCU\Software\RegisteredApplications` 与 `HKCU\Software\AdouOFD` 下的每用户注册表项。
 
 上述数据均保存在本机。最近文件列表可在空状态中清空；日志和设置可手动删除；卸载应用会移除程序文件和文件关联项，`%APPDATA%\adou-ofd` 中的剩余日志可手动清理。

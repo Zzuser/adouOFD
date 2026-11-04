@@ -20,10 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -269,6 +267,7 @@ public class OfdStyleRepair {
     }
 
     private void rewrite(Path ofd, Map<String, byte[]> replacements) throws IOException {
+        OfdFileAccess.makeWritable(ofd);
         Path temp = Files.createTempFile(ofd.getParent(), ".ofd-style-", ".ofd");
         try {
             try (ZipInputStream in = new ZipInputStream(Files.newInputStream(ofd), StandardCharsets.UTF_8);
@@ -294,12 +293,7 @@ public class OfdStyleRepair {
                     in.closeEntry();
                 }
             }
-            try {
-                Files.move(temp, ofd, StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException ex) {
-                Files.move(temp, ofd, StandardCopyOption.REPLACE_EXISTING);
-            }
+            OfdFileAccess.replace(temp, ofd);
         } finally {
             Files.deleteIfExists(temp);
         }
