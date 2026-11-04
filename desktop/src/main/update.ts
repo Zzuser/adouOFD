@@ -18,7 +18,13 @@ import type {
 
 const DEFAULT_MANIFEST_URL = 'https://minio.grout.cn/adou-ofd/updates/stable.json'
 const MANIFEST_URL = process.env.ADOU_UPDATE_URL?.trim() || DEFAULT_MANIFEST_URL
-const ALLOWED_HOSTS = new Set(['minio.grout.cn', 'testminio.grout.cn'])
+// CNB Release 下载地址会 302 到 asset.cnb.cool，最终域名也要放行
+const ALLOWED_HOSTS = new Set([
+  'minio.grout.cn',
+  'testminio.grout.cn',
+  'cnb.cool',
+  'asset.cnb.cool'
+])
 const MAX_MANIFEST_BYTES = 1024 * 1024
 const MAX_DOWNLOAD_BYTES = 1024 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 15_000
