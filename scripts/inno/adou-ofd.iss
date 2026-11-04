@@ -35,10 +35,6 @@ UninstallDisplayIcon={app}\阿豆OFD.exe
 LicenseFile={#RepoRoot}\LICENSE
 Compression=lzma2/ultra64
 SolidCompression=yes
-; 单位 KB：262144 = 256MB。安装源里大量同构内容（Chromium/JRE/类库），
-; 加大字典显著提升压缩率；单独进程允许使用更多内存。
-LZMADictionarySize=262144
-LZMAUseSeparateProcess=yes
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
