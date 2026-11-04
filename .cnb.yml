@@ -11,7 +11,10 @@ main:
           jobs:
             backend-tests:
               image: maven:3-eclipse-temurin-25
-              script: mvn -B -ntp -f backend/pom.xml test
+              script: |
+                apt-get update
+                apt-get install -y --no-install-recommends fonts-noto-cjk
+                mvn -B -ntp -f backend/pom.xml test
             desktop-build:
               image: node:24
               script: |
@@ -28,7 +31,10 @@ main:
           jobs:
             backend-tests:
               image: maven:3-eclipse-temurin-25
-              script: mvn -B -ntp -f backend/pom.xml test
+              script: |
+                apt-get update
+                apt-get install -y --no-install-recommends fonts-noto-cjk
+                mvn -B -ntp -f backend/pom.xml test
             desktop-build:
               image: node:24
               script: |

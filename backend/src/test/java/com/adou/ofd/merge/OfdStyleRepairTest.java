@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class OfdStyleRepairTest {
 
@@ -62,7 +63,8 @@ class OfdStyleRepairTest {
     void repairsReadOnlyOfdCopy() throws Exception {
         Path ofd = writeOfd();
         assertTrue(ofd.toFile().setReadOnly());
-        assertFalse(Files.isWritable(ofd), "测试前置：副本应为只读");
+        // root 等特权用户不受只读属性约束，该前置条件在 Windows 与普通 Linux 用户下才成立
+        assumeFalse(Files.isWritable(ofd), "当前用户可绕过只读属性，跳过权限相关断言");
         try {
             OfdStyleRepair.StyleRepairResult result = new OfdStyleRepair().repair(ofd);
             assertEquals(2, result.changes());
