@@ -21,7 +21,7 @@
 </p>
 
 > 源码：<https://github.com/Zzuser/adouOFD>（镜像：<https://gitcode.com/Zzuser/adouOFD>）  
-> 当前版本：**1.1.2**（Javalin 6 本地引擎，启动约 0.4–0.8 秒；OFD / PDF / Markdown 阅读与编辑、转换、合并、拆分插页、打印与搜索；支持关于页检查更新与应用内升级）
+> 当前版本：**1.1.3**（Javalin 6 本地引擎，启动约 0.4–0.8 秒；OFD / PDF / Markdown 阅读与编辑、转换、合并、拆分插页、打印与搜索；支持关于页检查更新与应用内升级）
 
 ## 品牌与图标
 
@@ -88,7 +88,7 @@
 
 ## 下载与安装
 
-仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，或从 GitHub Releases 获取：<https://github.com/Zzuser/adouOFD/releases>。
+仓库只包含源码。预编译安装包体积较大（约 181MB，内含 jlink 裁剪的 JRE 25），暂未随仓库提交；可按下述步骤本地构建，或从 GitHub Releases 获取：<https://github.com/Zzuser/adouOFD/releases>。国内镜像：<https://cnb.cool/Zzuser/adouOFD/-/releases>。
 
 ```powershell
 cd desktop
@@ -239,6 +239,7 @@ npm run stress:ui
 - **M1.2**：全文搜索（已实现）/ Windows 文件关联（已实现）/ 页面旋转（已实现）/ 最近文件（已实现）
 - **M2**：PDF ↔ OFD 转换（单文件 + 批量标签页已实现）
 - **M3**：合并（已实现，支持 OFD / PDF 混合与顺序调整）/ 拆分与插页（已实现）
+- **1.1.3**：更新下载链路兼容 CNB Release 镜像，为后续国内下载加速做准备（本版本仍使用 MinIO 主源）；GitHub 构建产物同步发布到 CNB Release
 - **1.1.2**：安装器“文件关联”和“桌面快捷方式”在新安装与升级时默认勾选；更新包校验后可点击“运行安装包”启动升级
 - **1.1.1**：修复只读 OFD 合并、非 ISO 附件日期导致 PDF 转换失败、组合对象签章偏移；合并 PDF 新增自动/矢量/图像三档；新增关于页检查更新与应用内下载 + SHA256 校验
 - **1.1.0**：本地引擎由 Spring Boot 迁移到 Javalin 6（运行时无 Spring 依赖），热启动约 0.4 秒、首次约 0.8 秒，jar 约 36MB；HTTP API 与功能保持不变，54 个后端测试与完整 UI 冒烟通过

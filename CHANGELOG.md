@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 — 2026-11-04
+
+- Update downloads now accept CNB Release as a source (`cnb.cool` and the `asset.cnb.cool` redirect host), preparing a domestic mirror for a later switch; the production manifest still uses MinIO in this release. No UI or feature changes.
+- After publishing a GitHub Release, the release workflow now uploads the same installer, checksum, notes and license files to a CNB Release. CNB hosted nodes are Linux-only, so the Windows installer is still built by GitHub Actions and only distributed by CNB.
+
 ## 1.1.2 — 2026-11-04
 
 - File association and desktop shortcut tasks now default to checked for both fresh installs and upgrades; previous task selections are no longer reused (`UsePreviousTasks=no`).
