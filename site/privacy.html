@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>隐私政策 — 阿豆OFD</title>
+  <meta name="description" content="阿豆OFD 隐私政策：文档只在本机处理，不上传、不登录、不收集遥测；只有用户主动检查更新时才会请求版本清单。">
+  <meta name="theme-color" content="#f6f2e7">
+  <link rel="canonical" href="https://adou.grout.cn/privacy.html">
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="index.html" aria-label="阿豆OFD 首页">
+      <img src="assets/brand-mark.png" alt="" width="38" height="38">
+      <span>阿豆OFD</span>
+    </a>
+    <nav class="nav-desktop" aria-label="主导航">
+      <a href="index.html#features">功能</a>
+      <a href="index.html#screenshots">截图</a>
+      <a href="index.html#download">下载</a>
+      <a href="changelog.html">更新日志</a>
+      <a href="privacy.html">隐私</a>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-ghost btn-small" href="https://github.com/Zzuser/adouOFD" target="_blank" rel="noreferrer">GitHub</a>
+      <a class="btn btn-primary btn-small" href="index.html#download">下载</a>
+    </div>
+    <details class="nav-mobile">
+      <summary>菜单</summary>
+      <nav aria-label="移动端导航">
+        <a href="index.html#features">功能</a>
+        <a href="index.html#screenshots">截图</a>
+        <a href="index.html#download">下载</a>
+        <a href="changelog.html">更新日志</a>
+        <a href="privacy.html">隐私</a>
+        <a href="https://github.com/Zzuser/adouOFD" target="_blank" rel="noreferrer">GitHub</a>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <h1>隐私政策</h1>
+      <p>阿豆OFD 是一款离线文档工具。文档在本机处理，不需要账号，不收集遥测或文档内容。</p>
+      <div class="legal-meta">
+        <span>生效日期 2026-11-04</span>
+        <span>适用于 Windows 桌面版</span>
+        <span>中文</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="container prose">
+    <h2>1. 概述</h2>
+    <p>阿豆OFD 是一款免费的离线 Windows 桌面应用，用于读取、搜索、转换和合并 OFD / PDF 文档。应用不要求注册账号，不收集遥测、分析数据、广告标识或文档内容。</p>
+
+    <h2>2. 文档处理</h2>
+    <ul>
+      <li>文档在本机打开和处理，不上传文档、页面图像、提取文字或派生文件。</li>
+      <li>加密 PDF 的打开密码仅用于在内存中打开文档，不写入磁盘、不写入日志，也不会发送到本地引擎之外的任何位置。</li>
+      <li>本地 Java 引擎仅监听 <code>127.0.0.1</code>，每次启动使用随机访问令牌。</li>
+      <li>转换、合并或导出结果只写入用户选择的位置。</li>
+    </ul>
+
+    <h2>3. 网络行为</h2>
+    <p><strong>本程序不会向其他联网系统传输任何信息，除非用户或安装/操作该程序的人明确要求。</strong></p>
+    <ul>
+      <li>阅读、搜索、转换和合并不需要联网。</li>
+      <li>应用不包含账号、云同步、远程日志、遥测、广告或后台/自动更新检查。</li>
+      <li>用户主动点击“检查更新”时，应用通过 HTTPS 从 <code>cnb.cool</code>（Release 附件可能重定向到 <code>asset.cnb.cool</code>）读取版本清单；请求不包含文档内容、文件路径、账号标识或遥测数据。用户选择下载后，安装包从同一个 CNB Release 下载到“下载”目录，并按清单中的 SHA256 校验通过后才会提示完成。</li>
+      <li>只有用户主动点击外部链接（如 GitHub 仓库、Windows 默认应用设置）时才会打开对应页面。</li>
+    </ul>
+
+    <h2>4. 本地数据</h2>
+    <p>应用可能在本机创建：</p>
+    <ul>
+      <li><code>%APPDATA%\adou-ofd</code> 下的设置、最近文件列表（仅文件路径与显示名称）与本地引擎日志（可能包含文件路径和错误信息）。</li>
+      <li>系统临时目录中的渲染缓存和转换临时文件。</li>
+      <li>用户选择的输出文件。</li>
+      <li>通过“检查更新”下载的安装包，保存在用户的“下载”目录。</li>
+      <li>启用文件关联时，<code>HKCU\Software\Classes</code>、<code>HKCU\Software\RegisteredApplications</code> 与 <code>HKCU\Software\AdouOFD</code> 下的每用户注册表项。</li>
+    </ul>
+    <p>上述数据均保存在本机。最近文件列表可在设置中清空；日志和设置可手动删除；卸载应用会移除程序文件和文件关联项，<code>%APPDATA%\adou-ofd</code> 中的剩余日志可手动清理。</p>
+
+    <h2>5. 第三方组件</h2>
+    <p>安装包包含 Electron、React、精简 Java 运行时，以及 ofdrw、Apache PDFBox 等 Java 库。相关许可与版权声明见 <a href="https://github.com/Zzuser/adouOFD/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noreferrer">THIRD-PARTY-NOTICES.md</a>、<code>licenses/</code> 及安装目录的 <code>resources/notices/</code>。</p>
+
+    <h2>6. 儿童</h2>
+    <p>本应用是通用文档工具，不主动收集任何人的个人信息，包括儿童。</p>
+
+    <h2>7. 变更</h2>
+    <p>应用行为变化时可能更新本政策，并修改文首生效日期。</p>
+
+    <h2>8. 联系方式</h2>
+    <p>问题或隐私相关事项：<a href="https://github.com/Zzuser/adouOFD/issues" target="_blank" rel="noreferrer">GitHub Issues</a>。请勿在公开 Issue 中上传真实发票、合同或其他敏感文档。</p>
+
+    <p class="small-note">English version: <a href="https://github.com/Zzuser/adouOFD/blob/main/PRIVACY.md" target="_blank" rel="noreferrer">PRIVACY.md</a>。</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="index.html" aria-label="阿豆OFD 首页">
+        <img src="assets/brand-mark.png" alt="" width="36" height="36">
+        <span>阿豆OFD</span>
+      </a>
+      <p>免费、离线的 OFD / PDF / Markdown 工具。文档只在本机处理。</p>
+    </div>
+    <div>
+      <h3>产品</h3>
+      <a href="index.html#features">功能</a>
+      <a href="index.html#screenshots">截图</a>
+      <a href="index.html#download">下载</a>
+      <a href="changelog.html">更新日志</a>
+    </div>
+    <div>
+      <h3>项目</h3>
+      <a href="https://github.com/Zzuser/adouOFD" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://gitcode.com/Zzuser/adouOFD" target="_blank" rel="noreferrer">GitCode</a>
+      <a href="https://cnb.cool/Zzuser/adouOFD/-/releases" target="_blank" rel="noreferrer">CNB Release</a>
+      <a href="https://github.com/Zzuser/adouOFD/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT License</a>
+    </div>
+    <div>
+      <h3>支持</h3>
+      <a href="privacy.html">隐私政策</a>
+      <a href="https://github.com/Zzuser/adouOFD/blob/main/SECURITY.md" target="_blank" rel="noreferrer">安全问题</a>
+      <a href="https://github.com/Zzuser/adouOFD/issues" target="_blank" rel="noreferrer">问题反馈</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 阿豆OFD · MIT License</span>
+    <span>文档不上传 · 更新走 CNB Release</span>
+  </div>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>
