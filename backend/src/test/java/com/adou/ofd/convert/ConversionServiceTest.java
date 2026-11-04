@@ -84,7 +84,9 @@ class ConversionServiceTest {
             assertTrue(hasInk(page), "PDF 首页应有可见内容");
             if (!imageMode) {
                 String text = new PDFTextStripper().getText(pdf);
-                assertTrue(text.contains("阿豆"), "矢量导出应保留中文文字：" + text.substring(0, Math.min(80, text.length())));
+                // 不同字体的字形宽度不同，抽取时可能在汉字间插入空格
+                assertTrue(text.replaceAll("\\s+", "").contains("阿豆"),
+                        "矢量导出应保留中文文字：" + text.substring(0, Math.min(80, text.length())));
             }
         }
     }
