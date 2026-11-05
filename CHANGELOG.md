@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1 — 2026-11-05
+
+- The local engine now exits with its Electron parent: if the main process crashes or is force-closed, no orphaned `java.exe` remains. Stale engine and print temp directories older than 24 hours are cleaned at startup.
+- Added a per-document render cache budget (384 MB) with least-recently-used eviction, and the engine reopens document tabs by path after a restart; encrypted PDFs that cannot be restored are reported explicitly instead of leaving broken tabs.
+- Rendering no longer serializes every document behind one lock: different tabs parse and render in parallel, PNG responses stream instead of copying whole pages into the Java heap, the text layer loads after the page image, and only pages within ±4 of the current page stay rendered.
+- The Markdown/text editor is now lazy-loaded, cutting the initial renderer bundle from 3.37 MB to about 0.88 MB; only woff2 KaTeX fonts are shipped, reducing font assets from 1.17 MB to 0.29 MB.
+- Fixed the window background reverting to light after exporting PDF in dark mode, and waited for KaTeX fonts before PDF export so formulas keep their glyphs. Opening large documents now allows 120 seconds instead of 20.
+- Aligned the backend version with the desktop version (1.2.1). Verified with 71/71 backend tests, typecheck/build, full UI smoke and text/Markdown smoke; the parent-exit watchdog was tested with a real detached parent process.
+
 ## 1.2.0 — 2026-11-05
 
 - Added a full dark theme: system / light / dark preference persisted locally, native window and title-bar sync, and dark styling for the sidebar, pages, cards, reader chrome, text / Markdown editor, dialogs, convert / merge / split / print screens. Document paper, thumbnails and print preview stay white. Added a dark-theme mascot asset that completes only the transparent light negative space; the original artwork is not redrawn.
