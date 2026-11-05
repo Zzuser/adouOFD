@@ -4,8 +4,9 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { BackendManager } from './backend'
 import { parseDocumentPaths } from './document-args'
+import { windowBackground } from './window-theme'
 import { readLegalNotices, revealLegalNotices } from './legal'
-import { listPrinters, parsePrintOptions, printDocument } from './print'
+import { cleanupStalePrintDirs, listPrinters, parsePrintOptions, printDocument } from './print'
 import {
   installTextAssetProtocol,
   readTextFile,
@@ -77,6 +78,7 @@ if (!hasLock) {
     Menu.setApplicationMenu(null)
     session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
     installTextAssetProtocol()
+    void cleanupStalePrintDirs()
     nativeTheme.on('updated', applyWindowTheme)
 
     registerIpc()
@@ -129,13 +131,6 @@ function confirmDiscardChanges(): boolean {
     noLink: true
   })
   return choice === 1
-}
-
-const LIGHT_WINDOW_BACKGROUND = '#f6f4ec'
-const DARK_WINDOW_BACKGROUND = '#141916'
-
-function windowBackground(): string {
-  return nativeTheme.shouldUseDarkColors ? DARK_WINDOW_BACKGROUND : LIGHT_WINDOW_BACKGROUND
 }
 
 function applyWindowTheme(): void {

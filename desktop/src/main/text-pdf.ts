@@ -1,6 +1,7 @@
 import { app, dialog, type BrowserWindow } from 'electron'
 import { writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
+import { windowBackground } from './window-theme'
 import type { TextPdfExportResult } from '../shared/types'
 
 export async function exportTextPdf(
@@ -48,7 +49,7 @@ export async function exportTextPdf(
           '</div>'
       })
     } finally {
-      window.setBackgroundColor('#f6f4ec')
+      window.setBackgroundColor(windowBackground())
     }
     writeFileSync(target, pdf)
     return { ok: true, path: resolve(target), size: pdf.length }

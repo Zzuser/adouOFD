@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class DocumentService {
@@ -28,6 +29,7 @@ public class DocumentService {
     private final PdfDemoFactory pdfDemoFactory;
     private final Map<String, DocumentSession> sessions = new LinkedHashMap<>(16, 0.75f, true);
     private final Map<String, DocumentSession> previews = new LinkedHashMap<>(16, 0.75f, true);
+    private final Map<String, RenderCache> renderCaches = new ConcurrentHashMap<>();
 
     public DocumentService(DemoOfdFactory demoFactory, PdfDemoFactory pdfDemoFactory) {
         this.demoFactory = demoFactory;
@@ -183,6 +185,7 @@ public class DocumentService {
             if (!isUsable(png)) {
                 throw new IOException("渲染结果为空");
             }
+            renderCaches.computeIfAbsent(session.id(), id -> new RenderCache()).record(png);
             return png;
         } catch (IOException | RuntimeException ex) {
             log.warn("页面渲染失败: document={}, page={}, dpi={}, rotate={}",
@@ -219,6 +222,7 @@ public class DocumentService {
     }
 
     private void closeSession(DocumentSession session) {
+        renderCaches.remove(session.id());
         if (session.handle() != null) {
             try {
                 session.handle().close();

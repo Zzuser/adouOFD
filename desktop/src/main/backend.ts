@@ -77,7 +77,8 @@ export class BackendManager {
         '-jar',
         jar,
         `--server.port=${port}`,
-        `--adou.token=${token}`
+        `--adou.token=${token}`,
+        `--adou.parent-pid=${process.pid}`
       ]
       const child = spawn(java, args, {
         cwd: app.getPath('userData'),

@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -30,6 +30,8 @@ import type {
 
 const MAX_PRINT_PAGES = 2000
 const PREPARE_TIMEOUT_MS = 5 * 60 * 1000
+const PRINT_DIR_PREFIX = 'adou-print-'
+const STALE_PRINT_DIR_MS = 24 * 60 * 60 * 1000
 const MAX_COPIES = 99
 const PER_SHEET_VALUES = [1, 2, 4, 6, 8, 9]
 
@@ -154,6 +156,32 @@ function normalizeRotations(raw: unknown): RotationMap {
     }
   }
   return rotations
+}
+
+/**
+ * 清理异常退出遗留的打印临时目录（其中可能包含带访问令牌的 HTML）。
+ * 只删除超过 24 小时的目录，避免影响同时运行的另一个实例。
+ */
+export async function cleanupStalePrintDirs(): Promise<void> {
+  const root = tmpdir()
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    const staleBefore = Date.now() - STALE_PRINT_DIR_MS
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !entry.name.startsWith(PRINT_DIR_PREFIX)) continue
+      const dir = join(root, entry.name)
+      try {
+        const info = await stat(dir)
+        if (info.mtimeMs < staleBefore) {
+          await rm(dir, { recursive: true, force: true })
+        }
+      } catch {
+        // 目录可能已被其他实例删除或正被占用
+      }
+    }
+  } catch {
+    // 扫描临时目录失败不影响启动
+  }
 }
 
 export function parsePrintOptions(raw: unknown): PrintDocumentOptions | null {

@@ -11,7 +11,15 @@ import type {
 import type { TextKind } from '@shared/text-paths'
 import { fileNameOf, isTextPath, textKindOf } from '@shared/text-paths'
 import type { RotationMap } from '@shared/rotation'
-import { closeDocument, fetchHealth, messageOf, openDocument, ApiRequestError } from './api'
+import {
+  ApiRequestError,
+  closeDocument,
+  fetchHealth,
+  messageOf,
+  openDemo,
+  openDocument,
+  openPdfDemo
+} from './api'
 import { AboutDialog } from './components/AboutDialog'
 import { BatchConvert } from './components/BatchConvert'
 import { ConvertDialog } from './components/ConvertDialog'
@@ -105,6 +113,7 @@ export default function App() {
   const dirtyTextsRef = useRef<Record<string, boolean>>({})
   const textHandlesRef = useRef(new Map<string, TextViewerHandle>())
   const deferredFilesRef = useRef<string[]>([])
+  const reopeningRef = useRef(false)
   const activeTab = tabs.find((tab) => tab.key === activeId) ?? null
   const doc = activeTab?.type === 'document' ? activeTab.doc : null
   const closeTabItem = closeTarget ? tabs.find((tab) => tab.key === closeTarget) ?? null : null
@@ -525,15 +534,67 @@ export default function App() {
     setView('viewer')
   }, [])
 
+  /**
+   * 引擎重启后旧会话全部失效：按路径重新打开文档标签，加密 PDF 等无法静默恢复的
+   * 情况关闭标签并列出文件名，避免留下所有页面都报错的“僵尸标签”。
+   */
+  const reopenAfterRestart = useCallback(async (nextBackend: BackendInfo) => {
+    if (reopeningRef.current) return
+    const documents = tabsRef.current.filter((tab) => tab.type === 'document')
+    if (documents.length === 0) return
+    reopeningRef.current = true
+    try {
+      const keyMap = new Map<string, string>()
+      const failed: string[] = []
+      const next: Tab[] = []
+      for (const tab of tabsRef.current) {
+        if (tab.type === 'text') {
+          next.push(tab)
+          continue
+        }
+        try {
+          const summary = tab.doc.demo
+            ? tab.doc.kind === 'PDF'
+              ? await openPdfDemo(nextBackend)
+              : await openDemo(nextBackend)
+            : await openDocument(nextBackend, tab.doc.path)
+          keyMap.set(tab.key, summary.id)
+          next.push({ type: 'document', key: summary.id, doc: summary })
+        } catch {
+          failed.push(tab.doc.name)
+        }
+      }
+      tabsRef.current = next
+      setTabs(next)
+      const currentKey = activeIdRef.current
+      const mapped = currentKey
+        ? keyMap.get(currentKey) ?? (next.some((tab) => tab.key === currentKey) ? currentKey : null)
+        : null
+      const nextActive = mapped ?? next[0]?.key ?? null
+      activeIdRef.current = nextActive
+      setActiveId(nextActive)
+      setConvertOpen(false)
+      if (failed.length > 0) {
+        setError(`本地引擎已重启，以下文档需要重新打开：${failed.join('、')}`)
+      }
+    } finally {
+      reopeningRef.current = false
+    }
+  }, [])
+
   const retryEngine = useCallback(async () => {
     setError(null)
     try {
       const info = await window.adou.restartBackend()
-      if (info) setBackend(info)
+      if (!info) return
+      setBackend(info)
+      if (info.status === 'ready') {
+        await reopenAfterRestart(info)
+      }
     } catch (reason) {
       setError(messageOf(reason))
     }
-  }, [])
+  }, [reopenAfterRestart])
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((previous) => {

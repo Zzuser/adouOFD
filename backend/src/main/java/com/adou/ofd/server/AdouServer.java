@@ -48,7 +48,9 @@ import java.util.Optional;
  * 本地 HTTP 引擎：Javalin + Jetty，只绑定 127.0.0.1。
  *
  * <p>服务层不依赖 Web 框架，本类负责依赖装配、路由、Token 校验与错误映射。
- * 启动参数：--server.port、--adou.token；就绪后向 stdout 输出 ADOU_ENGINE_READY。
+ * 启动参数：--server.port、--adou.token、--adou.parent-pid；就绪后向 stdout 输出
+ * ADOU_ENGINE_READY。传入父进程 PID 时，父进程消失会自动退出，避免 Electron
+ * 崩溃或被强杀后留下常驻的 java.exe。
  */
 public final class AdouServer {
 
@@ -68,6 +70,8 @@ public final class AdouServer {
         String version = Optional
                 .ofNullable(AdouServer.class.getPackage().getImplementationVersion())
                 .orElse("1.0.0");
+
+        TempCleanup.runAsync();
 
         DemoOfdFactory demoFactory = new DemoOfdFactory();
         DocumentService documents = new DocumentService(demoFactory, new PdfDemoFactory(version));
@@ -92,10 +96,41 @@ public final class AdouServer {
         }, "adou-engine-shutdown-hook"));
 
         app.start(parsed.port());
+        startParentWatchdog(parsed.parentPid());
         System.out.println(READY_MARKER);
         System.out.flush();
 
         Thread.currentThread().join();
+    }
+
+    /**
+     * Electron 正常退出会先调用 /api/system/shutdown；这里覆盖主进程崩溃、
+     * 被任务管理器结束等异常情况，让引擎随父进程一起退出。
+     */
+    private static void startParentWatchdog(long parentPid) {
+        if (parentPid <= 0) {
+            return;
+        }
+        Thread watchdog = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(2_000L);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                boolean alive = ProcessHandle.of(parentPid)
+                        .map(ProcessHandle::isAlive)
+                        .orElse(false);
+                if (!alive) {
+                    log.warn("父进程 {} 已退出，关闭本地引擎", parentPid);
+                    System.exit(0);
+                    return;
+                }
+            }
+        }, "adou-parent-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
     }
 
     private static Javalin createApp(DocumentService documents, ConversionService conversions,
@@ -292,10 +327,11 @@ public final class AdouServer {
             String startedAt) {
     }
 
-    private record Args(int port, String token) {
+    private record Args(int port, String token, long parentPid) {
         static Args parse(String[] args) {
             int port = 0;
             String token = "";
+            long parentPid = -1;
             for (String arg : args) {
                 if (arg.startsWith("--server.port=")) {
                     try {
@@ -305,9 +341,15 @@ public final class AdouServer {
                     }
                 } else if (arg.startsWith("--adou.token=")) {
                     token = arg.substring("--adou.token=".length());
+                } else if (arg.startsWith("--adou.parent-pid=")) {
+                    try {
+                        parentPid = Long.parseLong(arg.substring("--adou.parent-pid=".length()));
+                    } catch (NumberFormatException ignored) {
+                        parentPid = -1;
+                    }
                 }
             }
-            return new Args(port, token);
+            return new Args(port, token, parentPid);
         }
     }
 }
