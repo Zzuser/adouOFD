@@ -253,6 +253,11 @@ export const TextViewer = forwardRef<TextViewerHandle, TextViewerProps>(function
         window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()))
       })
       await waitForPreviewImages()
+      // 公式使用 KaTeX 自带字体；字体未就绪时导出会退回系统字体
+      await Promise.race([
+        document.fonts.ready,
+        new Promise<void>((resolve) => window.setTimeout(resolve, 3000))
+      ])
       const result = await window.adou.exportTextPdf({ sourcePath: path })
       if (result.ok && result.path) {
         setExportInfo(result.path)
