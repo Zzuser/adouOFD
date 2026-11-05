@@ -2,12 +2,13 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import {
+  HighlightStyle,
   bracketMatching,
-  defaultHighlightStyle,
   indentOnInput,
   syntaxHighlighting
 } from '@codemirror/language'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
+import { tags } from '@lezer/highlight'
 import { EditorState } from '@codemirror/state'
 import {
   EditorView,
@@ -37,10 +38,10 @@ const editorTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
     border: 'none',
-    color: '#a8ada2'
+    color: 'var(--ink-faint)'
   },
   '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 16px' },
-  '.cm-activeLine': { backgroundColor: 'rgba(47, 122, 79, 0.045)' },
+  '.cm-activeLine': { backgroundColor: 'var(--surface-2)' },
   '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--brand)' },
   '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
     backgroundColor: 'rgba(228, 181, 75, 0.32)'
@@ -58,6 +59,27 @@ const editorTheme = EditorView.theme({
     color: 'var(--ink)'
   }
 })
+
+const editorHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: 'var(--code-keyword)' },
+  { tag: [tags.atom, tags.bool, tags.number], color: 'var(--code-number)' },
+  { tag: [tags.string, tags.special(tags.string)], color: 'var(--code-string)' },
+  {
+    tag: [tags.comment, tags.lineComment, tags.blockComment],
+    color: 'var(--code-comment)',
+    fontStyle: 'italic'
+  },
+  {
+    tag: [tags.definition(tags.variableName), tags.function(tags.variableName)],
+    color: 'var(--code-function)'
+  },
+  { tag: [tags.typeName, tags.className], color: 'var(--code-type)' },
+  { tag: [tags.propertyName, tags.attributeName], color: 'var(--code-property)' },
+  { tag: [tags.heading, tags.strong], color: 'var(--code-heading)', fontWeight: '700' },
+  { tag: [tags.link, tags.url], color: 'var(--code-link)', textDecoration: 'underline' },
+  { tag: tags.meta, color: 'var(--code-comment)' },
+  { tag: tags.invalid, color: 'var(--danger)' }
+])
 
 interface TextEditorProps {
   value: string
@@ -113,7 +135,7 @@ export const TextEditor = forwardRef<TextEditorHandle, TextEditorProps>(function
       EditorState.allowMultipleSelections.of(true),
       EditorView.lineWrapping,
       editorTheme,
-      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      syntaxHighlighting(editorHighlightStyle, { fallback: true }),
       keymap.of([
         indentWithTab,
         ...defaultKeymap,

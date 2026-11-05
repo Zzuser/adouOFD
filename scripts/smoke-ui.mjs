@@ -203,6 +203,7 @@ try {
 
   await evaluate(cdp, "document.querySelector('[data-action=\"nav-settings\"]')?.click()")
   await waitFor(cdp, "document.querySelector('.settings-page') !== null", 5_000)
+  await waitFor(cdp, "document.querySelector('.integration-panel[data-registered]') !== null", 10_000)
   const settingsTitle = await evaluate(cdp, "document.querySelector('.topbar-title h1')?.textContent")
   const integrationText = await evaluate(
     cdp,

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, session, shell } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -23,7 +23,6 @@ import {
 import {
   ensureRegisteredOnStartup,
   getWindowsIntegration,
-  openDefaultAppChoice,
   registerFileAssociations,
   unregisterFileAssociations
 } from './windows-integration'
@@ -78,6 +77,7 @@ if (!hasLock) {
     Menu.setApplicationMenu(null)
     session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
     installTextAssetProtocol()
+    nativeTheme.on('updated', applyWindowTheme)
 
     registerIpc()
     createWindow()
@@ -131,6 +131,18 @@ function confirmDiscardChanges(): boolean {
   return choice === 1
 }
 
+const LIGHT_WINDOW_BACKGROUND = '#f6f4ec'
+const DARK_WINDOW_BACKGROUND = '#141916'
+
+function windowBackground(): string {
+  return nativeTheme.shouldUseDarkColors ? DARK_WINDOW_BACKGROUND : LIGHT_WINDOW_BACKGROUND
+}
+
+function applyWindowTheme(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  mainWindow.setBackgroundColor(windowBackground())
+}
+
 function createWindow(): void {
   const window = new BrowserWindow({
     width: 1280,
@@ -138,7 +150,7 @@ function createWindow(): void {
     minWidth: 1000,
     minHeight: 680,
     show: false,
-    backgroundColor: '#f6f4ec',
+    backgroundColor: windowBackground(),
     title: APP_NAME,
     autoHideMenuBar: true,
     webPreferences: {
@@ -200,6 +212,12 @@ function createWindow(): void {
 }
 
 function registerIpc(): void {
+  ipcMain.on('theme:set', (_event, preference: unknown) => {
+    nativeTheme.themeSource =
+      preference === 'light' || preference === 'dark' ? preference : 'system'
+    applyWindowTheme()
+  })
+
   ipcMain.handle('backend:info', () => backend?.info)
   ipcMain.handle('backend:restart', async () => {
     if (!backend) return null
@@ -431,10 +449,9 @@ function registerIpc(): void {
   ipcMain.handle('windows:integration', () => getWindowsIntegration())
   ipcMain.handle('windows:register', () => registerFileAssociations())
   ipcMain.handle('windows:unregister', () => unregisterFileAssociations())
-  ipcMain.handle('windows:open-default-choice', () => openDefaultAppChoice())
-  ipcMain.handle('windows:open-default-apps', async () => {
+  ipcMain.handle('windows:open-app-defaults', async () => {
     if (process.platform === 'win32') {
-      await shell.openExternal('ms-settings:defaultapps')
+      await shell.openExternal('ms-settings:defaultapps?registeredAppUser=AdouOFD')
     }
   })
 

@@ -29,7 +29,7 @@ site/
    ├─ mascot-empty.webp
    ├─ icon.png / favicon.ico
    ├─ og.png           1200×630 分享图
-   └─ screenshots/     1.1.4 真实 UI 截图
+   └─ screenshots/     真实 UI 截图（随版本更新）
 ```
 
 ## EdgeOne 部署

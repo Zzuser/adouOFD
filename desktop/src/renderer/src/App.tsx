@@ -5,7 +5,8 @@ import type {
   DocumentSummary,
   EngineHealth,
   RecentFile,
-  RecentFileInput
+  RecentFileInput,
+  ThemePreference
 } from '@shared/types'
 import type { TextKind } from '@shared/text-paths'
 import { fileNameOf, isTextPath, textKindOf } from '@shared/text-paths'
@@ -26,6 +27,13 @@ import { SettingsPage } from './components/SettingsPage'
 import { TextViewer, type TextViewerHandle } from './components/TextViewer'
 import { Viewer } from './components/Viewer'
 import { IconAlert } from './components/icons'
+import {
+  applyResolvedTheme,
+  applyThemePreference,
+  readThemePreference,
+  watchSystemTheme,
+  writeThemePreference
+} from './theme'
 
 const INITIAL_BACKEND: BackendInfo = { status: 'starting', port: null, token: null }
 const MAX_TABS = 8
@@ -88,6 +96,9 @@ export default function App() {
       return false
     }
   })
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() =>
+    readThemePreference()
+  )
 
   const tabsRef = useRef<Tab[]>([])
   const activeIdRef = useRef<string | null>(null)
@@ -120,6 +131,14 @@ export default function App() {
     const count = Object.values(dirtyTexts).filter(Boolean).length
     window.adou.setUnsavedTextCount(count)
   }, [dirtyTexts])
+
+  useEffect(() => {
+    writeThemePreference(themePreference)
+    window.adou.setThemeSource(themePreference)
+    applyThemePreference(themePreference)
+    if (themePreference !== 'system') return
+    return watchSystemTheme(applyResolvedTheme)
+  }, [themePreference])
 
   useEffect(() => {
     let alive = true
@@ -637,7 +656,7 @@ export default function App() {
                       : view === 'pages'
                         ? '按页或区间拆分文档，也可把另一个文档的页面插入到指定位置；文件只在本机处理。'
                         : view === 'settings'
-                          ? '文件关联、本地数据与版本更新。'
+                          ? '外观、文件关联、本地数据与版本更新。'
                           : '阅读与编辑本地 OFD / PDF / Markdown / 文本文档。'}
                 </span>
               </div>
@@ -700,6 +719,9 @@ export default function App() {
 
           <div className="pane" hidden={view !== 'settings'}>
             <SettingsPage
+              active={view === 'settings'}
+              themePreference={themePreference}
+              onThemeChange={setThemePreference}
               recentCount={recentFiles.length}
               onClearRecent={clearRecent}
               onCheckUpdate={() => {

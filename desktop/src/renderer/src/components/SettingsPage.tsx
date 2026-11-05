@@ -1,13 +1,22 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import type { AppVersions } from '@shared/types'
-import { IconFile, IconLocation, IconSettings, IconShield } from './icons'
+import type { AppVersions, ThemePreference } from '@shared/types'
+import { IconFile, IconLocation, IconSettings, IconShield, IconTheme } from './icons'
 import { WindowsIntegrationPanel } from './WindowsIntegrationPanel'
 
 interface SettingsPageProps {
+  active: boolean
+  themePreference: ThemePreference
+  onThemeChange: (preference: ThemePreference) => void
   recentCount: number
   onClearRecent: () => Promise<boolean>
   onCheckUpdate: () => void
 }
+
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: '跟随系统' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' }
+]
 
 function SectionHead({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
   return (
@@ -23,7 +32,14 @@ function SectionHead({ icon, title, desc }: { icon: ReactNode; title: string; de
   )
 }
 
-export function SettingsPage({ recentCount, onClearRecent, onCheckUpdate }: SettingsPageProps) {
+export function SettingsPage({
+  active,
+  themePreference,
+  onThemeChange,
+  recentCount,
+  onClearRecent,
+  onCheckUpdate
+}: SettingsPageProps) {
   const [versions, setVersions] = useState<AppVersions | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [clearing, setClearing] = useState(false)
@@ -62,11 +78,40 @@ export function SettingsPage({ recentCount, onClearRecent, onCheckUpdate }: Sett
         <div className="settings-column">
           <section className="settings-card">
             <SectionHead
+              icon={<IconTheme size={18} />}
+              title="外观"
+              desc="跟随系统自动切换，也可固定为浅色或深色。文档纸张始终保持白色。"
+            />
+            <div className="theme-choice" role="radiogroup" aria-label="外观主题">
+              {THEME_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={themePreference === option.value}
+                  className={`theme-choice-btn ${
+                    themePreference === option.value ? 'active' : ''
+                  }`}
+                  data-action={`theme-${option.value}`}
+                  onClick={() => onThemeChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="settings-note">
+              <IconTheme size={13} />
+              跟随系统时，Windows 切换深浅色后界面会立即同步。
+            </p>
+          </section>
+
+          <section className="settings-card">
+            <SectionHead
               icon={<IconFile size={18} />}
               title="文件关联"
               desc="把阿豆OFD 加入 .ofd / .pdf / .md 的“打开方式”，并使用独立文件图标。默认应用仍由 Windows 统一管理。"
             />
-            <WindowsIntegrationPanel />
+            <WindowsIntegrationPanel active={active} />
           </section>
 
           <section className="settings-card">

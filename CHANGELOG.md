@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 — 2026-11-05
+
+- Added a full dark theme: system / light / dark preference persisted locally, native window and title-bar sync, and dark styling for the sidebar, pages, cards, reader chrome, text / Markdown editor, dialogs, convert / merge / split / print screens. Document paper, thumbnails and print preview stay white. Added a dark-theme mascot asset that completes only the transparent light negative space; the original artwork is not redrawn.
+- Settings now shows per-extension file-association status and default-app controls for `.ofd` / `.pdf` / `.md`; each “设为默认” opens the app-specific Windows Default Apps page. Removed the one-time “Open with” action. Registration detection now checks per-extension OpenWithProgids in HKCU/HKLM and falls back to RegisteredApplications/Capabilities, refreshes on settings entry/window focus, and startup repair re-registers missing extensions.
+- Merge, batch, split and insert primary buttons are no longer disabled when an output path or source is missing; clicking validates and shows an inline reminder. Only the running state disables actions.
+- Verified typecheck/build, main UI smoke and text/Markdown smoke; file-association status was checked against the real registry.
+
 ## 1.1.4 — 2026-11-04
 
 - Redesigned the Settings page: Windows file associations now show per-extension status chips, actions are split into primary / secondary / destructive, and removing associations or clearing recent files uses inline confirmation instead of a native dialog. Added loading skeletons, busy states, and success / error feedback.

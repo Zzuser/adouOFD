@@ -1,6 +1,9 @@
 import type { RotationMap } from './rotation'
 import type { TextEncoding, TextEol, TextKind } from './text-paths'
 
+export type ThemePreference = 'system' | 'light' | 'dark'
+export type ResolvedTheme = 'light' | 'dark'
+
 export type BackendStatus = 'starting' | 'ready' | 'error' | 'stopped'
 
 export interface BackendInfo {
@@ -363,6 +366,9 @@ export interface WindowsIntegrationStatus {
   packaged: boolean
   canRegister: boolean
   registered: boolean
+  ofdOpenWith: boolean
+  pdfOpenWith: boolean
+  mdOpenWith: boolean
   ofdDefault: boolean
   pdfDefault: boolean
   mdDefault: boolean
@@ -466,8 +472,7 @@ export interface AdouApi {
   getWindowsIntegration(): Promise<WindowsIntegrationStatus>
   registerWindowsIntegration(): Promise<WindowsIntegrationStatus>
   unregisterWindowsIntegration(): Promise<WindowsIntegrationStatus>
-  openDefaultAppChoice(): Promise<void>
-  openDefaultAppsSettings(): Promise<void>
+  openAppDefaultSettings(): Promise<void>
   readLegalNotices(): Promise<LegalNotices>
   revealLegalNotices(): Promise<void>
   listPrinters(): Promise<PrinterInfo[]>
@@ -481,4 +486,5 @@ export interface AdouApi {
   createTextFile(kind: NewTextKind): Promise<string | null>
   exportTextPdf(options: { sourcePath: string }): Promise<TextPdfExportResult>
   setUnsavedTextCount(count: number): void
+  setThemeSource(preference: ThemePreference): void
 }

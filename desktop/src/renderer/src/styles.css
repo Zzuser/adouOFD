@@ -19,6 +19,160 @@
   --sage: #a9c6b2;
   --shadow-soft: 0 10px 30px rgba(31, 50, 37, 0.07);
   --shadow-paper: 0 18px 45px rgba(35, 45, 38, 0.16);
+  color-scheme: light;
+  --bg-glow: #edf4e8;
+  --sidebar-top: #f0ede2;
+  --sidebar-mid: #f6f4ec;
+  --sidebar-bottom: #f4f1e7;
+  --surface-raised: #ffffff;
+  --surface-input: #f9f8f2;
+  --surface-quiet: #fbfaf4;
+  --surface-hover: #f5f2e9;
+  --surface-muted: #eceade;
+  --surface-chip: #f0ede3;
+  --ink-soft: #4c5a50;
+  --ink-faint: #939d94;
+  --line-strong: #d5d1c4;
+  --brand-solid: #2f7a4f;
+  --accent-line: #eadfc0;
+  --accent-ink: #80621d;
+  --danger-solid: #b4472f;
+  --danger-ink: #7d2f1e;
+  --warn-ink: #9a5a22;
+  --success-surface: #f4f9f4;
+  --success-line: #dbe9dd;
+  --danger-surface: #fffaf8;
+  --danger-line: #f0cfc5;
+  --glass-nav: rgba(255, 255, 255, 0.7);
+  --glass-card: rgba(255, 255, 255, 0.82);
+  --glass-soft: rgba(255, 255, 255, 0.55);
+  --glass-rail: rgba(255, 255, 255, 0.78);
+  --glass-dock: rgba(255, 255, 255, 0.94);
+  --glass-recent: rgba(255, 255, 255, 0.72);
+  --glass-badge: rgba(255, 255, 255, 0.8);
+  --glass-control: rgba(255, 255, 255, 0.6);
+  --topbar-bg: rgba(246, 242, 231, 0.78);
+  --hover-tint: rgba(23, 37, 28, 0.08);
+  --overlay: rgba(23, 37, 28, 0.32);
+  --overlay-strong: rgba(23, 37, 28, 0.42);
+  --empty-top: rgba(255, 253, 247, 0.9);
+  --empty-bottom: rgba(255, 253, 247, 0.56);
+  --empty-dot: #d9d2c1;
+  --scrollbar: #d2ccbd;
+  --scrollbar-hover: #bdb6a5;
+  --reader-bg: #e9e5da;
+  --reader-dot: #d3ccbc;
+  --reader-border: #ded8ca;
+  --reader-label: #6f7a70;
+  --paper: #ffffff;
+  --paper-line: #e7e1d4;
+  --skeleton-a: #ece7db;
+  --skeleton-b: #f5f1e7;
+  --toast-bg: rgba(35, 48, 38, 0.94);
+  --toast-danger-bg: rgba(125, 47, 30, 0.96);
+  --dot-idle: #b8b2a4;
+  --on-brand: #ffffff;
+  --txt-icon-bg: #eef0f2;
+  --txt-icon-ink: #425a70;
+  --md-icon-bg: #e7ecf1;
+  --md-icon-ink: #35506a;
+  --txt-badge-bg: #f0efe8;
+  --txt-badge-ink: #6a756c;
+  --code-keyword: #a626a4;
+  --code-number: #986801;
+  --code-string: #50a14f;
+  --code-comment: #a0a1a7;
+  --code-function: #4078f2;
+  --code-type: #c18401;
+  --code-property: #e45649;
+  --code-heading: #215c3b;
+  --code-link: #4078f2;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #141916;
+  --bg-glow: #1b2a20;
+  --surface: #1c231f;
+  --surface-2: #222b25;
+  --surface-raised: #232c26;
+  --surface-input: #202823;
+  --surface-quiet: #1f2721;
+  --surface-hover: #28322b;
+  --surface-muted: #2a342d;
+  --surface-chip: #2a342d;
+  --ink: #e6ece7;
+  --ink-soft: #c3ccc4;
+  --ink-faint: #8d978e;
+  --muted: #a1aca3;
+  --line: #303a33;
+  --line-strong: #3b473e;
+  --brand: #63b984;
+  --brand-solid: #2f7a4f;
+  --brand-deep: #a6ddba;
+  --brand-soft: #1f3a2a;
+  --accent: #e4b54b;
+  --accent-soft: #3a311b;
+  --accent-line: #5a4a24;
+  --accent-ink: #e3c478;
+  --danger: #ef8d73;
+  --danger-solid: #b4472f;
+  --danger-soft: #3a231d;
+  --danger-line: #4a2c24;
+  --danger-ink: #f0b09c;
+  --danger-surface: #2a1f1b;
+  --warn-ink: #e3b276;
+  --success-surface: #1b2a21;
+  --success-line: #2d4a37;
+  --sidebar-top: #171d19;
+  --sidebar-mid: #1a211c;
+  --sidebar-bottom: #171e19;
+  --glass-nav: rgba(255, 255, 255, 0.06);
+  --glass-card: rgba(255, 255, 255, 0.05);
+  --glass-soft: rgba(255, 255, 255, 0.04);
+  --glass-rail: rgba(30, 38, 32, 0.8);
+  --glass-dock: rgba(30, 38, 32, 0.94);
+  --glass-recent: rgba(255, 255, 255, 0.04);
+  --glass-badge: rgba(255, 255, 255, 0.05);
+  --glass-control: rgba(255, 255, 255, 0.06);
+  --topbar-bg: rgba(20, 25, 22, 0.8);
+  --hover-tint: rgba(255, 255, 255, 0.08);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --overlay-strong: rgba(0, 0, 0, 0.65);
+  --empty-top: rgba(28, 35, 31, 0.9);
+  --empty-bottom: rgba(28, 35, 31, 0.56);
+  --empty-dot: #3a463d;
+  --scrollbar: #39443c;
+  --scrollbar-hover: #4b574d;
+  --reader-bg: #0f1411;
+  --reader-dot: #232c26;
+  --reader-border: #2a342d;
+  --reader-label: #8f9a91;
+  --paper: #ffffff;
+  --paper-line: #3a463d;
+  --skeleton-a: #242d27;
+  --skeleton-b: #2f3a32;
+  --toast-bg: rgba(38, 47, 40, 0.96);
+  --toast-danger-bg: rgba(110, 48, 34, 0.96);
+  --dot-idle: #4a554c;
+  --on-brand: #ffffff;
+  --txt-icon-bg: #2b3338;
+  --txt-icon-ink: #aac4d8;
+  --md-icon-bg: #29333d;
+  --md-icon-ink: #b4cee4;
+  --txt-badge-bg: #2b302c;
+  --txt-badge-ink: #a8b2a9;
+  --code-keyword: #c678dd;
+  --code-number: #d19a66;
+  --code-string: #98c379;
+  --code-comment: #7f8c84;
+  --code-function: #61afef;
+  --code-type: #e5c07b;
+  --code-property: #e06c75;
+  --code-heading: #a6ddba;
+  --code-link: #61afef;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-paper: 0 18px 45px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -39,7 +193,7 @@ body {
   font-size: 14px;
   color: var(--ink);
   background:
-    radial-gradient(900px 600px at 88% -12%, #edf4e8 0%, transparent 62%),
+    radial-gradient(900px 600px at 88% -12%, var(--bg-glow) 0%, transparent 62%),
     var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -61,14 +215,14 @@ button:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d2ccbd;
+  background: var(--scrollbar);
   border: 2px solid transparent;
   border-radius: 10px;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #bdb6a5;
+  background: var(--scrollbar-hover);
   border: 2px solid transparent;
   background-clip: content-box;
 }
@@ -87,7 +241,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   padding: 22px 16px 16px;
-  background: linear-gradient(180deg, #f0ede2 0%, #f6f4ec 58%, #f4f1e7 100%);
+  background: linear-gradient(180deg, var(--sidebar-top) 0%, var(--sidebar-mid) 58%, var(--sidebar-bottom) 100%);
   border-right: 1px solid var(--line);
   transition:
     width 0.22s ease,
@@ -115,7 +269,7 @@ button:focus-visible {
   margin-left: auto;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-nav);
   color: var(--muted);
   cursor: pointer;
   transition:
@@ -125,8 +279,8 @@ button:focus-visible {
 }
 
 .sidebar-toggle:hover {
-  border-color: #d2dbd0;
-  background: #fff;
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
   color: var(--ink);
 }
 
@@ -208,7 +362,7 @@ button:focus-visible {
 .engine-mini-retry {
   margin-left: auto;
   padding: 2px 7px;
-  border: 1px solid #f0cfc5;
+  border: 1px solid var(--danger-line);
   border-radius: 6px;
   background: var(--danger-soft);
   color: var(--danger);
@@ -290,7 +444,7 @@ button:focus-visible {
 }
 
 .nav-button:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--glass-control);
   color: var(--ink);
 }
 
@@ -298,8 +452,8 @@ button:focus-visible {
   margin-left: auto;
   padding: 2px 6px;
   border-radius: 999px;
-  background: #ece9de;
-  color: #939b93;
+  background: var(--surface-muted);
+  color: var(--ink-faint);
   font-size: 9.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -311,9 +465,9 @@ button:focus-visible {
   gap: 8px;
   margin: 18px 6px 0;
   padding: 10px 11px;
-  border: 1px dashed #d7d9cc;
+  border: 1px dashed var(--line-strong);
   border-radius: 10px;
-  color: #768277;
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.55;
 }
@@ -329,7 +483,7 @@ button:focus-visible {
   padding: 13px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--glass-card);
   font-size: 11.5px;
   box-shadow: 0 4px 14px rgba(31, 50, 37, 0.03);
 }
@@ -347,7 +501,7 @@ button:focus-visible {
   height: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #b8b2a4;
+  background: var(--dot-idle);
 }
 
 .engine-card.ready .status-dot,
@@ -384,7 +538,7 @@ button:focus-visible {
   grid-template-columns: auto 1fr;
   gap: 5px 10px;
   margin: 11px 0 0;
-  color: #879187;
+  color: var(--muted);
 }
 
 .engine-rows dt {
@@ -406,7 +560,7 @@ button:focus-visible {
   width: 100%;
   margin-top: 10px;
   padding: 7px 10px;
-  border: 1px solid #ecc9bf;
+  border: 1px solid var(--danger-line);
   border-radius: 8px;
   background: var(--danger-soft);
   color: var(--danger);
@@ -420,7 +574,7 @@ button:focus-visible {
   justify-content: space-between;
   gap: 8px;
   padding: 12px 4px 0;
-  color: #9aa39a;
+  color: var(--ink-faint);
   font-size: 9.5px;
 }
 
@@ -441,7 +595,7 @@ button:focus-visible {
   min-height: 50px;
   padding: 8px 30px;
   border-bottom: 1px solid var(--line);
-  background: rgba(246, 242, 231, 0.78);
+  background: var(--topbar-bg);
   backdrop-filter: blur(10px);
 }
 
@@ -499,27 +653,27 @@ button:focus-visible {
   padding: 8px 13px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--glass-badge);
   color: var(--muted);
   font-size: 12px;
   white-space: nowrap;
 }
 
 .engine-badge.ready {
-  border-color: #cfe2d4;
+  border-color: var(--success-line);
   background: var(--brand-soft);
   color: var(--brand-deep);
   font-weight: 600;
 }
 
 .engine-badge.starting {
-  border-color: #eadfc0;
+  border-color: var(--accent-line);
   background: var(--accent-soft);
-  color: #80621d;
+  color: var(--accent-ink);
 }
 
 .engine-badge.error {
-  border-color: #f0cfc5;
+  border-color: var(--danger-line);
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -529,7 +683,7 @@ button:focus-visible {
   padding: 2px 6px;
   border: 0;
   border-radius: 6px;
-  background: rgba(180, 71, 47, 0.1);
+  background: var(--danger-soft);
   color: var(--danger);
   font-size: 10.5px;
   font-weight: 700;
@@ -540,7 +694,7 @@ button:focus-visible {
   width: 12px;
   height: 12px;
   border: 2px solid rgba(128, 98, 29, 0.25);
-  border-top-color: #80621d;
+  border-top-color: var(--accent-ink);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -566,8 +720,8 @@ button:focus-visible {
 }
 
 .btn.primary {
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-solid);
+  color: var(--on-brand);
   box-shadow: 0 9px 20px rgba(47, 122, 79, 0.22);
 }
 
@@ -584,7 +738,7 @@ button:focus-visible {
 }
 
 .btn.ghost:hover:not(:disabled) {
-  border-color: #cfd8cc;
+  border-color: var(--line-strong);
   background: var(--surface-2);
 }
 
@@ -625,7 +779,7 @@ button:focus-visible {
 }
 
 .icon-btn:hover {
-  border-color: #d2dbd0;
+  border-color: var(--line-strong);
   color: var(--ink);
 }
 
@@ -637,10 +791,10 @@ button:focus-visible {
   gap: 10px;
   margin: 14px 30px 0;
   padding: 11px 13px;
-  border: 1px solid #f0cfc5;
+  border: 1px solid var(--danger-line);
   border-radius: 12px;
   background: var(--danger-soft);
-  color: #7d2f1e;
+  color: var(--danger-ink);
   font-size: 12.5px;
   line-height: 1.55;
   animation: fade-in 0.2s ease;
@@ -661,7 +815,7 @@ button:focus-visible {
   padding: 0 4px;
   border: 0;
   background: transparent;
-  color: #9b5b4b;
+  color: var(--danger-ink);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -678,7 +832,7 @@ button:focus-visible {
   overflow-x: auto;
   overflow-y: hidden;
   border-bottom: 1px solid var(--line);
-  background: rgba(246, 242, 231, 0.78);
+  background: var(--topbar-bg);
   scrollbar-width: none;
 }
 
@@ -700,11 +854,11 @@ button:focus-visible {
 }
 
 .doc-tab:hover {
-  border-color: #d2dbd0;
+  border-color: var(--line-strong);
 }
 
 .doc-tab.active {
-  border-color: #cfe0d4;
+  border-color: var(--success-line);
   background: var(--brand-soft);
 }
 
@@ -760,7 +914,7 @@ button:focus-visible {
 }
 
 .doc-tab-close:hover {
-  background: rgba(23, 37, 28, 0.08);
+  background: var(--hover-tint);
   color: var(--ink);
 }
 
@@ -771,7 +925,7 @@ button:focus-visible {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px dashed #d2cec1;
+  border: 1px dashed var(--line-strong);
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
@@ -810,12 +964,12 @@ button:focus-visible {
   padding: 42px 40px 32px;
   overflow-x: hidden;
   overflow-y: auto;
-  border: 1.5px dashed #d9d3c4;
+  border: 1.5px dashed var(--line-strong);
   border-radius: 22px;
   background: linear-gradient(
     180deg,
-    rgba(255, 253, 247, 0.9) 0%,
-    rgba(255, 253, 247, 0.56) 100%
+    var(--empty-top) 0%,
+    var(--empty-bottom) 100%
   );
   text-align: center;
   transition:
@@ -828,7 +982,7 @@ button:focus-visible {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(#d9d2c1 1px, transparent 1px);
+  background-image: radial-gradient(var(--empty-dot) 1px, transparent 1px);
   background-size: 22px 22px;
   opacity: 0.3;
   pointer-events: none;
@@ -837,7 +991,7 @@ button:focus-visible {
 
 .empty.drag {
   border-color: var(--brand);
-  background: linear-gradient(180deg, #eef6ef 0%, #e4f0e7 100%);
+  background: var(--brand-soft);
   transform: scale(1.002);
 }
 
@@ -858,6 +1012,21 @@ button:focus-visible {
 .hero-art-mascot img.is-loading {
   width: 190px;
   margin: 0 auto;
+}
+
+.hero-art-mascot .mascot-dark,
+.about-mascot.mascot-dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .hero-art-mascot .mascot-light,
+:root[data-theme='dark'] .about-mascot.mascot-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .hero-art-mascot .mascot-dark,
+:root[data-theme='dark'] .about-mascot.mascot-dark {
+  display: block;
 }
 
 .empty h2 {
@@ -889,7 +1058,7 @@ button:focus-visible {
 .empty-hint {
   z-index: 1;
   margin-top: 14px;
-  color: #939d94;
+  color: var(--ink-faint);
   font-size: 11px;
 }
 
@@ -900,7 +1069,7 @@ button:focus-visible {
   padding: 10px 12px 12px;
   border: 1px solid var(--line);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--glass-recent);
   text-align: left;
 }
 
@@ -963,7 +1132,7 @@ button:focus-visible {
 }
 
 .recent-open:hover {
-  background: #f5f2e9;
+  background: var(--surface-hover);
 }
 
 .recent-name {
@@ -991,18 +1160,18 @@ button:focus-visible {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #8b958c;
+  color: var(--ink-faint);
   cursor: pointer;
 }
 
 .recent-icon:hover {
-  background: #f5f2e9;
+  background: var(--surface-hover);
   color: var(--ink);
 }
 
 .recent-more {
   padding: 5px 4px 0;
-  color: #a3aca4;
+  color: var(--ink-faint);
   font-size: 10px;
 }
 
@@ -1014,7 +1183,7 @@ button:focus-visible {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: rgba(23, 37, 28, 0.32);
+  background: var(--overlay);
   backdrop-filter: blur(3px);
   animation: fade-in 0.18s ease;
 }
@@ -1053,7 +1222,7 @@ button:focus-visible {
 }
 
 .about-close:hover {
-  background: #f3f0e7;
+  background: var(--surface-hover);
   color: var(--ink);
 }
 
@@ -1142,9 +1311,9 @@ button:focus-visible {
 .about-update-card {
   margin-top: 9px;
   padding: 10px 11px;
-  border: 1px solid #ece9df;
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface-raised);
 }
 
 .about-update-title {
@@ -1195,7 +1364,7 @@ button:focus-visible {
   margin-top: 7px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eceade;
+  background: var(--surface-muted);
 }
 
 .about-update-progress span {
@@ -1226,7 +1395,7 @@ button:focus-visible {
 
 .about-update-privacy {
   margin: 8px 0 0;
-  color: #9aa39a;
+  color: var(--ink-faint);
   font-size: 9.5px;
 }
 
@@ -1276,7 +1445,7 @@ button:focus-visible {
 .about-license-tags span {
   padding: 2px 6px;
   border-radius: 5px;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--muted);
   font-size: 9px;
   white-space: nowrap;
@@ -1305,7 +1474,7 @@ button:focus-visible {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(23, 37, 28, 0.42);
+  background: var(--overlay-strong);
   backdrop-filter: blur(3px);
   animation: fade-in 0.16s ease;
 }
@@ -1352,7 +1521,7 @@ button:focus-visible {
 }
 
 .license-close:hover {
-  background: #f1eee5;
+  background: var(--surface-hover);
   color: var(--ink);
 }
 
@@ -1379,7 +1548,7 @@ button:focus-visible {
 
 .about-note {
   margin: 18px 0 0;
-  color: #939d94;
+  color: var(--ink-faint);
   font-size: 10px;
   line-height: 1.6;
 }
@@ -1449,6 +1618,45 @@ button:focus-visible {
   line-height: 1.65;
 }
 
+.theme-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 18px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.theme-choice-btn {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.theme-choice-btn:hover:not(.active) {
+  color: var(--ink);
+}
+
+.theme-choice-btn.active {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--brand-deep);
+  box-shadow: 0 2px 8px rgba(31, 50, 37, 0.06);
+}
+
+
 .integration-panel {
   margin-top: 18px;
   padding: 14px 16px 15px;
@@ -1469,7 +1677,7 @@ button:focus-visible {
   height: 9px;
   margin-top: 5px;
   border-radius: 50%;
-  background: #c8c1b1;
+  background: var(--dot-idle);
   box-shadow: 0 0 0 3px rgba(200, 193, 177, 0.18);
 }
 
@@ -1502,7 +1710,7 @@ button:focus-visible {
   margin-left: auto;
   padding: 3px 9px;
   border-radius: 999px;
-  background: #eee9dc;
+  background: var(--surface-muted);
   color: var(--muted);
   font-size: 10.5px;
   font-weight: 600;
@@ -1513,11 +1721,36 @@ button:focus-visible {
   color: var(--brand-deep);
 }
 
-.integration-extensions {
+.integration-defaults {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 7px;
   margin-top: 14px;
+}
+
+.integration-defaults-label {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.integration-default-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.integration-default-row .integration-chip {
+  flex: 0 0 auto;
+}
+
+.integration-default-row .btn {
+  margin-left: auto;
 }
 
 .integration-chip {
@@ -1538,8 +1771,8 @@ button:focus-visible {
 }
 
 .integration-chip.ok {
-  border-color: #cfe3d5;
-  background: #edf7f0;
+  border-color: var(--success-line);
+  background: var(--success-surface);
   color: var(--brand-deep);
 }
 
@@ -1550,7 +1783,7 @@ button:focus-visible {
 .integration-chip.muted {
   border-style: dashed;
   background: transparent;
-  color: #939d94;
+  color: var(--ink-faint);
 }
 
 .integration-actions {
@@ -1566,21 +1799,21 @@ button:focus-visible {
 }
 
 .btn-spinner.dark {
-  border-color: rgba(29, 42, 34, 0.18);
+  border-color: var(--line-strong);
   border-top-color: var(--brand-deep);
 }
 
 .integration-confirm {
   margin-top: 12px;
   padding: 12px 13px;
-  border: 1px solid #efc9be;
+  border: 1px solid var(--danger-line);
   border-radius: 10px;
   background: var(--danger-soft);
 }
 
 .integration-confirm p {
   margin: 0;
-  color: #7c3a2a;
+  color: var(--danger-ink);
   font-size: 11.5px;
   line-height: 1.55;
 }
@@ -1636,7 +1869,7 @@ button:focus-visible {
   display: block;
   height: 10px;
   border-radius: 6px;
-  background: linear-gradient(90deg, #ece7db 25%, #f5f1e7 37%, #ece7db 63%);
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 37%, var(--skeleton-a) 63%);
   background-size: 400% 100%;
   animation: settings-shimmer 1.4s ease infinite;
 }
@@ -1793,8 +2026,8 @@ button:focus-visible {
 }
 
 .btn.danger {
-  background: var(--danger);
-  color: #fff;
+  background: var(--danger-solid);
+  color: var(--on-brand);
   box-shadow: 0 8px 18px rgba(180, 71, 47, 0.18);
 }
 
@@ -1826,7 +2059,7 @@ button:focus-visible {
   padding: 26px 28px 22px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: 0 24px 70px rgba(23, 37, 28, 0.28);
   animation: fade-up 0.22s ease;
 }
@@ -1861,11 +2094,11 @@ button:focus-visible {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #f9f8f2;
+  background: var(--surface-input);
 }
 
 .convert-card.target {
-  border-color: #cfe3d6;
+  border-color: var(--success-line);
   background: var(--brand-soft);
 }
 
@@ -1912,7 +2145,7 @@ button:focus-visible {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #f9f8f2;
+  background: var(--surface-input);
   color: var(--ink);
   font-size: 11.5px;
   text-overflow: ellipsis;
@@ -1920,7 +2153,7 @@ button:focus-visible {
 }
 
 .convert-path.is-empty {
-  color: #9aa39a;
+  color: var(--ink-faint);
 }
 
 .convert-progress {
@@ -1943,7 +2176,7 @@ button:focus-visible {
   height: 7px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eceade;
+  background: var(--surface-muted);
 }
 
 .convert-bar span {
@@ -1957,9 +2190,9 @@ button:focus-visible {
 .convert-result {
   margin-top: 16px;
   padding: 13px 14px;
-  border: 1px solid #dbe9dd;
+  border: 1px solid var(--success-line);
   border-radius: 12px;
-  background: #f4f9f4;
+  background: var(--success-surface);
 }
 
 .convert-result-grid {
@@ -1987,7 +2220,7 @@ button:focus-visible {
   display: flex;
   gap: 6px;
   margin: 10px 0 0;
-  color: #80621d;
+  color: var(--accent-ink);
   font-size: 11.5px;
   line-height: 1.55;
 }
@@ -2073,7 +2306,7 @@ button:focus-visible {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #f9f8f2;
+  background: var(--surface-input);
   color: var(--ink);
   font-size: 11.5px;
   text-overflow: ellipsis;
@@ -2081,7 +2314,7 @@ button:focus-visible {
 }
 
 .batch-dir.is-empty {
-  color: #9aa39a;
+  color: var(--ink-faint);
 }
 
 .batch-toolbar-actions {
@@ -2102,7 +2335,7 @@ button:focus-visible {
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: #c6c9bf;
+  background: var(--dot-idle);
 }
 
 .batch-summary .warn {
@@ -2139,7 +2372,7 @@ button:focus-visible {
 
 .batch-note {
   background: var(--accent-soft);
-  color: #80621d;
+  color: var(--accent-ink);
 }
 
 .batch-alert .batch-link {
@@ -2149,7 +2382,7 @@ button:focus-visible {
 
 .batch-note .batch-link {
   margin-left: auto;
-  color: #80621d;
+  color: var(--accent-ink);
 }
 
 .batch-drop {
@@ -2160,9 +2393,9 @@ button:focus-visible {
   justify-content: center;
   min-height: 400px;
   padding: 40px;
-  border: 1px dashed #d7d9cc;
+  border: 1px dashed var(--line-strong);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--glass-soft);
   text-align: center;
 }
 
@@ -2212,14 +2445,14 @@ button:focus-visible {
 }
 
 .batch-row.done {
-  border-color: #dbe9dd;
-  background: #fbfdfb;
+  border-color: var(--success-line);
+  background: var(--success-surface);
 }
 
 .batch-row.failed,
 .batch-row.invalid {
-  border-color: #f0cfc5;
-  background: #fffaf8;
+  border-color: var(--danger-line);
+  background: var(--danger-surface);
 }
 
 .batch .format-badge {
@@ -2278,7 +2511,7 @@ button:focus-visible {
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eceade;
+  background: var(--surface-muted);
 }
 
 .batch-bar span {
@@ -2311,12 +2544,12 @@ button:focus-visible {
 }
 
 .batch-chip.muted {
-  background: #f1efe6;
+  background: var(--surface-muted);
   color: var(--muted);
 }
 
 .batch-chip.pending {
-  background: #f7f5ed;
+  background: var(--surface-quiet);
   color: var(--muted);
 }
 
@@ -2329,7 +2562,7 @@ button:focus-visible {
 .batch-warn {
   display: grid;
   place-items: center;
-  color: #80621d;
+  color: var(--accent-ink);
 }
 
 /* ---------- Merge ---------- */
@@ -2355,7 +2588,7 @@ button:focus-visible {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #f9f8f2;
+  background: var(--surface-input);
 }
 
 .merge-format-label {
@@ -2380,8 +2613,8 @@ button:focus-visible {
 }
 
 .merge-format-btn.active {
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-solid);
+  color: var(--on-brand);
 }
 
 .merge-format-btn:disabled {
@@ -2402,7 +2635,7 @@ button:focus-visible {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #f9f8f2;
+  background: var(--surface-input);
   color: var(--ink);
   font-size: 11.5px;
   text-overflow: ellipsis;
@@ -2410,7 +2643,7 @@ button:focus-visible {
 }
 
 .merge-output-path.is-empty {
-  color: #9aa39a;
+  color: var(--ink-faint);
 }
 
 .merge-list {
@@ -2436,8 +2669,8 @@ button:focus-visible {
 }
 
 .merge-row.invalid {
-  border-color: #f0cfc5;
-  background: #fffaf8;
+  border-color: var(--danger-line);
+  background: var(--danger-surface);
 }
 
 .merge-order {
@@ -2454,7 +2687,7 @@ button:focus-visible {
 
 .merge-handle {
   padding: 2px 0;
-  color: #a9b1a7;
+  color: var(--ink-faint);
   font-size: 16px;
   line-height: 1;
   text-align: center;
@@ -2481,9 +2714,9 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   overflow: hidden;
-  border: 1px solid #d5d1c4;
+  border: 1px solid var(--line-strong);
   border-radius: 9px;
-  background: #fcfbf6;
+  background: var(--surface-quiet);
 }
 
 .merge-sort-btn {
@@ -2494,7 +2727,7 @@ button:focus-visible {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2c3a31;
+  color: var(--ink);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -2506,7 +2739,7 @@ button:focus-visible {
 }
 
 .merge-sort-btn + .merge-sort-btn {
-  border-left: 1px solid #e8e4d9;
+  border-left: 1px solid var(--line);
 }
 
 .merge-sort-btn:hover:not(:disabled) {
@@ -2526,10 +2759,10 @@ button:focus-visible {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid #d5d1c4;
+  border: 1px solid var(--line-strong);
   border-radius: 9px;
   background: var(--surface);
-  color: #55645a;
+  color: var(--ink-soft);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -2538,7 +2771,7 @@ button:focus-visible {
 }
 
 .merge-view:hover:not(:disabled) {
-  border-color: #cfe0d4;
+  border-color: var(--success-line);
   background: var(--brand-soft);
   color: var(--brand-deep);
 }
@@ -2549,7 +2782,7 @@ button:focus-visible {
 }
 
 .merge-remove:hover:not(:disabled) {
-  border-color: #f0cfc5;
+  border-color: var(--danger-line);
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -2585,9 +2818,9 @@ button:focus-visible {
   flex-direction: column;
   gap: 10px;
   padding: 14px;
-  border: 1px solid #dbe9dd;
+  border: 1px solid var(--success-line);
   border-radius: 14px;
-  background: #fbfdfb;
+  background: var(--success-surface);
 }
 
 .merge-result-head {
@@ -2644,7 +2877,7 @@ button:focus-visible {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  color: #80621d;
+  color: var(--accent-ink);
   font-size: 11.5px;
   line-height: 1.5;
 }
@@ -2671,7 +2904,7 @@ button:focus-visible {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #f9f8f2;
+  background: var(--surface-input);
 }
 
 .page-mode-btn {
@@ -2697,8 +2930,8 @@ button:focus-visible {
 }
 
 .page-mode-btn.active {
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-solid);
+  color: var(--on-brand);
   box-shadow: 0 4px 10px rgba(47, 122, 79, 0.18);
 }
 
@@ -2713,9 +2946,9 @@ button:focus-visible {
   gap: 12px;
   min-height: 150px;
   padding: 14px;
-  border: 1px dashed #d7d9cc;
+  border: 1px dashed var(--line-strong);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--glass-soft);
   transition:
     border-color 0.16s ease,
     background 0.16s ease;
@@ -2792,7 +3025,7 @@ button:focus-visible {
 
 .file-slot-path {
   overflow: hidden;
-  color: #9aa39a;
+  color: var(--ink-faint);
   font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2887,7 +3120,7 @@ button:focus-visible {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fbfaf4;
+  background: var(--surface-quiet);
   text-align: left;
   cursor: pointer;
   transition:
@@ -2896,8 +3129,8 @@ button:focus-visible {
 }
 
 .page-choice:hover:not(:disabled) {
-  border-color: #cfd8cc;
-  background: #fff;
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
 }
 
 .page-choice.active {
@@ -2960,19 +3193,19 @@ button:focus-visible {
   border: 1px solid var(--line);
   border-radius: 8px;
   outline: none;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--ink);
   font: inherit;
   font-size: 12px;
 }
 
 .page-tool-input:focus {
-  border-color: #b9cdbb;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(47, 122, 79, 0.12);
 }
 
 .page-tool-input:disabled {
-  background: #f4f2ea;
+  background: var(--surface-hover);
   cursor: not-allowed;
 }
 
@@ -3010,7 +3243,7 @@ button:focus-visible {
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfaf4;
+  background: var(--surface-quiet);
   color: var(--muted);
   font-size: 12px;
   font-weight: 650;
@@ -3018,7 +3251,7 @@ button:focus-visible {
 }
 
 .page-position-btn:hover:not(:disabled) {
-  border-color: #cfd8cc;
+  border-color: var(--line-strong);
   color: var(--brand-deep);
 }
 
@@ -3073,7 +3306,7 @@ button:focus-visible {
   gap: 10px;
   padding: 7px 9px;
   border-radius: 8px;
-  background: #fbfaf4;
+  background: var(--surface-quiet);
 }
 
 .page-output-name {
@@ -3174,14 +3407,14 @@ button:focus-visible {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border: 1px solid #e7e1d4;
+  border: 1px solid var(--paper-line);
   border-radius: 4px;
-  background: #fff;
+  background: var(--paper);
   box-shadow: 0 2px 6px rgba(31, 50, 37, 0.05);
 }
 
 .page-preview-item.grouped .page-preview-frame {
-  border-color: #b7d3bf;
+  border-color: var(--brand);
 }
 
 .page-preview-frame img {
@@ -3207,8 +3440,8 @@ button:focus-visible {
   height: 17px;
   padding: 0 4px;
   border-radius: 6px;
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-solid);
+  color: var(--on-brand);
   font-size: 9px;
   font-weight: 800;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
@@ -3352,7 +3585,7 @@ button:focus-visible {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 18px;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: 0 24px 70px rgba(23, 37, 28, 0.3);
   animation: fade-up 0.22s ease;
 }
@@ -3402,7 +3635,7 @@ button:focus-visible {
   padding: 6px 20px 20px;
   overflow-y: auto;
   border-right: 1px solid var(--line);
-  background: #fbfaf5;
+  background: var(--surface-2);
   scrollbar-width: thin;
 }
 
@@ -3450,7 +3683,7 @@ button:focus-visible {
   border: 1px solid var(--line);
   border-radius: 8px;
   outline: none;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--ink);
   font: inherit;
   font-size: 11.5px;
@@ -3459,7 +3692,7 @@ button:focus-visible {
 .print-dialog select:focus,
 .print-dialog input[type='number']:focus,
 .print-range-input:focus {
-  border-color: #b9cdbb;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(47, 122, 79, 0.12);
 }
 
@@ -3506,8 +3739,8 @@ button:focus-visible {
 }
 
 .print-range-input:disabled {
-  background: #f3f1e8;
-  color: #9aa39a;
+  background: var(--surface-hover);
+  color: var(--ink-faint);
 }
 
 .print-radio-inline {
@@ -3532,7 +3765,7 @@ button:focus-visible {
 }
 
 .print-note-warn {
-  color: #9a5a22;
+  color: var(--warn-ink);
 }
 
 .print-static {
@@ -3546,7 +3779,7 @@ button:focus-visible {
   gap: 2px;
   padding: 2px;
   border-radius: 9px;
-  background: #f0eee4;
+  background: var(--surface-muted);
 }
 
 .print-segment button {
@@ -3561,7 +3794,7 @@ button:focus-visible {
 }
 
 .print-segment button.active {
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--ink);
   font-weight: 650;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -3581,7 +3814,7 @@ button:focus-visible {
   height: 28px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--muted);
   font: inherit;
   font-size: 11px;
@@ -3589,7 +3822,7 @@ button:focus-visible {
 }
 
 .print-order button.active {
-  border-color: #cfe2d4;
+  border-color: var(--success-line);
   background: var(--brand-soft);
   color: var(--brand-deep);
   font-weight: 650;
@@ -3618,14 +3851,14 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: #eeebe1;
+  background: var(--reader-bg);
 }
 
 .print-preview-head {
   display: flex;
   justify-content: space-between;
   padding: 11px 18px;
-  border-bottom: 1px solid rgba(33, 49, 38, 0.08);
+  border-bottom: 1px solid var(--line);
   color: var(--muted);
   font-size: 11px;
 }
@@ -3652,7 +3885,7 @@ button:focus-visible {
 .print-paper {
   position: relative;
   flex: 0 0 auto;
-  background: #fff;
+  background: var(--paper);
   box-shadow: 0 10px 34px rgba(33, 49, 38, 0.18);
   transition:
     width 0.15s ease,
@@ -3721,9 +3954,9 @@ button:focus-visible {
   place-items: center;
   width: 26px;
   height: 26px;
-  border: 1px solid rgba(33, 49, 38, 0.12);
+  border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--ink);
   cursor: pointer;
 }
@@ -3739,7 +3972,7 @@ button:focus-visible {
   gap: 10px;
   padding: 12px 20px;
   border-top: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface-raised);
 }
 
 .print-foot-note {
@@ -3785,8 +4018,8 @@ button:focus-visible {
   max-width: min(560px, calc(100vw - 48px));
   padding: 9px 14px;
   border-radius: 999px;
-  background: rgba(35, 48, 38, 0.94);
-  color: #fff;
+  background: var(--toast-bg);
+  color: var(--on-brand);
   font-size: 12px;
   line-height: 1.5;
   box-shadow: 0 10px 28px rgba(23, 37, 28, 0.28);
@@ -3796,7 +4029,7 @@ button:focus-visible {
 }
 
 .print-notice.error {
-  background: rgba(125, 47, 30, 0.96);
+  background: var(--toast-danger-bg);
 }
 
 .print-notice-spinner {
@@ -3910,7 +4143,7 @@ button:focus-visible {
 }
 
 .properties-path {
-  color: #4c5a50;
+  color: var(--ink-soft);
   font-size: 11.5px;
   word-break: break-all;
 }
@@ -3925,7 +4158,7 @@ button:focus-visible {
 }
 
 .properties-error {
-  color: #b4472f;
+  color: var(--danger);
 }
 
 .properties-error .btn {
@@ -3948,7 +4181,7 @@ button:focus-visible {
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #fbfaf5;
+  background: var(--surface-2);
 }
 
 .properties-signature-name {
@@ -3967,7 +4200,7 @@ button:focus-visible {
 
 .properties-note {
   margin: 8px 0 0;
-  color: #8b958c;
+  color: var(--ink-faint);
   font-size: 10.5px;
 }
 
@@ -3977,8 +4210,8 @@ button:focus-visible {
   gap: 6px;
   padding: 9px 11px;
   border-radius: 9px;
-  background: #fdf3e5;
-  color: #8a5a1d;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
   font-size: 11px;
 }
 
@@ -4046,7 +4279,7 @@ button:focus-visible {
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--ink);
   font: inherit;
   font-size: 13px;
@@ -4068,12 +4301,12 @@ button:focus-visible {
 }
 
 .password-message.is-error {
-  color: #b4472f;
+  color: var(--danger);
 }
 
 .password-note {
   margin: 0;
-  color: #939d94;
+  color: var(--ink-faint);
   font-size: 10.5px;
 }
 

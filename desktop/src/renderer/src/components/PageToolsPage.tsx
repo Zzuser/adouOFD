@@ -843,23 +843,6 @@ export function PageToolsPage({ backend, onOpenDocument, onPrintResult }: PageTo
       positionPage >= 1 &&
       positionPage <= baseDoc.pages)
 
-  const canStartSplit =
-    !running &&
-    splitDoc?.status === 'ready' &&
-    Boolean(outputDir) &&
-    Boolean(splitPreview) &&
-    !splitPreview?.error &&
-    (splitPreview?.count ?? 0) > 0
-  const canStartInsert =
-    !running &&
-    baseDoc?.status === 'ready' &&
-    insertDoc?.status === 'ready' &&
-    Boolean(insertOutput) &&
-    Boolean(insertPreview) &&
-    !insertPreview?.error &&
-    (insertPreview?.count ?? 0) > 0 &&
-    positionValid
-
   const startSplitJob = async () => {
     if (runningRef.current) return
     if (!splitDoc || splitDoc.status !== 'ready') {
@@ -989,7 +972,8 @@ export function PageToolsPage({ backend, onOpenDocument, onPrintResult }: PageTo
               className="btn primary"
               data-action="split-start"
               onClick={() => void startSplitJob()}
-              disabled={!canStartSplit}
+              disabled={running}
+              title={outputDir ? undefined : '请先选择输出目录'}
             >
               {running ? <span className="btn-spinner" /> : <IconPages size={16} />}
               {running ? '拆分中' : '开始拆分'}
@@ -999,7 +983,8 @@ export function PageToolsPage({ backend, onOpenDocument, onPrintResult }: PageTo
               className="btn primary"
               data-action="insert-start"
               onClick={() => void startInsertJob()}
-              disabled={!canStartInsert}
+              disabled={running}
+              title={insertOutput ? undefined : '请选择保存位置'}
             >
               {running ? <span className="btn-spinner" /> : <IconPlus size={16} />}
               {running ? '插入中' : '开始插入'}

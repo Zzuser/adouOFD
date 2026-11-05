@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { RecentFile } from '@shared/types'
 import mascotEmpty from '../assets/mascot-empty.webp'
+import mascotEmptyDark from '../assets/mascot-empty-dark.webp'
 import mascotLoading from '../assets/mascot-loading.webp'
 import { IconClose, IconFolder, IconLocation, IconPlus } from './icons'
 
@@ -51,8 +52,14 @@ export function EmptyState({
     >
       <div className="hero-art-mascot" aria-hidden="true">
         <img
-          className={engineStarting ? 'is-loading' : undefined}
+          className={`mascot-light${engineStarting ? ' is-loading' : ''}`}
           src={engineStarting ? mascotLoading : mascotEmpty}
+          alt=""
+          draggable={false}
+        />
+        <img
+          className={`mascot-dark${engineStarting ? ' is-loading' : ''}`}
+          src={engineStarting ? mascotLoading : mascotEmptyDark}
           alt=""
           draggable={false}
         />

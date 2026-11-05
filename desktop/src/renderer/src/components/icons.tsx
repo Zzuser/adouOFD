@@ -103,6 +103,15 @@ export function IconShield(props: IconProps) {
   )
 }
 
+export function IconTheme(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" stroke="none" />
+    </Svg>
+  )
+}
+
 export function IconChevronLeft(props: IconProps) {
   return (
     <Svg {...props}>

@@ -50,8 +50,7 @@ const api: AdouApi = {
   getWindowsIntegration: () => ipcRenderer.invoke('windows:integration'),
   registerWindowsIntegration: () => ipcRenderer.invoke('windows:register'),
   unregisterWindowsIntegration: () => ipcRenderer.invoke('windows:unregister'),
-  openDefaultAppChoice: () => ipcRenderer.invoke('windows:open-default-choice'),
-  openDefaultAppsSettings: () => ipcRenderer.invoke('windows:open-default-apps'),
+  openAppDefaultSettings: () => ipcRenderer.invoke('windows:open-app-defaults'),
   readLegalNotices: () => ipcRenderer.invoke('legal:read'),
   revealLegalNotices: () => ipcRenderer.invoke('legal:reveal'),
   listPrinters: () => ipcRenderer.invoke('printer:list'),
@@ -64,7 +63,8 @@ const api: AdouApi = {
   writeTextFile: (options) => ipcRenderer.invoke('text:write', options),
   createTextFile: (kind) => ipcRenderer.invoke('dialog:new-text', kind),
   exportTextPdf: (options) => ipcRenderer.invoke('text:export-pdf', options),
-  setUnsavedTextCount: (count) => ipcRenderer.send('text:unsaved-count', count)
+  setUnsavedTextCount: (count) => ipcRenderer.send('text:unsaved-count', count),
+  setThemeSource: (preference) => ipcRenderer.send('theme:set', preference)
 }
 
 contextBridge.exposeInMainWorld('adou', api)

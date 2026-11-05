@@ -9,6 +9,7 @@ import type {
 } from '@shared/types'
 import { messageOf } from '../api'
 import mascotEmpty from '../assets/mascot-empty.webp'
+import mascotEmptyDark from '../assets/mascot-empty-dark.webp'
 import { IconClose, IconExternal } from './icons'
 
 const REPOSITORY = 'https://gitcode.com/Zzuser/adouOFD'
@@ -183,7 +184,19 @@ export function AboutDialog({ open, autoCheck = false, onClose, backend, health,
         <button className="about-close" onClick={onClose} aria-label="关闭关于">
           <IconClose size={16} />
         </button>
-        <img className="about-mascot" src={mascotEmpty} alt="阿豆" draggable={false} />
+        <img
+          className="about-mascot mascot-light"
+          src={mascotEmpty}
+          alt="阿豆"
+          draggable={false}
+        />
+        <img
+          className="about-mascot mascot-dark"
+          src={mascotEmptyDark}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
         <h2 id="about-title">阿豆OFD</h2>
         <div className="about-version">v{versions?.app ?? '—'} · MIT License</div>
         <p className="about-desc">本地 OFD / PDF / Markdown 阅读与处理工具，文档不上传。</p>

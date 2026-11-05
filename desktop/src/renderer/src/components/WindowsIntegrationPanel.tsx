@@ -3,11 +3,16 @@ import type { WindowsIntegrationStatus } from '@shared/types'
 import { messageOf } from '../api'
 import { IconAlert } from './icons'
 
-type Action = 'register' | 'default' | 'settings' | 'unregister'
+type Action = 'register' | 'unregister'
 
-export function WindowsIntegrationPanel() {
+interface WindowsIntegrationPanelProps {
+  active: boolean
+}
+
+export function WindowsIntegrationPanel({ active }: WindowsIntegrationPanelProps) {
   const [status, setStatus] = useState<WindowsIntegrationStatus | null>(null)
   const [busyAction, setBusyAction] = useState<Action | null>(null)
+  const [busyExtension, setBusyExtension] = useState<'ofd' | 'pdf' | 'md' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [confirmingRemove, setConfirmingRemove] = useState(false)
@@ -15,19 +20,30 @@ export function WindowsIntegrationPanel() {
 
   useEffect(() => {
     let alive = true
-    setError(null)
-    void window.adou
-      .getWindowsIntegration()
-      .then((value) => {
-        if (alive) setStatus(value)
-      })
-      .catch((reason: unknown) => {
-        if (alive) setError(messageOf(reason))
-      })
+    const load = (): void => {
+      setError(null)
+      void window.adou
+        .getWindowsIntegration()
+        .then((value) => {
+          if (alive) setStatus(value)
+        })
+        .catch((reason: unknown) => {
+          if (alive) setError(messageOf(reason))
+        })
+    }
+    load()
+    if (!active) {
+      return () => {
+        alive = false
+      }
+    }
+    // 进入设置页或从 Windows 设置返回时刷新，避免启动注册尚未完成导致的状态过期
+    window.addEventListener('focus', load)
     return () => {
       alive = false
+      window.removeEventListener('focus', load)
     }
-  }, [reloadKey])
+  }, [active, reloadKey])
 
   useEffect(() => {
     if (!feedback) return
@@ -53,29 +69,18 @@ export function WindowsIntegrationPanel() {
     }
   }
 
-  const openSystemSettings = async (): Promise<void> => {
-    setBusyAction('settings')
+  const openAppDefaults = async (ext: 'ofd' | 'pdf' | 'md'): Promise<void> => {
+    setBusyExtension(ext)
     setError(null)
     setFeedback(null)
     try {
-      await window.adou.openDefaultAppsSettings()
-      setFeedback('已打开 Windows 默认应用设置')
+      await window.adou.openAppDefaultSettings()
+      setFeedback(`已打开默认应用设置，请将 .${ext} 设为阿豆OFD`)
     } catch (reason) {
       setError(messageOf(reason))
     } finally {
-      setBusyAction(null)
+      setBusyExtension(null)
     }
-  }
-
-  const chooseDefault = (): void => {
-    void run(
-      'default',
-      async () => {
-        await window.adou.openDefaultAppChoice()
-        return window.adou.getWindowsIntegration()
-      },
-      '已打开 .ofd 默认应用选择'
-    )
   }
 
   const remove = (): void => {
@@ -113,22 +118,42 @@ export function WindowsIntegrationPanel() {
     )
   }
 
+  const extOpenWith = (ext: 'ofd' | 'pdf' | 'md'): boolean =>
+    ext === 'ofd' ? status.ofdOpenWith : ext === 'pdf' ? status.pdfOpenWith : status.mdOpenWith
+
+  const extIsDefault = (ext: 'ofd' | 'pdf' | 'md'): boolean =>
+    ext === 'ofd' ? status.ofdDefault : ext === 'pdf' ? status.pdfDefault : status.mdDefault
+
+  const missingExtensions = (['ofd', 'pdf', 'md'] as const)
+    .filter((ext) => !extOpenWith(ext))
+    .map((ext) => `.${ext}`)
+
   const extension = (ext: 'ofd' | 'pdf' | 'md'): { label: string; tone: string } => {
     if (!status.registered) return { label: '未注册', tone: 'muted' }
-    const isDefault = ext === 'ofd' ? status.ofdDefault : ext === 'pdf' ? status.pdfDefault : status.mdDefault
-    if (isDefault) return { label: '默认应用', tone: 'ok' }
+    if (!extOpenWith(ext)) return { label: '需修复', tone: 'muted' }
+    if (extIsDefault(ext)) return { label: '默认应用', tone: 'ok' }
     return { label: ext === 'ofd' ? '已加入' : '系统默认', tone: 'soft' }
   }
+
+  const busy = busyAction !== null || busyExtension !== null
 
   return (
     <div className="integration-panel" data-integration-panel data-registered={status.registered}>
       <div className="integration-status">
         <span className={`integration-dot ${status.registered ? 'ok' : ''}`} aria-hidden="true" />
         <div className="integration-status-copy">
-          <b>{status.registered ? '已加入 Windows 打开方式' : '尚未注册文件关联'}</b>
+          <b>
+            {status.registered
+              ? missingExtensions.length > 0
+                ? '已注册，部分扩展需修复'
+                : '已加入 Windows 打开方式'
+              : '尚未注册文件关联'}
+          </b>
           <span>
             {status.registered
-              ? '右键 .ofd / .pdf / .md 可直接选择阿豆OFD；默认应用仍由 Windows 管理。'
+              ? missingExtensions.length > 0
+                ? `${missingExtensions.join('、')} 不在“打开方式”列表中，点“注册 / 修复”补回。`
+                : '右键 .ofd / .pdf / .md 可直接选择阿豆OFD；默认应用仍由 Windows 管理。'
               : '注册后，.ofd / .pdf / .md 会出现在“打开方式”列表中。'}
           </span>
         </div>
@@ -137,59 +162,72 @@ export function WindowsIntegrationPanel() {
         </span>
       </div>
 
-      <div className="integration-extensions">
+      <div className="integration-defaults">
+        <span className="integration-defaults-label">默认应用</span>
         {(['ofd', 'pdf', 'md'] as const).map((ext) => {
           const state = extension(ext)
+          const available = status.registered && extOpenWith(ext)
+          const isDefault = extIsDefault(ext)
           return (
-            <span key={ext} className={`integration-chip ${state.tone}`}>
-              <b>.{ext}</b>
-              <span>{state.label}</span>
-            </span>
+            <div className="integration-default-row" key={ext}>
+              <span className={`integration-chip ${state.tone}`}>
+                <b>.{ext}</b>
+                <span>{state.label}</span>
+              </span>
+              <button
+                className="btn ghost small"
+                data-action={`windows-default-${ext}`}
+                disabled={!available || isDefault || busy}
+                onClick={() => void openAppDefaults(ext)}
+                title={
+                  !available
+                    ? '请先注册 / 修复文件关联'
+                    : isDefault
+                      ? `阿豆OFD 已是 .${ext} 的默认应用`
+                      : `在 Windows 设置中将 .${ext} 设为阿豆OFD`
+                }
+              >
+                {busyExtension === ext ? <span className="btn-spinner dark" /> : null}
+                {busyExtension === ext ? '正在打开…' : isDefault ? '已是默认' : '设为默认'}
+              </button>
+            </div>
           )
         })}
-        {status.optedOut ? <span className="integration-chip muted">安装器自动注册已关闭</span> : null}
       </div>
+      {status.optedOut ? <p className="integration-note">安装器自动注册已关闭。</p> : null}
 
       <div className="integration-actions">
         <button
           className="btn primary small"
           data-action="windows-register"
-          disabled={!status.canRegister || busyAction !== null}
-          onClick={() => void run('register', () => window.adou.registerWindowsIntegration(), '已注册文件关联')}
+          disabled={busy}
+          onClick={() => {
+            if (!status.canRegister) {
+              setError('开发模式不写入注册表，请使用安装版执行修复')
+              setFeedback(null)
+              return
+            }
+            void run('register', () => window.adou.registerWindowsIntegration(), '已注册文件关联')
+          }}
         >
           {busyAction === 'register' ? <span className="btn-spinner" /> : null}
           {busyAction === 'register' ? '正在注册…' : '注册 / 修复'}
-        </button>
-        <button
-          className="btn ghost small"
-          data-action="windows-default-choice"
-          disabled={!status.registered || busyAction !== null}
-          onClick={chooseDefault}
-          title="选择 .ofd 的默认打开方式"
-        >
-          {busyAction === 'default' ? <span className="btn-spinner dark" /> : null}
-          {busyAction === 'default' ? '正在打开…' : '设为默认…'}
-        </button>
-        <button
-          className="btn ghost small"
-          data-action="windows-default"
-          disabled={busyAction !== null}
-          onClick={() => void openSystemSettings()}
-        >
-          {busyAction === 'settings' ? <span className="btn-spinner dark" /> : null}
-          {busyAction === 'settings' ? '正在打开…' : '系统设置'}
         </button>
         {status.registered ? (
           <button
             className="btn ghost small danger-text"
             data-action="windows-unregister"
-            disabled={busyAction !== null}
+            disabled={busy}
             onClick={() => setConfirmingRemove(true)}
           >
             移除
           </button>
         ) : null}
       </div>
+
+      <p className="integration-note">
+        Windows 不允许应用静默修改默认应用。点任一“设为默认”会打开本应用的默认应用页，请按扩展逐项确认。
+      </p>
 
       {confirmingRemove ? (
         <div className="integration-confirm" role="alertdialog" aria-label="确认移除文件关联">

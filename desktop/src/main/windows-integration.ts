@@ -1,7 +1,6 @@
 import { app } from 'electron'
 import { execFile } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import type { WindowsIntegrationStatus } from '../shared/types'
@@ -138,22 +137,32 @@ function defaultIconValue(iconFile: string): string {
 }
 
 async function commandRegistered(progId: string): Promise<boolean> {
-  const output = await regQuery([
-    'query',
+  const keys = [
     `HKCU\\Software\\Classes\\${progId}\\shell\\open\\command`,
-    '/ve'
-  ])
-  return output !== null
+    `HKLM\\Software\\Classes\\${progId}\\shell\\open\\command`
+  ]
+  const results = await Promise.all(keys.map((key) => regQuery(['query', key, '/ve'])))
+  return results.some((output) => output !== null)
 }
 
 async function openWithRegistered(extension: string, progId: string): Promise<boolean> {
-  const output = await regQuery([
-    'query',
+  const keys = [
     `HKCU\\Software\\Classes\\.${extension}\\OpenWithProgids`,
-    '/v',
-    progId
-  ])
-  return output !== null
+    `HKLM\\Software\\Classes\\.${extension}\\OpenWithProgids`
+  ]
+  const results = await Promise.all(
+    keys.map((key) => regQuery(['query', key, '/v', progId]))
+  )
+  return results.some((output) => output !== null)
+}
+
+async function capabilitiesRegistered(): Promise<boolean> {
+  const keys = [
+    `HKCU\\${REGISTERED_APPLICATIONS}`,
+    `HKLM\\${REGISTERED_APPLICATIONS}`
+  ]
+  const results = await Promise.all(keys.map((key) => regQuery(['query', key, '/v', APP_KEY])))
+  return results.some((output) => output !== null)
 }
 
 async function readUserChoice(extension: string): Promise<string> {
@@ -210,13 +219,16 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
       packaged,
       canRegister: false,
       registered: false,
+      ofdOpenWith: false,
+      pdfOpenWith: false,
+      mdOpenWith: false,
       ofdDefault: false,
       pdfDefault: false,
       mdDefault: false,
       optedOut: false
     }
   }
-  const [fileTypesRegistered, ofdDefault, pdfDefault, mdDefault] = await Promise.all([
+  const [fileTypesRegistered, capabilities, ofdDefault, pdfDefault, mdDefault] = await Promise.all([
     Promise.all(
       FILE_TYPES.map(async (type) => {
         const command = await commandRegistered(type.progId)
@@ -224,6 +236,7 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
         return command && openWith
       })
     ),
+    capabilitiesRegistered(),
     isDefaultFor('ofd'),
     isDefaultFor('pdf'),
     isDefaultFor('md')
@@ -232,7 +245,10 @@ export async function getWindowsIntegration(): Promise<WindowsIntegrationStatus>
     supported,
     packaged,
     canRegister: packaged,
-    registered: fileTypesRegistered.every(Boolean),
+    registered: capabilities || fileTypesRegistered.some(Boolean),
+    ofdOpenWith: fileTypesRegistered[0],
+    pdfOpenWith: fileTypesRegistered[1],
+    mdOpenWith: fileTypesRegistered[2],
     ofdDefault,
     pdfDefault,
     mdDefault,
@@ -320,6 +336,9 @@ export async function unregisterFileAssociations(): Promise<WindowsIntegrationSt
   if (!app.isPackaged) {
     throw new Error('开发模式不写入注册表，请使用安装版')
   }
+  if (!app.isPackaged) {
+    throw new Error('开发模式不写入注册表，请使用安装版')
+  }
   if (
     (await userChoiceIsOurs('ofd')) ||
     (await userChoiceIsOurs('pdf')) ||
@@ -371,27 +390,17 @@ export async function ensureRegisteredOnStartup(): Promise<void> {
   if (config.optedOut) return
   try {
     const status = await getWindowsIntegration()
-    if (status.registered && config.registeredPath === process.execPath) return
+    if (
+      status.registered &&
+      status.ofdOpenWith &&
+      status.pdfOpenWith &&
+      status.mdOpenWith &&
+      config.registeredPath === process.execPath
+    ) {
+      return
+    }
     await registerFileAssociations()
   } catch (error) {
     console.warn('[windows] 自动注册文件关联失败', error)
   }
-}
-
-/**
- * Windows 不允许静默修改默认应用；用“打开方式”对话框让用户自行确认，
- * 这是双击直接打开最直接的入口。
- */
-export async function openDefaultAppChoice(): Promise<void> {
-  if (!isWindows()) return
-  const sample = join(tmpdir(), 'adou-ofd-association.ofd')
-  try {
-    writeFileSync(sample, '')
-  } catch {
-    // 示例文件仅用于唤起对话框
-  }
-  await execFileAsync('rundll32.exe', ['shell32.dll,OpenAs_RunDLL', sample], {
-    windowsHide: true
-  })
-  await refreshShellIcons()
 }

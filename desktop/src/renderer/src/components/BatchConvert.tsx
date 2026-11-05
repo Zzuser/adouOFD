@@ -371,10 +371,6 @@ export function BatchConvert({ backend, onOpenDocument, onPrintResult }: BatchCo
     return { total: items.length, done, failed, pending }
   }, [items])
 
-  const hasQueue = items.some(
-    (item) => item.status === 'pending' || item.status === 'failed' || item.status === 'canceled'
-  )
-
   return (
     <div
       className={`batch ${dragOver ? 'drag' : ''}`}
@@ -430,7 +426,8 @@ export function BatchConvert({ backend, onOpenDocument, onPrintResult }: BatchCo
             className="btn primary"
             data-action="batch-start"
             onClick={() => void start()}
-            disabled={running || !hasQueue}
+            disabled={running}
+            title={outputDir ? undefined : '请先选择输出目录'}
           >
             {running ? <span className="btn-spinner" /> : <IconSwap size={16} />}
             {running ? '转换中' : '开始转换'}

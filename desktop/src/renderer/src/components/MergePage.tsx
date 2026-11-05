@@ -331,8 +331,6 @@ export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageP
   const probing = items.some((item) => item.status === 'probing')
   const totalPages = readyItems.reduce((sum, item) => sum + item.pages, 0)
   const hasOfdInput = readyItems.some((item) => item.kind === 'OFD')
-  const canStart =
-    !running && readyItems.length >= 2 && readyItems.length === items.length && Boolean(outputPath)
   const elapsed =
     running && startedAtRef.current ? formatElapsed(now - startedAtRef.current) : ''
   const activeJob = job && (job.status === 'QUEUED' || job.status === 'RUNNING') ? job : null
@@ -470,7 +468,8 @@ export function MergePage({ backend, onOpenDocument, onPrintResult }: MergePageP
             className="btn primary"
             data-action="merge-start"
             onClick={() => void start()}
-            disabled={!canStart}
+            disabled={running}
+            title={outputPath ? undefined : '请先选择保存位置'}
           >
             {running ? <span className="btn-spinner" /> : <IconMerge size={16} />}
             {running ? '合并中' : '开始合并'}
