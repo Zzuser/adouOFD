@@ -83,7 +83,8 @@ if (!hasLock) {
 
     registerIpc()
     createWindow()
-    void ensureRegisteredOnStartup()
+    // 文件关联检查会串行拉起十几个 reg.exe，延后避开引擎与窗口初始化
+    setTimeout(() => void ensureRegisteredOnStartup(), 2500)
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

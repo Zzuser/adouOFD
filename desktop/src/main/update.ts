@@ -52,8 +52,8 @@ export async function checkForUpdate(): Promise<UpdateCheckResult> {
     if (!response.ok) {
       return { ...base, error: `检查更新失败（HTTP ${response.status}）` }
     }
-    const text = await response.text()
-    if (text.length > MAX_MANIFEST_BYTES) {
+    const text = await readLimitedText(response, MAX_MANIFEST_BYTES)
+    if (text === null) {
       return { ...base, error: '更新清单过大' }
     }
     const manifest = parseUpdateManifest(JSON.parse(text))
@@ -189,6 +189,35 @@ export async function installDownloadedUpdate(rawPath: unknown): Promise<UpdateD
     return { ok: false, error: `无法启动安装包：${error}` }
   }
   return { ok: true, path: rawPath }
+}
+
+/**
+ * 读取有大小上限的文本响应：先看 Content-Length，再按字节流计数，
+ * 避免异常清单把整个响应读进内存后才判断。
+ */
+async function readLimitedText(response: Response, maxBytes: number): Promise<string | null> {
+  const declared = Number(response.headers.get('content-length') ?? Number.NaN)
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    return null
+  }
+  if (!response.body) {
+    return ''
+  }
+  const reader = response.body.getReader()
+  const chunks: Buffer[] = []
+  let received = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    received += value.byteLength
+    if (received > maxBytes) {
+      await reader.cancel().catch(() => undefined)
+      return null
+    }
+    chunks.push(Buffer.from(value))
+  }
+  return Buffer.concat(chunks).toString('utf8')
 }
 
 function validateDownload(raw: unknown): UpdateDownload | null {
