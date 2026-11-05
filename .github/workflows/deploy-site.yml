@@ -1,0 +1,37 @@
+name: Deploy site
+
+# EdgeOne Pages 的部署钩子需要外部主动 POST 才会触发。
+# 这里只监听 site/ 的变更，避免每次改代码都重建官网。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: edgeone-site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger EdgeOne Pages deployment
+        env:
+          EDGEONE_DEPLOY_HOOK: ${{ secrets.EDGEONE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$EDGEONE_DEPLOY_HOOK" ]; then
+            echo "缺少仓库 Secret：EDGEONE_DEPLOY_HOOK" >&2
+            exit 1
+          fi
+          curl -fsS -X POST \
+            --max-time 30 \
+            --retry 3 \
+            --retry-delay 5 \
+            "$EDGEONE_DEPLOY_HOOK"

@@ -35,12 +35,26 @@ site/
 ## EdgeOne 部署
 
 - 平台：EdgeOne Pages（Makers），项目名 `adouofd`
-- Git：CNB `Zzuser/adouOFD`（仓库同步自 GitHub），分支 `main`；EdgeOne 只监听 CNB，推送 GitHub/GitCode 不会触发部署
+- Git：GitHub `Zzuser/adouOFD`，分支 `main`（在 EdgeOne 控制台确认 Git 来源已切到 GitHub）
 - 根目录：`./`
 - 安装命令：留空
 - 构建命令：留空（必填时 `echo skip`）
 - 输出目录：`site`
 - 若控制台不接受上述组合：根目录 `site`、输出目录 `.`
+
+自动部署有两条链路，二选一即可；同时开启会对同一次推送部署两次：
+
+1. **Git 集成（首选）**：EdgeOne 关联 GitHub 后，推送到 `main` 自动构建。EdgeOne 只处理 `main` 分支。
+2. **部署钩子 + GitHub Actions**：控制台创建部署钩子，把完整 URL 保存为 GitHub 仓库 Secret `EDGEONE_DEPLOY_HOOK`；`.github/workflows/deploy-site.yml` 会在 `site/**` 变更时 POST 钩子，也支持手动触发。
+   - 钩子 URL 等同部署凭据，不要提交到仓库、Issue 或公开聊天；泄露后立即在控制台重新生成。
+   - 部署钩子只是触发入口，设置后不会自己执行，必须由 GitHub Actions、CI 或其它系统调用。
+
+配置 Secret（任选其一）：
+
+```powershell
+gh secret set EDGEONE_DEPLOY_HOOK --repo Zzuser/adouOFD
+# 或在 GitHub 仓库 Settings → Secrets and variables → Actions 添加
+```
 
 ## 域名与 HTTPS
 
@@ -67,13 +81,13 @@ site/
 3. 用当前版本重截关键 UI 截图，替换 `site/assets/screenshots/`
 4. 更新 `site/assets/og.png`（可从最新 `viewer.png` 裁 1200×630）
 5. 本地预览并检查手机宽度，确认无控制台错误和坏链接
-6. 更新 `site/sitemap.xml` 的 `lastmod`；同步/推送 CNB `main`（GitHub 推送后可在 CNB 点“同步”），EdgeOne 自动部署
+6. 更新 `site/sitemap.xml` 的 `lastmod`；推送到 GitHub `main`，`site/**` 变更会触发 EdgeOne 部署（CNB 仅作代码镜像，不再影响官网）
 7. 确认 `https://adou.grout.cn/`、`/robots.txt`、`/sitemap.xml` 均返回 200
 8. 确认下载按钮指向当前 CNB Release，SHA256 文件可访问；在搜索后台重新提交 sitemap
 
 ## 注意
 
-- 发版后必须同步 CNB `main`：EdgeOne 关联的是 `cnb.cool/Zzuser/adouOFD`，不是 GitHub；只推 GitHub 会看到旧版本。
+- 官网跟 GitHub `main`；CNB 只作代码镜像，是否同步不影响官网。使用部署钩子链路时，确认 `EDGEONE_DEPLOY_HOOK` 已配置，否则工作流会明确报错。
 - 主站不自动拉取最新版本：浏览器直接请求 CNB 清单会被 CORS 拦截；版本与下载链接是静态的。如需自动最新版，用 EdgeOne Edge Function 做同源代理。
 - canonical / og:url / og:image / JSON-LD 目前假设 `https://adou.grout.cn`；换域名要同步修改。
 - 备案号拿到后加入 `index.html` 的 `footer-bottom`。
