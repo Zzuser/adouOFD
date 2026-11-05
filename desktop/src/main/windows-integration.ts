@@ -336,9 +336,6 @@ export async function unregisterFileAssociations(): Promise<WindowsIntegrationSt
   if (!app.isPackaged) {
     throw new Error('开发模式不写入注册表，请使用安装版')
   }
-  if (!app.isPackaged) {
-    throw new Error('开发模式不写入注册表，请使用安装版')
-  }
   if (
     (await userChoiceIsOurs('ofd')) ||
     (await userChoiceIsOurs('pdf')) ||
