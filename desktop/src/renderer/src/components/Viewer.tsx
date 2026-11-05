@@ -35,6 +35,8 @@ const PX_PER_MM = 96 / 25.4
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 4
 const ZOOM_FACTOR = 1.25
+// 只保留当前页附近的页面图片；长文档整本浏览后不会把所有页面常驻在内存里
+const RENDER_WINDOW = 4
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -77,6 +79,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Array<HTMLDivElement | null>>([])
+  const visiblePagesRef = useRef<Set<number>>(new Set())
   const pageInputRef = useRef<HTMLInputElement>(null)
   const anchorPageRef = useRef<number | null>(null)
   const currentPageRef = useRef(1)
@@ -91,6 +94,7 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     currentPageRef.current = 1
     setPageInput('1')
     setRenderedPages(new Set([1]))
+    visiblePagesRef.current.clear()
     setNavOpen(doc.pageCount > 1)
     setNavTab('thumbs')
     setOutline([])
@@ -345,6 +349,12 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     if (!root) return
     const observer = new IntersectionObserver(
       (entries) => {
+        for (const entry of entries) {
+          const page = Number((entry.target as HTMLElement).dataset.page)
+          if (!Number.isFinite(page)) continue
+          if (entry.isIntersecting) visiblePagesRef.current.add(page)
+          else visiblePagesRef.current.delete(page)
+        }
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .map((entry) => Number((entry.target as HTMLElement).dataset.page))
@@ -369,6 +379,21 @@ export function Viewer({ backend, doc, active, printOpen, onClose, onConvert, on
     }
     return () => observer.disconnect()
   }, [doc.id, doc.pageCount, navOpen])
+
+  useEffect(() => {
+    setRenderedPages((previous) => {
+      let changed = false
+      const next = new Set<number>()
+      for (const page of previous) {
+        if (Math.abs(page - currentPage) <= RENDER_WINDOW || visiblePagesRef.current.has(page)) {
+          next.add(page)
+        } else {
+          changed = true
+        }
+      }
+      return changed ? next : previous
+    })
+  }, [currentPage])
 
   useEffect(() => {
     const target = anchorPageRef.current

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ public class DocumentService {
 
     private final DemoOfdFactory demoFactory;
     private final PdfDemoFactory pdfDemoFactory;
+    private final Object registryLock = new Object();
     private final Map<String, DocumentSession> sessions = new LinkedHashMap<>(16, 0.75f, true);
     private final Map<String, DocumentSession> previews = new LinkedHashMap<>(16, 0.75f, true);
     private final Map<String, RenderCache> renderCaches = new ConcurrentHashMap<>();
@@ -36,18 +38,22 @@ public class DocumentService {
         this.pdfDemoFactory = pdfDemoFactory;
     }
 
-    public synchronized DocumentSummary open(String rawPath) {
+    /**
+     * 打开/渲染只锁各自文档会话：不同标签可以并行解析与渲染，
+     * 同一文档仍串行访问 PDFBox/ofdrw 的非线程安全对象。
+     */
+    public DocumentSummary open(String rawPath) {
         return open(rawPath, null);
     }
 
-    public synchronized DocumentSummary open(String rawPath, String password) {
+    public DocumentSummary open(String rawPath, String password) {
         return openSession(rawPath, false, password);
     }
 
     /**
      * 拆分/插页页面预览专用会话：独立于阅读器标签，避免预览把已打开的文档挤出会话。
      */
-    public synchronized DocumentSummary openPreview(String rawPath) {
+    public DocumentSummary openPreview(String rawPath) {
         return openSession(rawPath, true, null);
     }
 
@@ -88,7 +94,7 @@ public class DocumentService {
         }
     }
 
-    public synchronized DocumentSummary openDemo() {
+    public DocumentSummary openDemo() {
         Path workDir = createWorkDir();
         try {
             Path demoPath = demoFactory.generate(workDir);
@@ -101,7 +107,7 @@ public class DocumentService {
         }
     }
 
-    public synchronized DocumentSummary openPdfDemo() {
+    public DocumentSummary openPdfDemo() {
         Path workDir = createWorkDir();
         try {
             Path demoPath = pdfDemoFactory.generate(workDir);
@@ -114,120 +120,141 @@ public class DocumentService {
         }
     }
 
-    public synchronized DocumentSummary summary(String id) {
+    public DocumentSummary summary(String id) {
         return require(id).summary();
     }
 
-    public synchronized DocumentProperties properties(String id) {
+    public DocumentProperties properties(String id) {
         DocumentSession session = require(id);
-        try {
-            DocumentMetadata metadata = session.handle().metadata();
-            return new DocumentProperties(
-                    session.summary(),
-                    metadata.metadata(),
-                    metadata.signatures(),
-                    metadata.warning());
-        } catch (RuntimeException ex) {
-            log.warn("文档属性读取失败: document={}", id, ex);
-            return new DocumentProperties(
-                    session.summary(),
-                    Map.of(),
-                    List.of(),
-                    "文档属性读取失败");
+        synchronized (session) {
+            try {
+                DocumentMetadata metadata = session.handle().metadata();
+                return new DocumentProperties(
+                        session.summary(),
+                        metadata.metadata(),
+                        metadata.signatures(),
+                        metadata.warning());
+            } catch (RuntimeException ex) {
+                log.warn("文档属性读取失败: document={}", id, ex);
+                return new DocumentProperties(
+                        session.summary(),
+                        Map.of(),
+                        List.of(),
+                        "文档属性读取失败");
+            }
         }
     }
 
-    public synchronized List<OutlineItem> outline(String id) {
-        return require(id).handle().outline();
-    }
-
-    public synchronized List<TextRun> pageText(String id, int page) {
+    public List<OutlineItem> outline(String id) {
         DocumentSession session = require(id);
-        if (page < 1 || page > session.pageCount()) {
-            throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
-                    "页码超出范围（1-" + session.pageCount() + "）");
-        }
-        try {
-            return session.handle().pageText(page);
-        } catch (IOException | RuntimeException ex) {
-            log.warn("文本提取失败: document={}, page={}", id, page, ex);
-            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "TEXT_EXTRACT_FAILED",
-                    "页面文本提取失败", ex.getMessage());
+        synchronized (session) {
+            return session.handle().outline();
         }
     }
 
-    public synchronized Path render(String id, int page, int dpi) {
+    public List<TextRun> pageText(String id, int page) {
+        DocumentSession session = require(id);
+        synchronized (session) {
+            if (page < 1 || page > session.pageCount()) {
+                throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
+                        "页码超出范围（1-" + session.pageCount() + "）");
+            }
+            try {
+                return session.handle().pageText(page);
+            } catch (IOException | RuntimeException ex) {
+                log.warn("文本提取失败: document={}, page={}", id, page, ex);
+                throw new ApiException(Http.INTERNAL_SERVER_ERROR, "TEXT_EXTRACT_FAILED",
+                        "页面文本提取失败", ex.getMessage());
+            }
+        }
+    }
+
+    public Path render(String id, int page, int dpi) {
         return render(id, page, dpi, 0);
     }
 
-    public synchronized Path render(String id, int page, int dpi, int rotate) {
+    public Path render(String id, int page, int dpi, int rotate) {
         return renderSession(require(id), page, dpi, rotate);
     }
 
-    public synchronized Path renderPreview(String id, int page, int dpi) {
+    public Path renderPreview(String id, int page, int dpi) {
         return renderSession(requirePreview(id), page, dpi, 0);
     }
 
     private Path renderSession(DocumentSession session, int page, int dpi, int rotate) {
-        if (page < 1 || page > session.pageCount()) {
-            throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
-                    "页码超出范围（1-" + session.pageCount() + "）");
-        }
-        if (rotate % 90 != 0) {
-            throw new ApiException(Http.BAD_REQUEST, "INVALID_ROTATION",
-                    "旋转角度必须是 90 的倍数");
-        }
-        int safeDpi = Math.min(300, Math.max(24, dpi));
-        int safeRotate = ((rotate % 360) + 360) % 360;
-
-        try {
-            Path png = session.handle().render(page, safeDpi, safeRotate);
-            if (!isUsable(png)) {
-                throw new IOException("渲染结果为空");
+        synchronized (session) {
+            if (page < 1 || page > session.pageCount()) {
+                throw new ApiException(Http.BAD_REQUEST, "PAGE_OUT_OF_RANGE",
+                        "页码超出范围（1-" + session.pageCount() + "）");
             }
-            renderCaches.computeIfAbsent(session.id(), id -> new RenderCache()).record(png);
-            return png;
-        } catch (IOException | RuntimeException ex) {
-            log.warn("页面渲染失败: document={}, page={}, dpi={}, rotate={}",
-                    session.id(), page, safeDpi, safeRotate, ex);
-            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
-                    "页面渲染失败，请查看引擎日志", ex.getMessage());
-        } catch (StackOverflowError error) {
-            log.error("页面渲染栈溢出: document={}, page={}, dpi={}, rotate={}",
-                    session.id(), page, safeDpi, safeRotate);
-            throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
-                    "页面包含异常的资源引用，暂时无法渲染", "文档渲染递归溢出");
+            if (rotate % 90 != 0) {
+                throw new ApiException(Http.BAD_REQUEST, "INVALID_ROTATION",
+                        "旋转角度必须是 90 的倍数");
+            }
+            int safeDpi = Math.min(300, Math.max(24, dpi));
+            int safeRotate = ((rotate % 360) + 360) % 360;
+
+            try {
+                Path png = session.handle().render(page, safeDpi, safeRotate);
+                if (!isUsable(png)) {
+                    throw new IOException("渲染结果为空");
+                }
+                renderCaches.computeIfAbsent(session.id(), id -> new RenderCache()).record(png);
+                return png;
+            } catch (IOException | RuntimeException ex) {
+                log.warn("页面渲染失败: document={}, page={}, dpi={}, rotate={}",
+                        session.id(), page, safeDpi, safeRotate, ex);
+                throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_FAILED",
+                        "页面渲染失败，请查看引擎日志", ex.getMessage());
+            } catch (StackOverflowError error) {
+                log.error("页面渲染栈溢出: document={}, page={}, dpi={}, rotate={}",
+                        session.id(), page, safeDpi, safeRotate);
+                throw new ApiException(Http.INTERNAL_SERVER_ERROR, "RENDER_OVERFLOW",
+                        "页面包含异常的资源引用，暂时无法渲染", "文档渲染递归溢出");
+            }
         }
     }
 
-    public synchronized void close(String id) {
-        DocumentSession removed = sessions.remove(id);
+    public void close(String id) {
+        DocumentSession removed;
+        synchronized (registryLock) {
+            removed = sessions.remove(id);
+        }
         if (removed != null) {
             closeSession(removed);
         }
     }
 
-    public synchronized void closePreview(String id) {
-        DocumentSession removed = previews.remove(id);
+    public void closePreview(String id) {
+        DocumentSession removed;
+        synchronized (registryLock) {
+            removed = previews.remove(id);
+        }
         if (removed != null) {
             closeSession(removed);
         }
     }
 
-    public synchronized void closeAll() {
-        sessions.values().forEach(this::closeSession);
-        sessions.clear();
-        previews.values().forEach(this::closeSession);
-        previews.clear();
+    public void closeAll() {
+        List<DocumentSession> closing;
+        synchronized (registryLock) {
+            closing = new ArrayList<>(sessions.values());
+            closing.addAll(previews.values());
+            sessions.clear();
+            previews.clear();
+        }
+        closing.forEach(this::closeSession);
     }
 
     private void closeSession(DocumentSession session) {
         renderCaches.remove(session.id());
-        if (session.handle() != null) {
-            try {
-                session.handle().close();
-            } catch (IOException ex) {
-                log.warn("关闭文档失败: {}", session.path(), ex);
+        synchronized (session) {
+            if (session.handle() != null) {
+                try {
+                    session.handle().close();
+                } catch (IOException ex) {
+                    log.warn("关闭文档失败: {}", session.path(), ex);
+                }
             }
         }
         deleteRecursively(session.workDir());
@@ -314,37 +341,49 @@ public class DocumentService {
     }
 
     private void register(DocumentSession session) {
-        while (sessions.size() >= MAX_SESSIONS) {
-            var eldest = sessions.entrySet().iterator().next();
-            sessions.remove(eldest.getKey());
-            closeSession(eldest.getValue());
+        List<DocumentSession> evicted = new ArrayList<>(1);
+        synchronized (registryLock) {
+            while (sessions.size() >= MAX_SESSIONS) {
+                var eldest = sessions.entrySet().iterator().next();
+                sessions.remove(eldest.getKey());
+                evicted.add(eldest.getValue());
+            }
+            sessions.put(session.id(), session);
         }
-        sessions.put(session.id(), session);
+        evicted.forEach(this::closeSession);
     }
 
     private void registerPreview(DocumentSession session) {
-        while (previews.size() >= MAX_PREVIEWS) {
-            var eldest = previews.entrySet().iterator().next();
-            previews.remove(eldest.getKey());
-            closeSession(eldest.getValue());
+        List<DocumentSession> evicted = new ArrayList<>(1);
+        synchronized (registryLock) {
+            while (previews.size() >= MAX_PREVIEWS) {
+                var eldest = previews.entrySet().iterator().next();
+                previews.remove(eldest.getKey());
+                evicted.add(eldest.getValue());
+            }
+            previews.put(session.id(), session);
         }
-        previews.put(session.id(), session);
+        evicted.forEach(this::closeSession);
     }
 
     private DocumentSession require(String id) {
-        DocumentSession session = sessions.get(id);
-        if (session == null) {
-            throw new ApiException(Http.NOT_FOUND, "SESSION_NOT_FOUND", "文档会话不存在或已关闭");
+        synchronized (registryLock) {
+            DocumentSession session = sessions.get(id);
+            if (session == null) {
+                throw new ApiException(Http.NOT_FOUND, "SESSION_NOT_FOUND", "文档会话不存在或已关闭");
+            }
+            return session;
         }
-        return session;
     }
 
     private DocumentSession requirePreview(String id) {
-        DocumentSession session = previews.get(id);
-        if (session == null) {
-            throw new ApiException(Http.NOT_FOUND, "PREVIEW_NOT_FOUND", "页面预览会话不存在或已关闭");
+        synchronized (registryLock) {
+            DocumentSession session = previews.get(id);
+            if (session == null) {
+                throw new ApiException(Http.NOT_FOUND, "PREVIEW_NOT_FOUND", "页面预览会话不存在或已关闭");
+            }
+            return session;
         }
-        return session;
     }
 
     private Path createWorkDir() {

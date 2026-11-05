@@ -114,17 +114,19 @@ export function PageCanvas({
     if (loaded) onLoaded?.()
   }, [loaded, onLoaded])
 
+  // 先让图片出图，再请求文字层：同一文档的渲染与文本提取是串行的，
+  // 抢在图片前请求文本会明显拖慢首屏。
+  const textReady =
+    loaded &&
+    !failed &&
+    shouldRender &&
+    ready &&
+    backend.status === 'ready' &&
+    Boolean(backend.port) &&
+    Boolean(backend.token)
+
   useEffect(() => {
-    setTextRuns([])
-    if (
-      !shouldRender ||
-      !ready ||
-      backend.status !== 'ready' ||
-      !backend.port ||
-      !backend.token
-    ) {
-      return
-    }
+    if (!textReady) return
     const controller = new AbortController()
     fetchPageText(backend, docId, page, controller.signal)
       .then((runs) => setTextRuns(runs))
@@ -132,7 +134,7 @@ export function PageCanvas({
         // 无文本层或提取失败时不影响图片预览
       })
     return () => controller.abort()
-  }, [backend, docId, page, ready, shouldRender])
+  }, [textReady, backend, docId, page])
 
   const renderedRuns = useMemo(() => {
     let offset = 0

@@ -98,7 +98,9 @@ export function openDocument(
 ): Promise<DocumentSummary> {
   return request<DocumentSummary>(info, '/api/documents/open', {
     method: 'POST',
-    body: JSON.stringify(password ? { path, password } : { path })
+    body: JSON.stringify(password ? { path, password } : { path }),
+    // 大文档首次解析可能超过默认 20 秒；超时会导致前端报错而后端已建好会话
+    signal: AbortSignal.timeout(120_000)
   })
 }
 

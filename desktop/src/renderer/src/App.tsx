@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppVersions,
   BackendInfo,
@@ -32,7 +32,7 @@ import { PasswordDialog } from './components/PasswordDialog'
 import { PrintDialog } from './components/PrintDialog'
 import { Sidebar, type AppView } from './components/Sidebar'
 import { SettingsPage } from './components/SettingsPage'
-import { TextViewer, type TextViewerHandle } from './components/TextViewer'
+import type { TextViewerHandle } from './components/TextViewer'
 import { Viewer } from './components/Viewer'
 import { IconAlert } from './components/icons'
 import {
@@ -45,6 +45,11 @@ import {
 
 const INITIAL_BACKEND: BackendInfo = { status: 'starting', port: null, token: null }
 const MAX_TABS = 8
+
+// 编辑器依赖 CodeMirror / react-markdown / KaTeX，单独分包；只读 OFD/PDF 的用户不必加载
+const TextViewer = lazy(() =>
+  import('./components/TextViewer').then((module) => ({ default: module.TextViewer }))
+)
 
 interface DocumentTab {
   type: 'document'
@@ -826,14 +831,16 @@ export default function App() {
                       onPrint={(page, rotations) => requestPrint(tab.doc, page, rotations)}
                     />
                   ) : (
-                    <TextViewer
-                      ref={(handle) => registerTextHandle(tab.key, handle)}
-                      path={tab.path}
-                      active={tab.key === activeId && view === 'viewer'}
-                      onDirtyChange={(dirty) => setTextDirty(tab.key, dirty)}
-                      onOpenPath={(path) => void openPath(path)}
-                      onClose={() => requestCloseTab(tab.key)}
-                    />
+                    <Suspense fallback={null}>
+                      <TextViewer
+                        ref={(handle) => registerTextHandle(tab.key, handle)}
+                        path={tab.path}
+                        active={tab.key === activeId && view === 'viewer'}
+                        onDirtyChange={(dirty) => setTextDirty(tab.key, dirty)}
+                        onOpenPath={(path) => void openPath(path)}
+                        onClose={() => requestCloseTab(tab.key)}
+                      />
+                    </Suspense>
                   )}
                 </div>
               ))

@@ -284,7 +284,9 @@ public final class AdouServer {
     private static void sendPng(Context ctx, Path png) throws IOException {
         ctx.header("Cache-Control", PNG_CACHE_CONTROL);
         ctx.contentType("image/png");
-        ctx.result(Files.readAllBytes(png));
+        // 直接流式输出，避免把整页 PNG（可达数 MB）再复制一份到 Java 堆
+        ctx.header("Content-Length", Long.toString(Files.size(png)));
+        ctx.result(Files.newInputStream(png));
     }
 
     private static int intParam(Context ctx, String name) {
