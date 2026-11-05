@@ -35,7 +35,7 @@ site/
 ## EdgeOne 部署
 
 - 平台：EdgeOne Pages（Makers），项目名 `adouofd`
-- Git：GitHub `Zzuser/adouOFD`，分支 `main`
+- Git：CNB `Zzuser/adouOFD`（仓库同步自 GitHub），分支 `main`；EdgeOne 只监听 CNB，推送 GitHub/GitCode 不会触发部署
 - 根目录：`./`
 - 安装命令：留空
 - 构建命令：留空（必填时 `echo skip`）
@@ -67,12 +67,13 @@ site/
 3. 用当前版本重截关键 UI 截图，替换 `site/assets/screenshots/`
 4. 更新 `site/assets/og.png`（可从最新 `viewer.png` 裁 1200×630）
 5. 本地预览并检查手机宽度，确认无控制台错误和坏链接
-6. 更新 `site/sitemap.xml` 的 `lastmod`，推送 `main`，EdgeOne 自动部署
+6. 更新 `site/sitemap.xml` 的 `lastmod`；同步/推送 CNB `main`（GitHub 推送后可在 CNB 点“同步”），EdgeOne 自动部署
 7. 确认 `https://adou.grout.cn/`、`/robots.txt`、`/sitemap.xml` 均返回 200
 8. 确认下载按钮指向当前 CNB Release，SHA256 文件可访问；在搜索后台重新提交 sitemap
 
 ## 注意
 
+- 发版后必须同步 CNB `main`：EdgeOne 关联的是 `cnb.cool/Zzuser/adouOFD`，不是 GitHub；只推 GitHub 会看到旧版本。
 - 主站不自动拉取最新版本：浏览器直接请求 CNB 清单会被 CORS 拦截；版本与下载链接是静态的。如需自动最新版，用 EdgeOne Edge Function 做同源代理。
 - canonical / og:url / og:image / JSON-LD 目前假设 `https://adou.grout.cn`；换域名要同步修改。
 - 备案号拿到后加入 `index.html` 的 `footer-bottom`。
