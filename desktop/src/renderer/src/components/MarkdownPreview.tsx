@@ -1,14 +1,23 @@
 import type { MouseEvent } from 'react'
+import type { Root } from 'mdast'
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
+import rehypeKatex from 'rehype-katex'
 import rehypeSlug from 'rehype-slug'
+import remarkFrontmatter from 'remark-frontmatter'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 import 'highlight.js/styles/github.css'
+import 'katex/dist/katex.min.css'
 import {
   TEXT_ASSET_SCHEME,
   resolveLocalReference,
   textAssetUrl
 } from '@shared/text-paths'
+
+const stripFrontmatter = () => (tree: Root): void => {
+  tree.children = tree.children.filter((node) => node.type !== 'yaml')
+}
 
 interface MarkdownPreviewProps {
   content: string
@@ -32,8 +41,12 @@ export function MarkdownPreview({ content, documentPath, onOpenPath }: MarkdownP
   return (
     <article className="md-body" data-markdown-preview>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSlug, [rehypeHighlight, { detect: false, ignoreMissing: true }]]}
+        remarkPlugins={[remarkGfm, remarkFrontmatter, remarkMath, stripFrontmatter]}
+        rehypePlugins={[
+          rehypeSlug,
+          [rehypeKatex, { throwOnError: false, errorColor: '#cc0000' }],
+          [rehypeHighlight, { detect: false, ignoreMissing: true }]
+        ]}
         urlTransform={transformUrl}
         components={{
           img({ src, alt }) {
@@ -45,7 +58,7 @@ export function MarkdownPreview({ content, documentPath, onOpenPath }: MarkdownP
                 </span>
               )
             }
-            return <img src={value} alt={alt ?? ''} loading="lazy" />
+            return <img src={value} alt={alt ?? ''} />
           },
           a({ href, children }) {
             const handleClick = (event: MouseEvent<HTMLAnchorElement>): void => {

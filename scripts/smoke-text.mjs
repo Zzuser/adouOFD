@@ -44,6 +44,12 @@ rmSync(newFilePath, { force: true })
 rmSync(exportPath, { force: true })
 
 const guideSource = [
+  '---',
+  'title: hidden-smoke-marker',
+  'tags:',
+  '  - markdown',
+  '---',
+  '',
   '# 阿豆 Markdown 测试',
   '',
   '这是 **Markdown** 预览测试，包含中文与 `inline code`。',
@@ -58,14 +64,32 @@ const guideSource = [
   '- [x] 本地图片',
   '- [ ] 外部上传（不启用）',
   '',
-  '```ts',
-  "const message: string = 'hello'",
-  'console.log(message)',
-  '```',
-  '',
   '![猫](images/cat.png)',
   '',
   '[打开笔记](notes.txt)',
+  '',
+  '## 公式',
+  '',
+  '行内公式 $E = mc^2$，独立公式如下：',
+  '',
+  '$$',
+  '\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}',
+  '$$',
+  '',
+  '## 长代码行',
+  '',
+  '```ts',
+  "const longUrl: string = 'https://example.com/path/to/a/very/long/resource?with=query&and=more&parameters=that&should=wrap'",
+  '```',
+  '',
+  '## 跨页表格',
+  '',
+  '| 项目 | 说明 | 序号 |',
+  '| --- | --- | --- |',
+  ...Array.from(
+    { length: 48 },
+    (_, index) => `| 排版分页 ${index + 1} | 用于验证跨页时表头重复与单元格内中文换行 | ${index + 1} |`
+  ),
   '',
   ...Array.from(
     { length: 24 },
@@ -187,7 +211,10 @@ try {
       modeSplit: document.querySelector('[data-action="text-mode-split"]')?.classList.contains('active'),
       heading: document.querySelector('.md-body h1')?.textContent,
       paragraphs: document.querySelectorAll('.md-body p').length,
-      tableRows: document.querySelectorAll('.md-body table tbody tr').length,
+      tableRows: document.querySelectorAll('.md-body table')[0]?.querySelectorAll('tbody tr').length ?? 0,
+      crossPageTable: Boolean(document.querySelectorAll('.md-body table')[1]),
+      katex: document.querySelectorAll('.md-body .katex').length,
+      frontmatterHidden: !(document.querySelector('.md-body')?.textContent ?? '').includes('hidden-smoke-marker'),
       codeHighlighted: Boolean(document.querySelector('.md-body pre code.hljs')),
       checkboxes: document.querySelectorAll('.md-body input[type="checkbox"]').length,
       firstChecked: document.querySelector('.md-body input[type="checkbox"]')?.checked,
@@ -202,6 +229,9 @@ try {
   if (!initial.modeSplit) errors.push('Markdown 默认不是分栏模式')
   if (initial.heading !== '阿豆 Markdown 测试') errors.push('Markdown 标题未渲染')
   if (initial.tableRows !== 2) errors.push(`GFM 表格行数异常：${initial.tableRows}`)
+  if (!initial.crossPageTable) errors.push('跨页表格未渲染')
+  if (initial.katex < 2) errors.push(`公式未渲染：${initial.katex}`)
+  if (!initial.frontmatterHidden) errors.push('YAML frontmatter 未隐藏')
   if (!initial.codeHighlighted) errors.push('代码块未高亮')
   if (initial.checkboxes !== 2 || initial.firstChecked !== true) errors.push('任务列表未渲染')
   if (!initial.imageLoaded) errors.push('本地图片未加载')
@@ -329,7 +359,7 @@ try {
     "Array.from(document.querySelectorAll('.viewer-pane:not([hidden]) .text-outline-item')).map((item) => ({ text: item.textContent, line: item.dataset.outlineLine }))"
   )
   console.log('目录：', JSON.stringify(outlineItems))
-  if (outlineItems.length !== 2) errors.push(`目录标题数量异常：${outlineItems.length}`)
+  if (outlineItems.length !== 5) errors.push(`目录标题数量异常：${outlineItems.length}`)
   await evaluate(
     cdp,
     "Array.from(document.querySelectorAll('.viewer-pane:not([hidden]) .text-outline-item')).find((item) => item.textContent === '功能清单')?.click()"

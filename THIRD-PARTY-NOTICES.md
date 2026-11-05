@@ -16,6 +16,7 @@
 | ofdrw / ofdrw-full 2.5.1 | OFD 读取、渲染、版式、合并 | MIT；https://github.com/ofdrw/ofdrw |
 | SLF4J 2.0.20 / SLF4J Simple | 日志门面与日志实现 | `licenses/SLF4J-LICENSE.txt` |
 | Bouncy Castle 1.85 | 密码学与证书支持（ofdrw 传递依赖） | `licenses/Bouncy-Castle-LICENSE.md` |
+| react-markdown / remark-gfm / remark-frontmatter / remark-math / rehype-highlight / rehype-slug / rehype-katex / KaTeX | Markdown 预览、公式渲染与 PDF 导出 | 均为 MIT |
 
 ### Apache License 2.0
 
@@ -40,6 +41,7 @@
 | TwelveMonkeys ImageIO | TIFF 图像读取（ofdrw 依赖） | BSD-3-Clause |
 | Jaxen | XPath（ofdrw 依赖） | BSD-3-Clause |
 | Dom4j | XML 处理（ofdrw 依赖） | BSD 风格（Plexus） |
+| highlight.js | 代码块语法高亮（rehype-highlight 依赖） | BSD-3-Clause |
 
 BSD-3-Clause 文本见 `licenses/BSD-3-Clause.txt`；各组件版权归其作者所有，项目链接见组件发布页。
 

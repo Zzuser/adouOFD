@@ -39,7 +39,13 @@ export async function exportTextPdf(
       pdf = await window.webContents.printToPDF({
         printBackground: true,
         pageSize: 'A4',
-        preferCSSPageSize: true
+        preferCSSPageSize: true,
+        displayHeaderFooter: true,
+        headerTemplate: '<div></div>',
+        footerTemplate:
+          '<div style="width:100%;padding:0 15mm;color:#8a8f8b;font-family:\'Segoe UI\',\'Microsoft YaHei UI\',sans-serif;font-size:9px;line-height:1;text-align:center;">' +
+          '第 <span class="pageNumber"></span> 页 / 共 <span class="totalPages"></span> 页' +
+          '</div>'
       })
     } finally {
       window.setBackgroundColor('#f6f4ec')
