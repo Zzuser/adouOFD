@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2 — 2026-11-09
+
+- Fixed missing text after PDF→OFD conversion of invoices: generated clip regions store path data relative to their own Boundary, but the preview renderer placed them at the page origin, cutting away the text they covered. Renders now translate such clips in memory; the source file is not modified, and WPS and other readers were already correct.
+- Boundary compensation is now applied per render backend: composite objects are compensated for both backends, while clip translation is applied only to the image renderer. The vector-PDF renderer already handles clip Boundaries, so the previous patch would have shifted those clips twice.
+- Enabled antialiasing for the image renderer: sub-pixel horizontal strokes in small serif fonts no longer break up or disappear at preview DPI (0.05 mm strokes now render as gray coverage, matching PDF readers).
+- Verified with 81/81 backend tests, the full UI smoke and text/Markdown smoke; a real electronic invoice was checked at 144/300 DPI in the packaged UI and through vector PDF export.
+
 ## 1.2.1 — 2026-11-05
 
 - The local engine now exits with its Electron parent: if the main process crashes or is force-closed, no orphaned `java.exe` remains. Stale engine and print temp directories older than 24 hours are cleaned at startup.
