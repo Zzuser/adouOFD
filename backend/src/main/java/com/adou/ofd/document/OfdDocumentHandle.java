@@ -1,6 +1,7 @@
 package com.adou.ofd.document;
 
-import com.adou.ofd.render.OfdCompositePlacement;
+import com.adou.ofd.render.AntialiasedImageMaker;
+import com.adou.ofd.render.OfdRenderNormalizer;
 import org.ofdrw.converter.ImageMaker;
 import org.ofdrw.core.action.CT_Action;
 import org.ofdrw.core.action.Actions;
@@ -56,7 +57,7 @@ public final class OfdDocumentHandle implements DocumentHandle {
     private final Map<Integer, List<TextRun>> textCache = new HashMap<>();
     private ContentExtractor textExtractor;
     private List<OutlineItem> outlineCache;
-    private boolean compositePlacementNormalized;
+    private boolean renderModelNormalized;
 
     private OfdDocumentHandle(OFDReader reader, Path workDir) throws IOException {
         this.reader = reader;
@@ -339,9 +340,9 @@ public final class OfdDocumentHandle implements DocumentHandle {
             throw new IOException("旋转角度必须是 90 的倍数");
         }
         int actualDpi = cappedDpi(page, dpi);
-        if (!compositePlacementNormalized) {
-            OfdCompositePlacement.normalize(reader);
-            compositePlacementNormalized = true;
+        if (!renderModelNormalized) {
+            OfdRenderNormalizer.normalize(reader, OfdRenderNormalizer.Backend.IMAGE);
+            renderModelNormalized = true;
         }
         Path outputDir = workDir.resolve("render")
                 .resolve("ofd-p" + page + "-" + actualDpi + (rotation == 0 ? "" : "-r" + rotation));
@@ -351,7 +352,7 @@ public final class OfdDocumentHandle implements DocumentHandle {
         }
         Files.createDirectories(outputDir);
         ImageMaker maker = imageMakers.computeIfAbsent(actualDpi, value -> {
-            ImageMaker imageMaker = new ImageMaker(reader, value / 25.4);
+            ImageMaker imageMaker = new AntialiasedImageMaker(reader, value / 25.4);
             imageMaker.config.setDrawBoundary(false);
             return imageMaker;
         });

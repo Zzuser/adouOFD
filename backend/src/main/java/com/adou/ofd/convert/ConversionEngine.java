@@ -1,6 +1,7 @@
 package com.adou.ofd.convert;
 
-import com.adou.ofd.render.OfdCompositePlacement;
+import com.adou.ofd.render.AntialiasedImageMaker;
+import com.adou.ofd.render.OfdRenderNormalizer;
 import com.adou.ofd.web.ApiException;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
@@ -170,7 +171,7 @@ public class ConversionEngine {
                 bytes / (1024 * 1024), pages, SIZE_FALLBACK_DPI, source.getFileName());
         progress.update(PROGRESS_START + PROGRESS_SPAN, "矢量 PDF 体积过大，正在按图像重新导出");
         Files.deleteIfExists(output);
-        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI);
+        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI, false);
         return ExportMode.IMAGE;
     }
 
@@ -183,7 +184,7 @@ public class ConversionEngine {
      * 合并任务显式选择“小体积”时使用：直接按图像写入 PDF。
      */
     public ExportMode ofdToPdfImageForMerge(Path source, Path output, Progress progress) throws IOException {
-        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI);
+        exportOfdToPdfImage(source, output, progress, SIZE_FALLBACK_DPI, false);
         return ExportMode.IMAGE;
     }
 
@@ -233,7 +234,7 @@ public class ConversionEngine {
     private void exportOfdToPdfVector(Path source, Path output, Progress progress) throws IOException {
         try (OFDReader reader = new OFDReader(source);
              PDDocument document = new PDDocument()) {
-            OfdCompositePlacement.normalize(reader);
+            OfdRenderNormalizer.normalize(reader, OfdRenderNormalizer.Backend.PDF);
             PdfboxMaker maker = new PdfboxMaker(reader, document);
             // ofdrw 的页码接口是 1 起的，这里统一用页面列表避免索引换算
             List<PageInfo> pages = reader.getPageList();
@@ -259,22 +260,28 @@ public class ConversionEngine {
     }
 
     private void exportOfdToPdfImage(Path source, Path output, Progress progress) throws IOException {
-        exportOfdToPdfImage(source, output, progress, IMAGE_FALLBACK_DPI);
+        exportOfdToPdfImage(source, output, progress, IMAGE_FALLBACK_DPI, true);
     }
 
     /**
      * 用本机渲染结果生成 PDF：版面 100% 一致，但文字不可选中。
+     *
+     * @param antialias 是否开启抗锯齿。抗锯齿能让小字号细笔画保留下来，代价是 PNG/PDF
+     *                  体积约 2.5 倍，因此"合并时小体积"路径关闭它。
      */
-    private void exportOfdToPdfImage(Path source, Path output, Progress progress, int dpi) throws IOException {
+    private void exportOfdToPdfImage(Path source, Path output, Progress progress,
+                                     int dpi, boolean antialias) throws IOException {
         try (OFDReader reader = new OFDReader(source);
              PDDocument document = new PDDocument()) {
-            OfdCompositePlacement.normalize(reader);
+            OfdRenderNormalizer.normalize(reader, OfdRenderNormalizer.Backend.IMAGE);
             List<PageInfo> pages = reader.getPageList();
             int total = pages.size();
             if (total <= 0) {
                 throw new IOException("源文档不包含任何页面");
             }
-            ImageMaker maker = new ImageMaker(reader, dpi / 25.4);
+            ImageMaker maker = antialias
+                    ? new AntialiasedImageMaker(reader, dpi / 25.4)
+                    : new ImageMaker(reader, dpi / 25.4);
             for (int index = 0; index < total; index++) {
                 checkCanceled(progress);
                 ST_Box box = pages.get(index).getSize();

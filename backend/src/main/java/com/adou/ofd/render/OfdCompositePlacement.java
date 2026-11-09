@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * PdfboxMaker 只应用 CTM、忽略 Boundary 平移，签章会被画到页面左上角。
  * 这里在打开文档后为这类组合对象补上 Boundary 位移，只改内存模型，不修改源文件。
  */
-public final class OfdCompositePlacement {
+final class OfdCompositePlacement {
 
     private static final Logger log = LoggerFactory.getLogger(OfdCompositePlacement.class);
     private static final double EPSILON = 0.01;
@@ -31,7 +31,7 @@ public final class OfdCompositePlacement {
     private OfdCompositePlacement() {
     }
 
-    public static void normalize(OFDReader reader) {
+    static void normalize(OFDReader reader) {
         try {
             ResourceManage resources = reader.getResMgt();
             int fixed = 0;
