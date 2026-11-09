@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>更新日志 — 阿豆OFD</title>
-  <meta name="description" content="阿豆OFD 的版本更新记录：1.2.1 稳定性与性能优化、1.2.0 深色模式、文件关联与打印改进。">
+  <meta name="description" content="阿豆OFD 的版本更新记录：1.2.2 修复发票预览缺字与抗锯齿、1.2.1 稳定性与性能优化、1.2.0 深色模式。">
   <meta name="theme-color" content="#f6f2e7">
   <link rel="canonical" href="https://adou.grout.cn/changelog.html">
   <meta name="robots" content="index,follow">
   <meta property="og:type" content="article">
   <meta property="og:locale" content="zh_CN">
   <meta property="og:title" content="更新日志 — 阿豆OFD">
-  <meta property="og:description" content="阿豆OFD 的版本更新记录：1.2.1 稳定性与性能优化、1.2.0 深色模式与文件关联改进。">
+  <meta property="og:description" content="阿豆OFD 的版本更新记录：1.2.2 修复发票预览缺字与抗锯齿、1.2.1 稳定性与性能优化、1.2.0 深色模式与文件关联改进。">
   <meta property="og:url" content="https://adou.grout.cn/changelog.html">
   <meta property="og:image" content="https://adou.grout.cn/assets/og.png">
   <link rel="icon" href="assets/favicon.ico" sizes="any">
@@ -57,14 +57,25 @@
       <h1>更新日志</h1>
       <p>阿豆OFD 的版本变化。完整英文记录见 GitHub 仓库的 CHANGELOG。</p>
       <div class="legal-meta">
-        <span>当前版本 1.2.1</span>
-        <span>2026-11-05</span>
+        <span>当前版本 1.2.2</span>
+        <span>2026-11-09</span>
         <span>Windows x64</span>
       </div>
     </div>
   </section>
 
   <div class="container timeline">
+    <article class="timeline-item">
+      <p class="timeline-date">2026-11-09</p>
+      <h2>1.2.2</h2>
+      <ul>
+        <li>修复 PDF 转 OFD 后发票类文档在预览、打印和导出时缺字的问题：裁剪区按自身 Boundary 定位，源文件不做修改，WPS 等阅读器本就正常。</li>
+        <li>渲染补偿按后端区分：预览补裁剪区与组合对象，矢量 PDF 导出只补组合对象，避免二次偏移。</li>
+        <li>预览开启抗锯齿，小字号宋体的细横画不再被整条丢弃，笔画连续、显示清晰，与 PDF 阅读器一致。</li>
+        <li>新增裁剪区与抗锯齿回归测试；后端 81 个测试、主 UI 冒烟与文本冒烟全部通过。</li>
+      </ul>
+    </article>
+
     <article class="timeline-item">
       <p class="timeline-date">2026-11-05</p>
       <h2>1.2.1</h2>
